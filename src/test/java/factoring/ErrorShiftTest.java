@@ -12,15 +12,32 @@ public class ErrorShiftTest {
 	@Test
 	public void test10037_4339 ()
 	{
-		final Set<Long> factors = new HashSet();
-		factors.add(10037l);
-		factors.add(4339l);
+		final int p = 10037;
+		final int q = 4339;
+		final Set<Long> factors = factors(p, q);
 		final ErrorShiftFact fact = new ErrorShiftFact();
-
-		final long factor = fact.findFactor(10037, 4339);
+		final long factor = fact.findFactor(p, q);
 
 		assertTrue(factors.contains(factor));
+	}
 
+	@Test
+	public void test10037_431 ()
+	{
+		final int p = 10037;
+		final int q = 60013;
+		final Set<Long> factors = factors(p, q);
+		final ErrorShiftFact fact = new ErrorShiftFact();
+		final long factor = fact.findFactor(p, q);
+
+		assertTrue(factors.contains(factor));
+	}
+
+	private Set<Long> factors(long p, long q) {
+		final Set<Long> factors = new HashSet();
+		factors.add(p);
+		factors.add(q);
+		return factors;
 	}
 
 }
