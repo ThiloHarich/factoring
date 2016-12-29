@@ -25,7 +25,8 @@ public class ErrorShiftFact {
 				final int yFloor = (int) Math.floor(Math.sqrt(right));
 				operations++;
 
-				for (long y=yFloor; y<=yFloor+1; y++)
+				int s = 4;
+				for (long y=yFloor-(s-1); y<=yFloor+s; y++)
 				{
 					int error = (int) Math.abs(right - y*y);
 
@@ -50,7 +51,7 @@ public class ErrorShiftFact {
 						if (sqrtR*sqrtR == right2)
 						{
 							printSolution(xSol, a, x, y, error, sign, sqrtN, xShifted);
-							return (long) (sqrtR + xShifted);
+							return (sqrtR + xShifted);
 						}
 					}
 				}
