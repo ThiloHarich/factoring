@@ -14,47 +14,49 @@ public class ErrorShiftFact {
 		float  a=1;
 		//			if(l>0)
 		//				a=7;
-		System.out.println("next a = " + a + " for new interval");
 		final double sqrt = Math.sqrt(n);
 //		final int tMax = (int) Math.floor(Math.sqrt(sqrt));
-		final int tMax = 200;
 		final int sqrtN = (int) Math.ceil(sqrt);
-		final double searchInterval = 3;
-		for (int x=sqrtN; x < sqrtN + searchInterval; x++){
-			final long right = x*x - n;
-			final int yFloor = (int) Math.floor(Math.sqrt(right));
-			operations++;
 
-//			int t = 4;
-			int s = x - sqrtN + 1;
-			int t = (int) (tMax / Math.sqrt(s) + 5);
-			for (int y=yFloor-(t-1); y<=yFloor+t; y++)
-			{
-				int error = (int) Math.abs(right - y*y);
+		for (int rightSize = 0; rightSize <= sqrtN; rightSize += Math.pow(n, .25))
+		{
+			System.out.println("next size = " + rightSize);
 
-				if(error == 0) {
-					System.out.println("found with fermat");
-					return y + x;
-				}
-				a = 1;
-				if (error % 2 == 0) {
-					error = error / 2;
-					a = .5f;
-				}
+			final int tMax = rightSize/2;
 
-				final int sign = (int) Math.signum(right - y*y);
-				final long xShifted = x + error;
-				printSolution(xSol, a, x, y-yFloor, error, sign, sqrtN, xShifted);
-				final long right2 = xShifted*xShifted - n;
-
+			for (int x = sqrtN + rightSize; x < sqrtN + 2*rightSize; x++) {
+				final long right = x * x - n;
+				final int yFloor = (int) Math.floor(Math.sqrt(right));
 				operations++;
-				if (MyMath.isSquare(right2))
-				{
-					final long sqrtR = (long) Math.sqrt(right2);
-					if (sqrtR*sqrtR == right2)
-					{
-						printSolution(xSol, a, x, y-yFloor, error, sign, sqrtN, xShifted);
-						return (sqrtR + xShifted);
+
+				int s = x - sqrtN + 1;
+				int t = (int) (tMax / Math.sqrt(s) + 2);
+
+				for (int y = yFloor - (t - 1); y <= yFloor + t; y++) {
+					int error = (int) Math.abs(right - y * y);
+
+					if (error == 0) {
+						System.out.println("found with fermat");
+						return y + x;
+					}
+					a = 1;
+					if (error % 2 == 0) {
+						error = error / 2;
+						a = .5f;
+					}
+
+					final int sign = (int) Math.signum(right - y * y);
+					final long xShifted = x + error;
+					printSolution(xSol, a, x, y - yFloor, error, sign, sqrtN, xShifted);
+					final long right2 = xShifted * xShifted - n;
+
+					operations++;
+					if (MyMath.isSquare(right2)) {
+						final long sqrtR = (long) Math.sqrt(right2);
+						if (sqrtR * sqrtR == right2) {
+							printSolution(xSol, a, x, y - yFloor, error, sign, sqrtN, xShifted);
+							return (sqrtR + xShifted);
+						}
 					}
 				}
 			}

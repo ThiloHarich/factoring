@@ -17,9 +17,9 @@ public class ErrorYIncShiftFact {
 		System.out.println("next a = " + a + " for new interval");
 		final double sqrt = Math.sqrt(n);
 //		final int tMax = (int) Math.floor(Math.sqrt(sqrt));
-		final int tMax = 200;
 		final int sqrtN = (int) Math.ceil(sqrt);
-		final double searchInterval = 50;
+		final int shiftMax = sqrtN;
+		final double searchInterval = 2000;
 		for (int x=sqrtN; x < sqrtN + searchInterval; x++){
 			final long right = x*x - n;
 			final int yFloor = (int) Math.floor(Math.sqrt(right));
@@ -27,22 +27,31 @@ public class ErrorYIncShiftFact {
 
 //			int t = 4;
 			int s = x - sqrtN + 1;
-			int t = (int) (tMax / Math.sqrt(s) + 5);
-			for (int yShift=0; yShift<=t && yShift < yFloor; yShift++)
+//			int t = (int) (tMax / Math.sqrt(s) + 5);
+			int y2 = yFloor;
+			int error = (int) Math.abs(right - y2 *y2);
+			int yShift=0;
+			for (;  (x-sqrtN) <= 8 && error < sqrtN*1 ||  yShift < 3; yShift++)
 			{
-				long factor = factor(n, xSol, sqrtN, x, right, yShift, yFloor + yShift);
+				y2 = yFloor - yShift;
+				error = (int) Math.abs(right - y2 *y2);
+
+				long factor = factor(n, xSol, sqrtN, x, right, yShift, y2, error);
 				if (factor != -1l) return factor;
-				factor = factor(n, xSol, sqrtN, x, right, yShift, yFloor - yShift);
+
+				y2 = yFloor + yShift;
+				error = (int) Math.abs(right - y2 *y2);
+				factor = factor(n, xSol, sqrtN, x, right, yShift, y2, error);
 				if (factor != -1l) return factor;
 			}
+			System.out.println("x serach " + (x - sqrtN) + "\t y serach interval " + yShift);
 		}
 		// no factor found
 		return -1;
 	}
 
-	private long factor(long n, long xSol, int sqrtN, int x, long right, int yShift, int y2) {
+	private long factor(long n, long xSol, int sqrtN, int x, long right, int yShift, int y2, int error) {
 		float a;
-		int error = (int) Math.abs(right - y2 *y2);
 
 		if(error == 0) {
             System.out.println("found with fermat");
