@@ -5,98 +5,104 @@ public class ErrorShift2DFact {
 	private final int maxL = 100;
 	long operations = 0;
 	private double exp;
-	int x;
+	long x;
 	int y;
-
+	long n;
+	long xSol;
+	int sqrtN;
+	int tRange;
 
 
 	public long findFactor(long q, long p)
 	{
-		final long n = p*q;
-		final long xSol = (p+q)/2;
+		n = p*q;
+		xSol = (p+q)/2;
 		// factor lower factors with trial division
 
-		float  a=1;
 		final double sqrt = Math.sqrt(n);
-		final int sqrtN = (int) Math.ceil(sqrt);
+		sqrtN = (int) Math.ceil(sqrt);
 
-		exp = 2;
-		int step = 100;
-		int yTraget = 0;
-		for (int i=1; yTraget < sqrtN; i++)
+		int step = 5;
+		for (int i=0; true; i++)
 		{
 			System.out.println("XX next i " + i);
-			yTraget = i*step;
-			int tRange = (int) Math.pow(i*step, 1/exp);
-//			int tRange = 3;
 
-			final Integer xShifted = findFactor(n, xSol, sqrtN, step, i, tRange);
-			if (xShifted != null) return xShifted;
+			tRange = 6;   // 6
+			Long factor;
+
+			for (int t = -tRange; t <= tRange+1; t++) {
+//				System.out.println("t: \t" + t + " s begin: \t" + s(i*step, t) + " e end: \t" + (s((i+1)*step, t)-1));
+				for (int s = s(i*step, t); s < s((i+1)*step, t); s++) {
+					if ((factor = findFactor(s, t)) != -1) return factor;
+				}
+			}
+			for (int s = 0; s <= 5; s++) {   // 2
+				for (int t = Math.max(tRange+1, i*step/8); t < (i+1)*step/8; t++) {
+					if ((factor = findFactor(s, t+1)) != -1) return factor;
+					if ((factor = findFactor(s, -t)) != -1) return factor;
+				}
+			}
 		}
-		// no factor found
+	}
+
+	private int s(int sRange, int t) {
+		return sRange;
+//		return (int) ((sRange+0.0)/(Math.abs(2*t-1))*tRange);
+	}
+
+	private long findFactor(int s, long t) {
+//		System.out.println("t:\t" + t + " \ts \t" + s);
+		float a;
+		x = sqrtN + s;
+		final long right = x * x - n;
+		y = (int) (Math.floor(Math.sqrt(right)) + t);
+		operations++;
+
+		int error = (int) Math.abs(right - y * y);
+
+		if (error == 0) {
+			System.out.println("found with fermat");
+			return y + x;
+		}
+		a = 1;
+		if (error % 2 == 0) {
+			error = error / 2;
+			a = .5f;
+		}
+
+		final int sign = (int) Math.signum(right - y * y);
+		long xShifted = x + error;
+		long factor = findFactor(s, t, a, error, sign, xShifted);
+		if (factor != -1) return factor;
+		if (s<=3)
+		{
+			error *= 2;
+			xShifted = x + error;
+			factor = findFactor(s, t, 2, error, sign, xShifted);
+			if (factor != -1) return factor;
+		}
 		return -1;
 	}
 
-	private Integer findFactor(long n, long xSol, int sqrtN, int step, int i, int tRange) {
-		float a;
-		for (int t = -tRange; t <= tRange; t++)
+	private long findFactor(int s, long t, float a, int error, int sign, long xShifted) {
+		printSolution(xSol, a, x, t, error, sign, sqrtN, xShifted, s);
+		final long right2 = xShifted * xShifted - n;
+		operations++;
+		if (MyMath.isSquare(right2))
         {
-            System.out.println("t:\t" + t + " \ts old \t" + s(t,i,step) + " \ts max \t" + s(t,i+1,step));
-            for (int s = s(t,i,step); s <= s(t,i+1,step)-1; s++)
-            {
-                x = sqrtN + s;
-                final long right = x * x - n;
-                y = (int) Math.floor(Math.sqrt(right)) + t;
-                operations++;
-
-                    int error = (int) Math.abs(right - y * y);
-
-                    if (error == 0) {
-                        System.out.println("found with fermat");
-                        return y + x;
-                    }
-                    a = 1;
-                    if (error % 2 == 0) {
-                        error = error / 2;
-                        a = .5f;
-                    }
-
-                    final int sign = (int) Math.signum(right - y * y);
-                    final int xShifted = x + error;
-                    printSolution(xSol, a, x, t, error, sign, sqrtN, xShifted, s);
-                    final long right2 = xShifted * xShifted - n;
-
-//					System.out.format("s: \t%d t: \t%d : \t%d\n", s, t, right2);
-
-                    operations++;
-                    if (MyMath.isSquare(right2))
-                    {
-                        final int sqrtR = (int) Math.sqrt(right2);
-                        if (sqrtR * sqrtR == right2) {
-                            printSolution(xSol, a, x, t, error, sign, sqrtN, xShifted, s);
-                            return (sqrtR + xShifted);
-                        }
-                    }
-                }
+            final int sqrtR = (int) Math.sqrt(right2);
+            if (sqrtR * sqrtR == right2) {
+				double speedup = (0.0 + xSol - sqrtN) / operations;
+				System.out.println("XXXXXXXXX Speedup : " + speedup);
+				printSolution(xSol, a, x, t, error, sign, sqrtN, xShifted, s);
+                return (sqrtR + xShifted);
+            }
         }
-		return null;
+		return -1;
 	}
 
-	private int s(int t, int i, int step) {
-		int t1 = Math.abs(2 * t - 1);
-		if (t1 < 8)
-			return i*step/t1;
-		else {
-			double range = Math.pow((i) * step, 1 / exp);
-			double diff = range / Math.abs(t);
-			return diff==i ? 0 : 1;
-		}
-//		return (int) (i*step/Math.pow(t1, exp));
-
-	}
-
-	protected void printSolution(final long xSol, float a, int x, long t, final int error, int sign, int sqrtN, long xShifted, int s) {
-		double div = 4;
+	protected void printSolution(final long xSol, float a, long x, long t, final int error, int sign, int sqrtN, long xShifted, int s) {
+		double div = 2*2*2*2* 3*3 * 5*5 * 7*7 * 11 * 13;
 		if ((0.0 + xSol-x)*div/error == Math.ceil((xSol-x)*div/error))
 		{
 			double rightA = (0.0 + xSol - x) / error;
@@ -104,9 +110,16 @@ public class ErrorShift2DFact {
 				rightA /= 2;
 //			if (rightA == 1 && a==.5f)
 //				rightA = a;
-			double speedup = (0.0 + xShifted - sqrtN) / operations;
-			if (speedup > rightA)
-			System.out.println("t:\t" + t + " \ts:\t"+ s + " right 'a' " + rightA + " \tspeedup " + speedup + " \tsearchInterval " + (x-sqrtN) + " \tx = " + x + "\te = " + error + " \ta(2x + a|e|) - sign(e) = " + a*(2*x + error - sign));
+			double speedup = (0.0 + xSol - sqrtN) / operations;
+			if (speedup > 2)
+			System.out.println("t:\t" + t + " \ts:\t"+ s + " right 'a' " + rightA+ " right '1/a' " + 1/rightA + " \tspeedup " + speedup + " \tsearchInterval " + (x-sqrtN) + " \tx = " + x + "\te = " + error + " \ta(2x + a|e|) - sign(e) = " + a*(2*x + error - sign));
 		}
+	}
+
+	public long getOperationsFermat (){
+		return xSol - sqrtN;
+	}
+	public long getOperations (){
+		return operations;
 	}
 }

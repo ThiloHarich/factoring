@@ -2,7 +2,9 @@ package factoring;
 
 import static org.junit.Assert.assertTrue;
 
-import java.util.HashSet;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
 import java.util.Set;
 
 import org.junit.Test;
@@ -14,47 +16,63 @@ public class ErrorShiftTest {
 	{
 		final int p = 10037;
 		final int q = 4339;
-		final Set<Long> factors = factors(p, q);
+		final Collection<Long> factors = factors(p, q);
 		final ErrorShiftFact fact = new ErrorShiftFact();
 		final long factor = fact.findFactor(p, q);
 
 		assertTrue(factors.contains(factor));
 	}
 
-	@Test
-	public void test10037_431 ()
+	List<Integer> qs ()
 	{
-		final int p = 9721;
-//		final int p = 9719;
-//		final int p = 11003;
-//				final int p = 10037;
-//				final int q = 4337;
-//		final int q = 20023; //  3 exp = 99 t=1
-//		final int q = 20029; //  2 exp = 2 t=2
-//		final int q = 24043; //  2 exp = 1 t=3
-//		final int q = 24029; //  .7 -> s=2 t=1
-//		final int q = 30029; // .5 ->
-//		final int q = 32029; //  2 exp = .8 t=3,5
-//		final int q = 45007; // 10 exp = 0.5  -> s=0, t=56
-		final int q = 60029; //  4 exp = .4  -> s=1;2
-//		final int q = 60017; // 10 exp = .6  -> s=2
-//		final int q = 60013; //  2 exp = 2  -> t=1
-//		final int q = 90023; //  8 exp = 1  -> s=2
-//		final int q = 90007; // 15 exp = 1  -> s=3
-//		int q = 140729;
-		final Set<Long> factors = factors(p, q);
-		final ErrorShift2DFact fact = new ErrorShift2DFact();
-//		final ErrorYIncShiftFact fact = new ErrorYIncShiftFact();
-		final long factor = fact.findFactor(p, q);
-
-		assertTrue(factors.contains(factor));
+		return Arrays.asList(20023, 20029, 24043, 24029, 30029, 45007, 60029, 60017, 60013, 90023, 90007);
 	}
 
-	private Set<Long> factors(long p, long q) {
-		final Set<Long> factors = new HashSet<Long>();
-		factors.add(p);
-		factors.add(q);
-		return factors;
+
+	private void checkFactors(int p) {
+		int operations = 0;
+		int fermatOperations = 0;
+		for (int q : qs())
+		{
+			final Collection<Long> factors = factors(p, q);
+			final ErrorShiftFact fact = new ErrorShiftFact();
+//		final ErrorYIncShiftFact fact = new ErrorYIncShiftFact();
+			final long factor = fact.findFactor(p, q);
+			assertTrue(factors.contains(factor));
+			operations += fact.operations;
+			fermatOperations += fact.getOperationsFermat();
+		}
+		System.out.println("Overall Speedup " + (fermatOperations + 0.0)/operations);
+	}
+
+	@Test
+	public void test9721 ()
+	{
+		final int p = 9721;
+		checkFactors(p);
+	}
+
+	@Test
+	public void test9719 ()
+	{
+		final int p = 9719;
+		checkFactors(p);
+	}
+	@Test
+	public void test11003 ()
+	{
+		final int p = 11003;
+		checkFactors(p);
+	}
+	@Test
+	public void test11007 ()
+	{
+				final int p = 10037;
+		checkFactors(p);
+	}
+
+	private Collection<Long> factors(long p, long q) {
+		return Arrays.asList(p,q);
 	}
 
 }
