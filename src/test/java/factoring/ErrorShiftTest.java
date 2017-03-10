@@ -5,13 +5,11 @@ import static org.junit.Assert.assertTrue;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.Set;
 
 import org.junit.Test;
 
 public class ErrorShiftTest {
 
-	@Test
 	public void test10037_4339 ()
 	{
 		final int p = 10037;
@@ -30,17 +28,18 @@ public class ErrorShiftTest {
 
 
 	private void checkFactors(int p) {
-		int operations = 0;
-		int fermatOperations = 0;
-		for (int q : qs())
+		final int operations = 0;
+		final int fermatOperations = 0;
+		for (final int q : qs())
 		{
 			final Collection<Long> factors = factors(p, q);
-			final ErrorShiftFact fact = new ErrorShiftFact();
-//		final ErrorYIncShiftFact fact = new ErrorYIncShiftFact();
+			final BasicErrorShiftFact fact = new BasicErrorShiftFact();
+			//			final ErrorShiftFact fact = new ErrorShiftFact();
+			//		final ErrorYIncShiftFact fact = new ErrorYIncShiftFact();
 			final long factor = fact.findFactor(p, q);
 			assertTrue(factors.contains(factor));
-			operations += fact.operations;
-			fermatOperations += fact.getOperationsFermat();
+			//			operations += fact.operations;
+			//			fermatOperations += fact.getOperationsFermat();
 		}
 		System.out.println("Overall Speedup " + (fermatOperations + 0.0)/operations);
 	}
@@ -67,7 +66,7 @@ public class ErrorShiftTest {
 	@Test
 	public void test11007 ()
 	{
-				final int p = 10037;
+		final int p = 10037;
 		checkFactors(p);
 	}
 
