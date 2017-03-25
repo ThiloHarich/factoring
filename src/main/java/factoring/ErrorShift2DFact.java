@@ -25,7 +25,7 @@ public class ErrorShift2DFact {
 		int step = 5;
 		for (int i=0; true; i++)
 		{
-			System.out.println("XX next i " + i);
+//			System.out.println("XX next i " + i);
 
 			tRange = 6;   // 6
 			Long factor;
@@ -111,7 +111,7 @@ public class ErrorShift2DFact {
 //			if (rightA == 1 && a==.5f)
 //				rightA = a;
 			double speedup = (0.0 + xSol - sqrtN) / operations;
-			if (speedup > 2)
+			if (rightA == 2.)
 			System.out.println("t:\t" + t + " \ts:\t"+ s + " right 'a' " + rightA+ " right '1/a' " + 1/rightA + " \tspeedup " + speedup + " \tsearchInterval " + (x-sqrtN) + " \tx = " + x + "\te = " + error + " \ta(2x + a|e|) - sign(e) = " + a*(2*x + error - sign));
 		}
 	}

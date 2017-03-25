@@ -15,9 +15,14 @@ public class MyMath {
 		if (!isProbableSquare(n))
 			return false;
 		long sqrt = (long)Math.sqrt(n);
+		return sqrt*sqrt == n;
+	}
+
+	public static long sqrt(long n) {
+		long sqrt = (long)Math.sqrt(n);
 		if (n < MATH_SQRT_WORKS)
 		{
-			return sqrt*sqrt == n;
+			return sqrt;
 		}
 		long sqrt2=sqrt, tmp;
 		do{
@@ -29,9 +34,9 @@ public class MyMath {
 			sqrt2 = (sqrt + nDivSqrt)/2;
 		}
 		while (sqrt2 - sqrt > 0);
-
-		return sqrt*sqrt == n;
+		return sqrt;
 	}
+
 	public static boolean isProbableSquare(long n) {
 		final int nMod = (int) (n & (mod-1));
 		if (!squaresMod[nMod])
