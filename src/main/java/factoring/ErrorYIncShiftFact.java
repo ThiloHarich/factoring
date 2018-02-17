@@ -1,5 +1,7 @@
 package factoring;
 
+import factoring.math.PrimeMath;
+
 public class ErrorYIncShiftFact {
 
 	private final int maxL = 100;
@@ -44,7 +46,7 @@ public class ErrorYIncShiftFact {
 				factor = factor(n, xSol, sqrtN, x, right, yShift, y2, error);
 				if (factor != -1l) return factor;
 			}
-			System.out.println("x serach " + (x - sqrtN) + "\t y serach interval " + yShift);
+			System.out.println("xArray serach " + (x - sqrtN) + "\t y serach interval " + yShift);
 		}
 		// no factor found
 		return -1;
@@ -69,7 +71,7 @@ public class ErrorYIncShiftFact {
 		final long right2 = xShifted*xShifted - n;
 
 		operations++;
-		if (MyMath.isSquare(right2))
+		if (PrimeMath.isSquare(right2))
         {
             final long sqrtR = (long) Math.sqrt(right2);
             if (sqrtR*sqrtR == right2)
@@ -92,7 +94,7 @@ public class ErrorYIncShiftFact {
 //				rightA = a;
 			double speedup = (0.0 + xShifted - sqrtN) / operations;
 			if (speedup > rightA)
-			System.out.println("right 'a' " + rightA + " \tspeedup " + speedup + " \tsearchInterval " + (x-sqrtN) + "\t t " + t + " \tx = " + x + "\te = " + error + " \ta(2x + a|e|) - sign(e) = " + a*(2*x + error - sign));
+			System.out.println("right 'a' " + rightA + " \tspeedup " + speedup + " \tsearchInterval " + (x-sqrtN) + "\t t " + t + " \txArray = " + x + "\te = " + error + " \ta(2x + a|e|) - sign(e) = " + a*(2*x + error - sign));
 		}
 	}
 }

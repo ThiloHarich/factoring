@@ -1,5 +1,7 @@
 package factoring;
 
+import factoring.math.PrimeMath;
+
 public class ErrorShift2DFact {
 
 	private final int maxL = 100;
@@ -88,7 +90,7 @@ public class ErrorShift2DFact {
 		printSolution(xSol, a, x, t, error, sign, sqrtN, xShifted, s);
 		final long right2 = xShifted * xShifted - n;
 		operations++;
-		if (MyMath.isSquare(right2))
+		if (PrimeMath.isSquare(right2))
         {
             final int sqrtR = (int) Math.sqrt(right2);
             if (sqrtR * sqrtR == right2) {
@@ -112,7 +114,7 @@ public class ErrorShift2DFact {
 //				rightA = a;
 			double speedup = (0.0 + xSol - sqrtN) / operations;
 			if (rightA == 2.)
-			System.out.println("t:\t" + t + " \ts:\t"+ s + " right 'a' " + rightA+ " right '1/a' " + 1/rightA + " \tspeedup " + speedup + " \tsearchInterval " + (x-sqrtN) + " \tx = " + x + "\te = " + error + " \ta(2x + a|e|) - sign(e) = " + a*(2*x + error - sign));
+			System.out.println("t:\t" + t + " \ts:\t"+ s + " right 'a' " + rightA+ " right '1/a' " + 1/rightA + " \tspeedup " + speedup + " \tsearchInterval " + (x-sqrtN) + " \txArray = " + x + "\te = " + error + " \ta(2x + a|e|) - sign(e) = " + a*(2*x + error - sign));
 		}
 	}
 
