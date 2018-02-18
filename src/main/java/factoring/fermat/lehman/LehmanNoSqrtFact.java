@@ -10,10 +10,11 @@ import factoring.trial.TrialWithPrimesFact;
  */
 public class LehmanNoSqrtFact extends FindPrimeFact {
 
-	final static float balanceTrial = 1.3f;
-	final static double ONE_THIRD = 1.0/3;
+	static float BALANCE_TRIAL = 1.3f;
+	static double ONE_THIRD = 1.0/3;
+	final static int xBeginMod4 = Integer.MAX_VALUE - 3;
 
-	static float balanceTrialCube = balanceTrial * balanceTrial;
+	static float balanceTrialCube = BALANCE_TRIAL * BALANCE_TRIAL;
 	static int kMax = (int) (Math.ceil(Math.pow(Long.MAX_VALUE, ONE_THIRD)) / balanceTrialCube);
 
 	static float [] sqrt = new float[kMax + 1];
@@ -26,12 +27,11 @@ public class LehmanNoSqrtFact extends FindPrimeFact {
 			sqrtInv[i] = 1.0f / sqrtI;
 		}
 	}
-	final static int xBeginMod4 = Integer.MAX_VALUE - 3;
 
 	@Override
 	public long findPrimeFactors(long n, Collection<Long> factors) {
 		final TrialWithPrimesFact smallFactoriser = new TrialWithPrimesFact();
-		double maxTrialFactor =  Math.ceil(balanceTrial * Math.pow(n, ONE_THIRD));
+		double maxTrialFactor =  Math.ceil(BALANCE_TRIAL * Math.pow(n, ONE_THIRD));
 		smallFactoriser.setMaxFactor((int) maxTrialFactor);
 		n = smallFactoriser.findPrimeFactors(n, factors);
 
@@ -45,7 +45,7 @@ public class LehmanNoSqrtFact extends FindPrimeFact {
 				return x;
 			}
 		}
-		maxTrialFactor =  balanceTrial * Math.pow(n, ONE_THIRD);
+		maxTrialFactor =  BALANCE_TRIAL * Math.pow(n, ONE_THIRD);
 		kMax = (int) (Math.ceil(maxTrialFactor / balanceTrialCube));
 		final int multiplier = 4;
 		final long n4 = n * multiplier;
