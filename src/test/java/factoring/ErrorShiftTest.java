@@ -3,13 +3,18 @@ package factoring;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+
+import org.junit.Test;
 
 import com.google.common.collect.Multiset;
 import com.google.common.collect.TreeMultiset;
-import factoring.fermat.*;
-import factoring.fermat.lehman.*;
-import org.junit.Test;
+
+import factoring.fermat.FermatFact;
+import factoring.fermat.lehman.LehmanNoSqrtFact;
+import factoring.fermat.lehman.LehmanRange1Fact;
 
 public class ErrorShiftTest {
 
@@ -32,37 +37,37 @@ public class ErrorShiftTest {
 
 	@Test
 	public void testCorrect() {
-		int bits = 16;
+		final int bits = 16;
 
-//		Factorizer factorizer1 = new LehmanResidueFact();
-//		Factorizer factorizer1 = new Fermat24();
-//		Factorizer factorizer1 = new HartFloorFact();
-		Factorizer factorizer2 = new LehmanRange1Fact();
-		Factorizer factorizer1 = new LehmanNoSqrtFact();
-//		Factorizer factorizer1 = new LehmanYafuFact();
-//		Factorizer factorizer2 = new Lehman8kFirstFact();
+		//		Factorizer factorizer1 = new LehmanResidueFact();
+		//		Factorizer factorizer1 = new Fermat24();
+		//		Factorizer factorizer1 = new HartFloorFact();
+		final Factorizer factorizer2 = new LehmanRange1Fact();
+		final Factorizer factorizer1 = new LehmanNoSqrtFact();
+		//		Factorizer factorizer1 = new LehmanYafuFact();
+		//		Factorizer factorizer2 = new Lehman8kFirstFact();
 
-//		for (int i = 65538; i < 1 << (bits + 1); i++)
-		int exp = 16;
+		//		for (int i = 65538; i < 1 << (bits + 1); i++)
+		final int exp = 16;
 		long begin = (1L << exp);  // = 2^4 * 3^2 * 5
-		begin = 795637L; // * 23
+		begin = 33157L; // * 23
 		// 29*23 * 53
 		// 29*53 * 23 ->
 		while (begin < Long.MAX_VALUE / 1000)
 		{
 			for (long i = begin; i < begin + begin/8; i++) {
-				Collection<Long> factors = factorizer1.findAllPrimeFactors(i);
+				final Collection<Long> factors = factorizer1.findAllPrimeFactors(i);
 				System.out.println(i + ": " + factorizer1.printFactors(i));
-	//			Collection<Integer> factors = factorizer1.findAllPrimeFactors(i);
-				Collection<Long> factors2 = factorizer2.findAllPrimeFactors(i);
+				//			Collection<Integer> factors = factorizer1.findAllPrimeFactors(i);
+				final Collection<Long> factors2 = factorizer2.findAllPrimeFactors(i);
 				System.out.println(i + ": " + factorizer2.printFactors(i));
 
 				assertEquals("Test failed for " + i, factors.size(), factors2.size());
-				Multiset<Long> factorsSet = TreeMultiset.create();
+				final Multiset<Long> factorsSet = TreeMultiset.create();
 				factorsSet.addAll(factors2);
 
-				for (long factor :
-						factors) {
+				for (final long factor :
+					factors) {
 					assertTrue("Test failed for " + i, factorsSet.contains(factor));
 				}
 			}
@@ -70,79 +75,79 @@ public class ErrorShiftTest {
 		}
 
 	}
-		@Test
+	@Test
 	public void testPerf()
 	{
-		int bits = 42;
-//		int bits = 25;
+		final int bits = 42;
+		//		int bits = 25;
 
 
-//		Factorizer factorizer1 = new Lehman8kFirstFact();
-//		Factorizer factorizer2 = new LehmanResidueFact();
-		Factorizer factorizer2 = new LehmanRange1Fact();
-//		Factorizer factorizer1 = new HartFact();
-//		Factorizer factorizer2 = new FermatResiduesRec();
-//		Factorizer factorizer2 = new FermatResiduesSieve();
-//		Factorizer factorizer2 = new FermatFact();
-		Factorizer factorizer1 = new LehmanNoSqrtFact();
-//		Factorizer factorizer2 = new LehmanYafuFact();
-//		Factorizer factorizer1 = new LehmanSquaresFact();
+		//		Factorizer factorizer1 = new Lehman8kFirstFact();
+		//		Factorizer factorizer2 = new LehmanResidueFact();
+		final Factorizer factorizer2 = new LehmanRange1Fact();
+		//		Factorizer factorizer1 = new HartFact();
+		//		Factorizer factorizer2 = new FermatResiduesRec();
+		//		Factorizer factorizer2 = new FermatResiduesSieve();
+		//		Factorizer factorizer2 = new FermatFact();
+		final Factorizer factorizer1 = new LehmanNoSqrtFact();
+		//		Factorizer factorizer2 = new LehmanYafuFact();
+		//		Factorizer factorizer1 = new LehmanSquaresFact();
 
-//		((TrialFactMod)factorizer1).setLimit(1 << 16);
+		//		((TrialFactMod)factorizer1).setLimit(1 << 16);
 
-		int factors = getFactors(factorizer1, bits);
-		int factors2 =  getFactors(factorizer2, bits);
+		final int factors = getFactors(factorizer1, bits);
+		final int factors2 =  getFactors(factorizer2, bits);
 
 		assertEquals(factors, factors2);
 
-		int factors3 = getFactors(factorizer1, bits);
-		int factors4 =  getFactors(factorizer2, bits);
+		final int factors3 = getFactors(factorizer1, bits);
+		final int factors4 =  getFactors(factorizer2, bits);
 
-//		assertEquals(factors3, factors4);
+		//		assertEquals(factors3, factors4);
 
-		int factors5 = getFactors(factorizer1, bits);
-		int factors6 =  getFactors(factorizer2, bits);
-		int factors7 = getFactors(factorizer1, bits);
-		int factors8 =  getFactors(factorizer2, bits);
+		final int factors5 = getFactors(factorizer1, bits);
+		final int factors6 =  getFactors(factorizer2, bits);
+		final int factors7 = getFactors(factorizer1, bits);
+		final int factors8 =  getFactors(factorizer2, bits);
 
-//		assertEquals(factors5, factors6);
+		//		assertEquals(factors5, factors6);
 	}
 
 	public int getFactors(Factorizer factorizer, int bits) {
 
 		// warmup
-		int factors = 0;
-		long begin = (1l << bits) +1584;
-		int range = 8000;
-		long start = System.nanoTime();
+		final int factors = 0;
+		final long begin = (1l << bits) +1584;
+		final int range = 8000;
+		final long start = System.nanoTime();
 		for (long i = begin; i < begin + range; i++)
 		{
 			factorizer.findAllPrimeFactors(i).size();
 		}
-		long time = System.nanoTime() - start;
-		String name = String.format("%-20s", factorizer.getClass().getSimpleName());
+		final long time = System.nanoTime() - start;
+		final String name = String.format("%-20s", factorizer.getClass().getSimpleName());
 		System.out.println(name + " :    \t" + (time));
 		return factors;
 	}
 
 
 	private void checkFactors(int p) {
-		int operations = 0;
-		int fermatOperations = 0;
-		for (int q : qs())
+		final int operations = 0;
+		final int fermatOperations = 0;
+		for (final int q : qs())
 		{
 			final List<Long> factors = factors(p, q);
-//			final Factorizer fact = new ErrorShiftFact(true);
+			//			final Factorizer fact = new ErrorShiftFact(true);
 			final FermatFact fact = new FermatFact();
-//			final ErrorShift2DFact fact = new ErrorShift2DFact();
-//		final ErrorYIncShiftFact fact = new ErrorYIncShiftFact();
+			//			final ErrorShift2DFact fact = new ErrorShift2DFact();
+			//		final ErrorYIncShiftFact fact = new ErrorYIncShiftFact();
 			fact.findFactors(p*q, factors);
 			final long factor = factors.get(0);
-//			assertTrue(factors.contains(factor));
+			//			assertTrue(factors.contains(factor));
 			if (!factors.contains(factor))
 				System.err.println("Factor not found");
-//			operations += fact.operations;
-//			fermatOperations += fact.getOperationsFermat();
+			//			operations += fact.operations;
+			//			fermatOperations += fact.getOperationsFermat();
 		}
 		System.out.println("Overall Speedup " + (fermatOperations + 0.0)/operations);
 	}
