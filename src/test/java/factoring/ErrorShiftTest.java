@@ -7,6 +7,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
+import factoring.fermat.lehman.LehmanYafuFact;
 import org.junit.Test;
 
 import com.google.common.collect.Multiset;
@@ -50,7 +51,7 @@ public class ErrorShiftTest {
 		//		for (int i = 65538; i < 1 << (bits + 1); i++)
 		final int exp = 16;
 		long begin = (1L << exp);  // = 2^4 * 3^2 * 5
-		begin = 33157L; // * 23
+		begin = 3337L	; // * 23
 		// 29*23 * 53
 		// 29*53 * 23 ->
 		while (begin < Long.MAX_VALUE / 1000)
@@ -84,13 +85,13 @@ public class ErrorShiftTest {
 
 		//		Factorizer factorizer1 = new Lehman8kFirstFact();
 		//		Factorizer factorizer2 = new LehmanResidueFact();
-		final Factorizer factorizer2 = new LehmanRange1Fact();
+//		final Factorizer factorizer2 = new LehmanRange1Fact();
 		//		Factorizer factorizer1 = new HartFact();
 		//		Factorizer factorizer2 = new FermatResiduesRec();
 		//		Factorizer factorizer2 = new FermatResiduesSieve();
 		//		Factorizer factorizer2 = new FermatFact();
 		final Factorizer factorizer1 = new LehmanNoSqrtFact();
-		//		Factorizer factorizer2 = new LehmanYafuFact();
+				Factorizer factorizer2 = new LehmanYafuFact();
 		//		Factorizer factorizer1 = new LehmanSquaresFact();
 
 		//		((TrialFactMod)factorizer1).setLimit(1 << 16);

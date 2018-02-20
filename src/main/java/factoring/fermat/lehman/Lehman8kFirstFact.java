@@ -42,13 +42,13 @@ public class Lehman8kFirstFact extends FermatFact {
         // by doing this, it is much more important to reduce the candidates of each level.
         int kMax = (int) (maxTrialFactor / balanceTrialCube);
         double nPow2Third = maxTrialFactor * maxTrialFactor;
-//        int kMax = (int)Math.pow(n, 1.0/3);
+//        int K_MAX = (int)Math.pow(n, 1.0/3);
         final double v = nPow2Third / multiplierSqrt;
         long factor = getFactor(1, kMax, 1, n, factors, v);
         if (factor > 0) return factor;
-//        factor = getFactor(1, kMax, 3, n, factors, nMod4, v);
+//        factor = getFactor(1, K_MAX, 3, n, factors, nMod4, v);
 //        if (factor > 0) return factor;
-//        factor = getFactor(2, kMax, 3, n, factors, nMod4, v);
+//        factor = getFactor(2, K_MAX, 3, n, factors, nMod4, v);
 //        if (factor > 0) return factor;
         return n;
     }

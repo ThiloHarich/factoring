@@ -37,7 +37,7 @@ public class LehmanBlocksFact extends FermatFact {
             int i =1;
             for (int block = 1; i <= limit; block++) {
                 // we calculate the range of the loop not per level
-                // since we have to calculate the sqrt this will take 3 times more time than calculating
+                // since we have to calculate the SQRT this will take 3 times more time than calculating
                 // checking the number. We calculate the end of the loop per block.
                 // a block is defined such that we have nearly the same number of operations, which is
                 // n^1/6/4 < 16 for number n < 2^48. For the lehman algorithm this is the maximal number

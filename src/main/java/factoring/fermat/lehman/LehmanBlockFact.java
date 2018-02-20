@@ -7,10 +7,10 @@ import factoring.trial.TrialWithPrimesFact;
 import java.util.Collection;
 
 /**
- * This implementation only calculates the expensive end of the for loop by the sqrt,
+ * This implementation only calculates the expensive end of the for loop by the SQRT,
  * if the range is greater then the choosen block size.
  * After this boarder we will always consider block size values for the given level i.
- * This ensures that calculating the begin of the loop by sqrt(i*n) is not more time consuming
+ * This ensures that calculating the begin of the loop by SQRT(i*n) is not more time consuming
  * then calculating is x^2 - i*n is a square root.
  * Due to the fact that we hit all the lehman candidates we can be sure to stop at level which is
  * equal to the biggest number of the trial division phase.
@@ -59,8 +59,8 @@ public class LehmanBlockFact extends FermatFact {
             // trick found https://github.com/DarkenCode/yafu/blob/master/factor/LehmanClean.c
             double kNSqrt = k * nSqrt;
             long xBegin = (long) (Math.ceil(multiplierSqrt * kNSqrt));
-            // n^1/6 / (4 * sqrt (k)) = n^2/3 / (4 * sqrt(k*n))
-            // only the sqrt for the begin of the loop is needed, and can be used for the end
+            // n^1/6 / (4 * SQRT (k)) = n^2/3 / (4 * SQRT(k*n))
+            // only the SQRT for the begin of the loop is needed, and can be used for the end
             // of the loop as well. It looks a little bit like heron
             // here we still have the division which is an expensive operation. This is going to be avoided
             // in the other implementations.

@@ -181,7 +181,7 @@ public class LehmanYafuFact extends FermatFact {
             MakeIssq();
             MakePrimeTable();
         }
-        long factor = LehmanFactor(n, 3.0, 0.0, true, 1.0);
+        long factor = LehmanFactor(n, 2.5, 0.0, true, 1.0);
         if (factor != n) {
             factors.add(n / factor);
         }
@@ -250,7 +250,7 @@ public class LehmanYafuFact extends FermatFact {
                     }
                 }
 //                        if(PrimeMath.isSquare(c)){
-//                            b = (int) Math.sqrt(c+0.9);
+//                            b = (int) Math.SQRT(c+0.9);
 //                            if(b*b==c){
 //                                if(a>=b){
 //                                    B2 = gcd64((long)(a-b), N);
@@ -309,7 +309,7 @@ public class LehmanYafuFact extends FermatFact {
             //Hence c should be correct, despite the overflow. Hence I am removing this error-exit.
 
             U = (int) (x + B2/(2*x));
-            //old code was  U = sqrt((double)(B2+kN4+0.99));   and was 4% slower.
+            //old code was  U = SQRT((double)(B2+kN4+0.99));   and was 4% slower.
 
             //Below loop is: for(all integers a with 0<=a*a-kN4<=B*B and with a%inc==r)
             for(a=b;  a<=U;  c+=inc*(a+a+inc), a+=inc ){
@@ -334,7 +334,7 @@ public class LehmanYafuFact extends FermatFact {
                     }
                 }
 //                if(PrimeMath.isSquare(c)){
-//                            b = (int) Math.sqrt(c + 0.9);
+//                            b = (int) Math.SQRT(c + 0.9);
 //                            if(b*b==c) { //square found
 //                                B2 = gcd64((long) (a + b), N);
 //                                assert (B2 > 1);

@@ -50,7 +50,7 @@ public class LehmanNoSqrt4Fact extends FermatFact {
         for (int k = 1; k <= kMax; k++) {
             long kn = k * n;
             long k4n = kn * multiplier;
-            // here we do not need to calculate the sqrt for k anymore since we have
+            // here we do not need to calculate the SQRT for k anymore since we have
             // it saves ~ 15% speed, we might store it only for the lower numbers and
             double sqrtKN = sqrt[k] * sqrtN;
             long xBegin = (long) (Math.ceil(sqrtKN));

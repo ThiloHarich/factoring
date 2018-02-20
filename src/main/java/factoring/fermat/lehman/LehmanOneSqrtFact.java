@@ -39,7 +39,7 @@ public class LehmanOneSqrtFact extends FermatFact {
         // by doing this, it is much more important to reduce the candidates of each level.
         int kMax = (int) (maxTrialFactor / balanceTrialCube);
         double nPow2Third = maxTrialFactor * maxTrialFactor;
-//        int kMax = (int)Math.pow(n, 1.0/3);
+//        int K_MAX = (int)Math.pow(n, 1.0/3);
         for (int k = 1; k <= kMax; k++) {
             long k4n = k * n * multiplier;
             // we move the multiplier out of the calculation of the square root.
@@ -48,12 +48,12 @@ public class LehmanOneSqrtFact extends FermatFact {
             // trick found https://github.com/DarkenCode/yafu/blob/master/factor/LehmanClean.c
             double sqrtKN = Math.sqrt(k4n);
             long xBegin = (long) (Math.ceil(sqrtKN));
-            // instead of directly calculating x range = 1/(4*(r+1))* sqrt (n/k) = n^1/6 / (4 * sqrt (k))
-            // we use lowest factor = sqrt(n/r+1)
-            // ->  x range = (lowest factor)^2 /  sqrt(8k*n)
-            // = n/((r+1) * sqrt(4k*n)) = sqrt(n)/((r+1) * 4 * sqrt(k))
-            // (4 * sqrt(k*n)), which has the same value so
-            // only the sqrt for the begin of the loop is needed, and can be used for the end
+            // instead of directly calculating x range = 1/(4*(r+1))* SQRT (n/k) = n^1/6 / (4 * SQRT (k))
+            // we use lowest factor = SQRT(n/r+1)
+            // ->  x range = (lowest factor)^2 /  SQRT(8k*n)
+            // = n/((r+1) * SQRT(4k*n)) = SQRT(n)/((r+1) * 4 * SQRT(k))
+            // (4 * SQRT(k*n)), which has the same value so
+            // only the SQRT for the begin of the loop is needed, and can be used for the end
             // of the loop as well. Surprisingly this gives a speedup of ~ 2.5
             // This means that calculating the square root of a small number k is much more
             // time consuming then the calculation the square root of the big numbers k*n do not get it.

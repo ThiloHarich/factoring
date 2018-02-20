@@ -11,7 +11,7 @@ import factoring.trial.TrialWithPrimesFact;
  */
 public class LehmanRange1Fact extends FindPrimeFact {
 
-	static final float FACTOR_TRIAL_DIVISION = 1.4f;
+	static final float FACTOR_TRIAL_DIVISION = 1.0f;
 	static final float BALANCE_TRIAL_CUBE = FACTOR_TRIAL_DIVISION * FACTOR_TRIAL_DIVISION;
 	static final double ONE_THIRD = 1.0/3;
 	static final int K_MAX = (int) (Math.ceil(Math.pow(Long.MAX_VALUE, ONE_THIRD)) / BALANCE_TRIAL_CUBE);
@@ -63,7 +63,7 @@ public class LehmanRange1Fact extends FindPrimeFact {
 		// TODO we can approximate the max factor here
 		maxTrialFactor =  FACTOR_TRIAL_DIVISION * Math.pow(n, ONE_THIRD);
 		kMax = (int) (Math.ceil(maxTrialFactor / BALANCE_TRIAL_CUBE));
-		//		final int k4Range1 = (int) (FACTOR_TRIAL_DIVISION * FACTOR_TRIAL_DIVISION * FACTOR_TRIAL_DIVISION * kMax / 16);
+		//		final int k4Range1 = (int) (FACTOR_TRIAL_DIVISION * FACTOR_TRIAL_DIVISION * FACTOR_TRIAL_DIVISION * K_MAX / 16);
 		multiplier = 4;
 		n4 = n * multiplier;
 		multiplierSqrt = 2;
@@ -80,21 +80,23 @@ public class LehmanRange1Fact extends FindPrimeFact {
 		//        x^2 = y^2 mod 3 , k*n == 0 -> k = 0 mod 3 since n != 0 mod 3 -> all solutions
 		long factor = getFactor();
 		if (factor > 0) return factor;
-		final int evenOffset = k4XRange1 & 1;
-		//		factor = getFactorOneX(evenOffset);
-		//		if (factor > 0) return factor;
-		factor = getFactorOneX(1 - evenOffset);
+//		final int evenOffset = k4XRange1 & 1;
+//				factor = getFactorOneX(evenOffset);
+//				if (factor > 0) return factor;
+//		factor = getFactorOneX(1 - evenOffset);
+//		if (factor > 0) return factor;
+		factor = getFactorOneX(0);
 		if (factor > 0) return factor;
-		//        long factor = getFactor(3, kMax, 3);
+		//        long factor = getFactor(3, K_MAX, 3);
 		//        if (factor > 0) return factor;
 		//        x^2 - 1 = y^2 mod 3 , k*n == 1 -> x=1,2 mod 3 -> k = n^-1 mod 3 -> k = n mod 3
 		//        mod 9 there are only 2 possible solutions as well
-		//        factor = getFactor(nMod3, kMax, 3, 1, 3);
+		//        factor = getFactor(nMod3, K_MAX, 3, 1, 3);
 		//        if (factor > 0) return factor;
-		//        factor = getFactor(nMod3, kMax, 3, 2, 3);
+		//        factor = getFactor(nMod3, K_MAX, 3, 2, 3);
 		//        if (factor > 0) return factor;
 		//        x^2 - 2 = y^2 mod 3 , k*n == 2 -> x=0 mod 3   -> k = 2* n^-1 mod 3  -> k = 2n mod 3
-		//        factor = getFactor(3 - nMod3, kMax, 3, 0, 3);
+		//        factor = getFactor(3 - nMod3, K_MAX, 3, 0, 3);
 		//        if (factor > 0) return factor;
 
 		return n;
@@ -111,9 +113,9 @@ public class LehmanRange1Fact extends FindPrimeFact {
 			// use only multiplications instead of division here
 			xRange = nPow1Sixth * SQRT_INV[k];
 			final long xEnd = (long) (sqrt4kn + xRange);
-			int xStep;
+			int xStep = 2;
 			if (k % 2 == 0) {
-				xStep = 2;
+//				xStep = 2;
 				xBegin |= 1;
 			}
 			else{
@@ -121,8 +123,8 @@ public class LehmanRange1Fact extends FindPrimeFact {
 				xBegin &= X_BEGIN_MOD_4;
 				//                xBegin -= xBegin % 4;
 				xBegin |= (k + nMod4) % 4;
-				//				if (xBegin < sqrtKn)
-				//					xBegin += 4;
+								if (xBegin < sqrtKn)
+									xBegin += 4;
 			}
 			for(long x = xBegin; x <= xEnd; x += xStep) {
 				final long x2 = x * x;
@@ -146,13 +148,23 @@ public class LehmanRange1Fact extends FindPrimeFact {
 	}
 	public long getFactorOneX(int kOffset) {
 		final int kBegin = k4XRange1 + kOffset;
-		final int kMod2 = kBegin % 2;
-		for (int k = kBegin; k <= kMax; k+= 2) {
+//		final int kMod2 = kBegin % 2;
+		for (int k = kBegin; k <= kMax; k+= 1) {
 			final double sqrtKn = SQRT[k] * sqrtN;
 			final double sqrt4kn = multiplierSqrt * sqrtKn;
-			final long x = (long) (Math.ceil(sqrt4kn - 0.001));
+			long x = (long) (Math.ceil(sqrt4kn - 0.001));
 			// check x mod 2 and 4
-			//			if ((x&1) != kMod2)
+			if (k % 2 == 0) {
+				x |= 1;
+			}
+			else{
+				x &= X_BEGIN_MOD_4;
+				//                xBegin -= xBegin % 4;
+				x |= (k + nMod4) % 4;
+								if (x < sqrtKn)
+									x += 4;
+			}
+//						if ((x&1) != kMod2)
 			//				if ((x%2==0) ^ (kMod2 ==0))
 			{
 				//                if (kMod2==0 ||  (k + nMod4) % 4 == (x % 4) )
@@ -165,9 +177,10 @@ public class LehmanRange1Fact extends FindPrimeFact {
 						final long factor = PrimeMath.gcd(n, x - y);
 						if (factor != 1) {
 							factors.add(factor);
-							if (n != factor)
-								factors.add(n / factor);
-							return 1;
+//							if (n != factor)
+//								factors.add(n / factor);
+//							return 1;
+							return n/factor;
 						}
 					}
 				}
