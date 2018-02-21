@@ -80,11 +80,17 @@ public class LehmanRange1Fact extends FindPrimeFact {
 		//        x^2 = y^2 mod 3 , k*n == 0 -> k = 0 mod 3 since n != 0 mod 3 -> all solutions
 		long factor = getFactor();
 		if (factor > 0) return factor;
+<<<<<<< Upstream, based on branch 'master' of https://github.com/ThiloHarich/factoring.git
 //		final int evenOffset = k4XRange1 & 1;
 //				factor = getFactorOneX(evenOffset);
 //				if (factor > 0) return factor;
 //		factor = getFactorOneX(1 - evenOffset);
 //		if (factor > 0) return factor;
+=======
+		final int evenOffset = k4XRange1 & 1;
+		//		factor = getFactorOneX(evenOffset);
+		//		if (factor > 0) return factor;
+>>>>>>> d9917b1 some changes
 		factor = getFactorOneX(0);
 		if (factor > 0) return factor;
 		//        long factor = getFactor(3, K_MAX, 3);
@@ -148,7 +154,11 @@ public class LehmanRange1Fact extends FindPrimeFact {
 	}
 	public long getFactorOneX(int kOffset) {
 		final int kBegin = k4XRange1 + kOffset;
+<<<<<<< Upstream, based on branch 'master' of https://github.com/ThiloHarich/factoring.git
 //		final int kMod2 = kBegin % 2;
+=======
+		final int kMod2 = kBegin % 2;
+>>>>>>> d9917b1 some changes
 		for (int k = kBegin; k <= kMax; k+= 1) {
 			final double sqrtKn = SQRT[k] * sqrtN;
 			final double sqrt4kn = multiplierSqrt * sqrtKn;
