@@ -15,9 +15,8 @@ import factoring.trial.TrialWithPrimesFact;
  * Since this is a java implementation we use just the basic operations "/" and "%"
  * and let the JVM do the optimization here. When adapting to other languages this should be done.
  * Created by Thilo Harich on 28.06.2017.
- * TODO check for big vaules
- * TODO use residue sieving at the bottom line for
- * TODO use error shift
+ *
+ * It first uses a factor of 1 and tries to find factors
  */
 public class LehmanNoSqrtFact2 extends FindPrimeFact {
 
@@ -77,7 +76,7 @@ public class LehmanNoSqrtFact2 extends FindPrimeFact {
 		// algorithm here
 		// then use the even k, which where every second number is a candidate
 		// then use the odd k, which where every forth number is a candidate
-		// Maybe fill up the bottom more
+		// This gives ~ 8% of speed
 		int k = 1;
 		double sqrt4kn = multiplierSqrt * SQRT[k] * sqrtN;
 		// to avoid rounding issues we subtract a small number here.
