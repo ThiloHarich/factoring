@@ -13,8 +13,8 @@ import java.util.Collection;
  */
 public class FermatFact implements Factorizer {
 
-    int [] smallFactors = {2,3,5,7,11,13,17,19};
-    int minFactor;
+    protected int [] smallFactors = {2,3,5,7,11,13,17,19};
+    protected int minFactor;
 
     public FermatFact(int minFactor)
     {
@@ -94,7 +94,7 @@ public class FermatFact implements Factorizer {
         long xEnd = (n / minFactor + minFactor) / 2;
         for (long x = sqrtN; x <= xEnd; x++) {
             long right = x*x - n;
-            if (SquaresMod.isSquare(right)) {
+            if (PrimeMath.isSquare(right)) {
                 long y = PrimeMath.sqrt(right);
                 long factorHigh = x + y;
                 factors.add(factorHigh);

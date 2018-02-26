@@ -16,8 +16,8 @@ import java.util.Collection;
  */
 public class LehmanResidueFact extends FermatFact {
 
-    double balanceTrial = 3;
-    int mod = 27 * 27;
+    double balanceTrial = 1;
+    int mod =9;
     FermatResiduesArray residues = new FermatResiduesArray(mod);
 
 

@@ -11,10 +11,8 @@ import factoring.trial.TrialWithPrimesFact;
  */
 public class LehmanRange1Fact extends FindPrimeFact {
 
-	static final float FACTOR_TRIAL_DIVISION = 1.0f;
-	static final float BALANCE_TRIAL_CUBE = FACTOR_TRIAL_DIVISION * FACTOR_TRIAL_DIVISION;
 	static final double ONE_THIRD = 1.0/3;
-	static final int K_MAX = (int) (Math.ceil(Math.pow(Long.MAX_VALUE, ONE_THIRD)) / BALANCE_TRIAL_CUBE);
+	static final int K_MAX = (int) (Math.ceil(Math.pow(Long.MAX_VALUE, ONE_THIRD)));
 
 	static float [] SQRT = new float[K_MAX + 1];
 	static float [] SQRT_INV = new float[K_MAX + 1];
@@ -45,7 +43,7 @@ public class LehmanRange1Fact extends FindPrimeFact {
 		factors = factorsIn;
 		n = nIn;
 		final TrialWithPrimesFact smallFactoriser = new TrialWithPrimesFact();
-		double maxTrialFactor =  Math.ceil(FACTOR_TRIAL_DIVISION * Math.pow(n, ONE_THIRD));
+		double maxTrialFactor =  Math.ceil(Math.pow(n, ONE_THIRD));
 		smallFactoriser.setMaxFactor((int) maxTrialFactor);
 		n = smallFactoriser.findPrimeFactors(n, factors);
 
@@ -61,8 +59,8 @@ public class LehmanRange1Fact extends FindPrimeFact {
 		}
 		// readjust the maximal factor
 		// TODO we can approximate the max factor here
-		maxTrialFactor =  FACTOR_TRIAL_DIVISION * Math.pow(n, ONE_THIRD);
-		kMax = (int) (Math.ceil(maxTrialFactor / BALANCE_TRIAL_CUBE));
+		maxTrialFactor =  Math.pow(n, ONE_THIRD);
+		kMax = (int) (Math.ceil(maxTrialFactor));
 		//		final int k4Range1 = (int) (FACTOR_TRIAL_DIVISION * FACTOR_TRIAL_DIVISION * FACTOR_TRIAL_DIVISION * K_MAX / 16);
 		multiplier = 4;
 		n4 = n * multiplier;
