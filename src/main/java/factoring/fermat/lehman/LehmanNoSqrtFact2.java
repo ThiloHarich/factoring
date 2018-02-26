@@ -16,7 +16,8 @@ import factoring.trial.TrialWithPrimesFact;
  * and let the JVM do the optimization here. When adapting to other languages this should be done.
  * Created by Thilo Harich on 28.06.2017.
  *
- * It first uses a factor of 1 and tries to find factors
+ * It first uses a factor of 1 and tries to find factors we have a range of n^1/6 here.
+ * The height (kMax) of the calculation is much higher we can not expect much out of it
  */
 public class LehmanNoSqrtFact2 extends FindPrimeFact {
 
