@@ -1,10 +1,11 @@
 package factoring.fermat.lehman;
 
-import java.util.Collection;
-
 import factoring.FindPrimeFact;
 import factoring.math.PrimeMath;
 import factoring.trial.TrialWithPrimesFact;
+
+import java.util.Collection;
+
 /**
  * This is a version of the lehman factorization, which is a variant of the fermat
  * factorization.
@@ -19,7 +20,7 @@ import factoring.trial.TrialWithPrimesFact;
  * and let the JVM do the optimization here. When adapting to other languages this should be done.
  * Created by Thilo Harich on 28.06.2017.
  */
-public class LehmanNoSqrtFact extends FindPrimeFact {
+public class LehmanSqrtSuccFact extends FindPrimeFact {
 
 	static double ONE_THIRD = 1.0/3;
 	// TODO see if it works for values above the precision/scale of the algorithm as well
@@ -86,8 +87,11 @@ public class LehmanNoSqrtFact extends FindPrimeFact {
 
 		// surprisingly it gives no speedup when using k's with many prime factors as lehman suggests
 		// for k=2 we know that x has to be even
+		double sqrtk = 1;
 		for (int k = 1; k <= kMax; k++) {
 			final double sqrt4kn = multiplierSqrt * SQRT[k] * sqrtN;
+			double k2Inv = 1 / (2.0 * (k-1));
+			sqrtk = SQRT[k-1] * (1 + k2Inv - k2Inv*k2Inv/2);
 			// adding a small constant to avoid rounding issues and rounding up is much slower then
 			// using the downcast and adding a constant close to 1. Took the constant from the yafu code
 			int xBegin = (int) (sqrt4kn + 0.9999999665);

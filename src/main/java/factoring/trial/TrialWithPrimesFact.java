@@ -50,13 +50,13 @@ public class TrialWithPrimesFact extends FindPrimeFact {
         System.out.printf("%d,...,%d,(%d)\n", prime[20],prime[6541],prime[6542]);
     }
 
-    private int maxFactor = 65536;
+    private int maxFactor = 65535;
     // we keep the index so that we can continue with the factoring after applying
     // other algorithms like lehman, not so nice
     int primeIndex = 0;
 
     public void setMaxFactor (int maxFactor) {
-        if (maxFactor > 65536)
+        if (maxFactor > 65535)
             throw new IllegalArgumentException("the maximal factor has to be lower then 65536");
         this.maxFactor = maxFactor;
     }
@@ -64,6 +64,8 @@ public class TrialWithPrimesFact extends FindPrimeFact {
     @Override
     public long findPrimeFactors(long n, Collection<Long> factors) {
         for (; prime[primeIndex] < maxFactor; primeIndex++) {
+//            if (primeIndex == 6542)
+//                System.out.println();
             while (n%prime[primeIndex] == 0) {
                 factors.add((long)prime[primeIndex]);
                 n /= prime[primeIndex];
