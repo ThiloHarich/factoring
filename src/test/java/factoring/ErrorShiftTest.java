@@ -13,8 +13,9 @@ import com.google.common.collect.Multiset;
 import com.google.common.collect.TreeMultiset;
 
 import factoring.fermat.FermatFact;
-import factoring.fermat.lehman.LehmanApproxFact;
 import factoring.fermat.lehman.LehmanNoSqrtFact;
+import factoring.fermat.lehman.LehmanYafuFact;
+import factoring.trial.TrialWithPrimesFact;
 
 public class ErrorShiftTest {
 
@@ -39,18 +40,18 @@ public class ErrorShiftTest {
 	public void testCorrect() {
 		final int bits = 16;
 
-		//		Factorizer factorizer1 = new LehmanResidueFact();
+		final Factorizer factorizer2 = new LehmanYafuFact();
 		//		Factorizer factorizer1 = new Fermat24();
 		//		Factorizer factorizer1 = new HartFloorFact();
-		final Factorizer factorizer2 = new LehmanApproxFact();
+		//		final Factorizer factorizer2 = new LehmanApproxFact();
 		final Factorizer factorizer1 = new LehmanNoSqrtFact();
 		//		Factorizer factorizer1 = new LehmanYafuFact();
 		//		Factorizer factorizer2 = new Lehman8kFirstFact();
 
 		//		for (int i = 65538; i < 1 << (bits + 1); i++)
-		final int exp = 16;
-		long begin = (1L << exp);  // = 2^4 * 3^2 * 5
-		begin = 223891L	; // * 23
+		final int exp = 39;
+		long begin = (1L << exp) +1;  // = 2^4 * 3^2 * 5
+		//		begin = 223891L	; // * 23
 		// 29*23 * 53
 		// 29*53 * 23 ->
 		while (begin < Long.MAX_VALUE / 1000)
@@ -82,7 +83,7 @@ public class ErrorShiftTest {
 		//		int bits = 25;
 
 
-		//		Factorizer factorizer1 = new Lehman8kFirstFact();
+		//				Factorizer factorizer1 = new TrialWithPrimesFact();
 		//		Factorizer factorizer2 = new LehmanResidueFact();
 		//		final Factorizer factorizer2 = new LehmanRange1Fact();
 		//		Factorizer factorizer1 = new HartFact();
@@ -90,7 +91,7 @@ public class ErrorShiftTest {
 		//		Factorizer factorizer2 = new FermatResiduesSieve();
 		//		Factorizer factorizer2 = new FermatFact();
 		final Factorizer factorizer1 = new LehmanNoSqrtFact();
-		final Factorizer factorizer2 = new LehmanApproxFact();
+		final Factorizer factorizer2 = new TrialWithPrimesFact();
 		//		final Factorizer factorizer2 = new LehmanYafuFact();
 		//		Factorizer factorizer1 = new LehmanSquaresFact();
 

@@ -6,7 +6,7 @@ import factoring.FindPrimeFact;
 import factoring.math.PrimeMath;
 import factoring.trial.TrialWithPrimesFact;
 /**
- * This is a version og the lehman factorization, which is a variant of the fermat
+ * This is a version of the lehman factorization, which is a variant of the fermat
  * factorization.
  * It is more twice as fats as the java version of the yafu lehman factorization.
  * In 15 out of 16 cases (for k) only one value of x has to be considered, but
@@ -22,11 +22,20 @@ import factoring.trial.TrialWithPrimesFact;
 public class LehmanNoSqrtFact extends FindPrimeFact {
 
 	static double ONE_THIRD = 1.0/3;
+	// TODO see if it works for values above the precision/scale of the algorithm as well
+	// If not check BigInteger
 	// to initialize the square roots we have to determine the maximal k
-	static int K_MAX = (int) (Math.ceil(Math.pow(Long.MAX_VALUE, ONE_THIRD)));
+	static int K_MAX = (int) (Math.ceil(Math.pow((4.0*Long.MAX_VALUE) /3.0, ONE_THIRD)));
+
+	// if we know sqrt(k) sqrt(k+1) = sqrt(k * (k+1)/k) = sqrt(k) * sqrt((k+1)/k) = sqrt(k) * sqrt(1+1/k)
+	// ~  sqrt(k) * (1+1/2k)= sqrt(k) + sqrt(k)^-1 / 2 so if we know sqrt(k) and sqrt(k)^-1 it is just an addition
+	//  ~  sqrt(k) * (1+ 1/2k + 1/8 k-^2) =  sqrt(k) * (1+ 1/2k + (1/2 k)^2/2) -> we need a division and a multiplication
+	// but better then calculating the sqrt
+	// the error is < 1/8 * 1/k^2 < n^-2/3 , since k < n^1/3
+
 	static float [] SQRT = new float[K_MAX + 1];
 	static float [] SQRT_INV = new float[K_MAX + 1];
-	// precalculate the square of all possible multipliers.
+	// precalculate the square of all possible multipliers. This takes at most n^1/3
 	static {
 		for(int i = 1; i< SQRT.length; i++)
 		{
@@ -36,6 +45,9 @@ public class LehmanNoSqrtFact extends FindPrimeFact {
 			// faster then the division we also calculate the  root and the inverse
 			SQRT_INV[i] = 1.0f / sqrtI;
 		}
+		System.out.printf(" sqrt table[0..%d] built: ", SQRT.length);
+		for(int i=0; i<5; i++){ System.out.printf("%f ", SQRT[i]); }
+		System.out.printf("%f ... %f %f\n", SQRT[5],SQRT[SQRT.length-2],SQRT[SQRT.length-1]);
 	}
 
 	@Override
