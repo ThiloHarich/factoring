@@ -8,10 +8,13 @@ import factoring.trial.TrialWithPrimesFact;
 /**
  * This is a version og the lehman factorization, which is a variant of the fermat
  * factorization.
- * It is twice as fats as the java version of the yafu lehman factorization.
+ * It is more twice as fats as the java version of the yafu lehman factorization.
+ * In 15 out of 16 cases (for k) only one value of x has to be considered, but
+ * the calculation of the rages has to be done all the time.
  * Since calculating the ranges of the inner loop requires at least one square root
  * and a division we try to reduce the cost for calculating this by precalculating the
  * square roots for the small multipliers k and the inversion of it.
+ * adressing a small array that fits in the level 1 cache
  * Since this is a java implementation we use just the basic operations "/" and "%"
  * and let the JVM do the optimization here. When adapting to other languages this should be done.
  * Created by Thilo Harich on 28.06.2017.
@@ -56,10 +59,10 @@ public class LehmanNoSqrtFact extends FindPrimeFact {
 				return x;
 			}
 		}
-		// readjust the maximal factor we have to search for. If factors were found, which is quite
+		// re-adjust the maximal factor we have to search for. If factors were found, which is quite
 		// often the case for arbitrary numbers, this cuts down the runtime dramatically.
 		maxTrialFactor =  Math.pow(n, ONE_THIRD);
-		int kMax = (int) (Math.ceil(maxTrialFactor));
+		final int kMax = (int) (Math.ceil(maxTrialFactor));
 		final int multiplier = 4;
 		final long n4 = n * multiplier;
 		final int multiplierSqrt = 2;
@@ -67,16 +70,15 @@ public class LehmanNoSqrtFact extends FindPrimeFact {
 		final int nMod4 = (int) (n % 4);
 		final double nPow2Third = maxTrialFactor * maxTrialFactor;
 		// TODO is division by 4 more efficient if we use int?
-		// TODO use float avoid division
 		final float nPow1Sixth = (float) ((nPow2Third / 4) / sqrtN);
 
 		// surprisingly it gives no speedup when using k's with many prime factors as lehman suggests
 		// for k=2 we know that x has to be even
 		for (int k = 1; k <= kMax; k++) {
 			final double sqrt4kn = multiplierSqrt * SQRT[k] * sqrtN;
-			// to avoid rounding issues we subtract a small number here.
-            int xBegin = (int) (Math.ceil(sqrt4kn - 0.001));
-//            int xBegin = (int) (sqrt4kn - 0.999);
+			// adding a small constant to avoid rounding issues and rounding up is much slower then
+			// using the downcast and adding a constant close to 1. Took the constant from the yafu code
+			int xBegin = (int) (sqrt4kn + 0.9999999665);
 			// use only multiplications instead of division here
 			// TODO use a float here
 			final float xRange = nPow1Sixth * SQRT_INV[k];
@@ -90,8 +92,8 @@ public class LehmanNoSqrtFact extends FindPrimeFact {
 			// 2 or 4 the runtime is only reduced by  something like 10%. This might be due to the Hotspot
 			// Behavior of java?
 
-//            int xStep = 1;
-            int xStep = 2;
+			//			final int xStep = 1;
+			int xStep = 2;
 			if (k % 2 == 0) {
 				xBegin |= 1;
 			}

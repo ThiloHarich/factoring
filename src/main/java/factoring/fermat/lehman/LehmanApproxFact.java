@@ -1,10 +1,10 @@
 package factoring.fermat.lehman;
 
+import java.util.Collection;
+
 import factoring.FindPrimeFact;
 import factoring.math.PrimeMath;
 import factoring.trial.TrialWithPrimesFact;
-
-import java.util.Collection;
 
 /**
  * This is a version og the lehman factorization, which is a variant of the fermat
@@ -62,7 +62,7 @@ public class LehmanApproxFact extends FindPrimeFact {
 		// readjust the maximal factor we have to search for. If factors were found, which is quite
 		// often the case for arbitrary numbers, this cuts down the runtime dramatically.
 		maxTrialFactor =  Math.pow(n, ONE_THIRD);
-		int kMax = (int) (Math.ceil(maxTrialFactor));
+		final int kMax = (int) (Math.ceil(maxTrialFactor));
 		final int multiplier = 4;
 		final long n4 = n * multiplier;
 		final int multiplierSqrt = 2;
@@ -73,10 +73,10 @@ public class LehmanApproxFact extends FindPrimeFact {
 		// TODO use float avoid division
 		final float nPow1Sixth = (float) ((nPow2Third / 4) / sqrtN);
 
-		for (int k = 1; k < kMax/4; k ++) {
+		for (int k = 1; k < kMax/16 + 1; k ++) {
 			final double sqrt4kn = multiplierSqrt * SQRT[k] * sqrtN;
 			// to avoid rounding issues we subtract a small number here.
-			int xBegin = (int) (Math.ceil(sqrt4kn - 0.001));
+			int xBegin = (int) (sqrt4kn + 0.9999999665);
 			// use only multiplications instead of division here
 			// TODO use a float here
 			final float xRange = nPow1Sixth * SQRT_INV[k];
@@ -125,37 +125,42 @@ public class LehmanApproxFact extends FindPrimeFact {
 		}
 		// surprisingly it gives no speedup when using k's with many prime factors as lehman suggests
 		// for k=2 we know that x has to be even
-		for (int k = kMax/4; k <= kMax/2; k++) {
+		for (int k = kMax/16 + 1; k <= kMax; k++) {
 			final double sqrt4kn = multiplierSqrt * SQRT[k] * sqrtN;
 			// to avoid rounding issues we subtract a small number here.
-			int xBegin = (int) (Math.ceil(sqrt4kn - 0.001));
+			// we would like to do this, but instead we use the automatically rounding down cast feature
+			//			final int xBegin = (int) (Math.ceil(sqrt4kn - 0.001));
+			final int xBegin = (int) (sqrt4kn + 0.9999999665);
 			// use only multiplications instead of division here
 			// TODO use a float here
-			final float xRange = nPow1Sixth * SQRT_INV[k];
+			//			final float xRange = nPow1Sixth * SQRT_INV[k];
 			// since it is much bigger as SQRT (Long.MaxValue) we have to take a long
 			// for k > kMax / 16 xRange is less then 1 unfortunately i can not use this fact to
 			// speed up the runtime. Since the range for x is very small applying mod arguments to the x values
 			// makes not much sense.
-			final long xEnd = (long) (sqrt4kn + xRange);
+			//			final long xEnd = (long) (sqrt4kn + xRange);
 			// instead of using a step 1 here we use the mod argument from lehman
 			// to reduce the possible numbers to verify. But reducing the numbers by a factor
 			// 2 or 4 the runtime is only reduced by  something like 10%. This might be due to the Hotspot
 			// Behavior of java?
-			int xStep = 2;
-			if (k % 2 == 0) {
-				xBegin |= 1;
-			}
-			//			else{
-			//				xBegin &= (Integer.MAX_VALUE -1);
+			//			int xStep = 2;
+			//			if (k % 2 == 0) {
+			//				xBegin |= 1;
 			//			}
-			else{
-				//				if (k*16 < kMax) {
-				// TODO use the k%8 cases as well
-				xStep = 4;
-				xBegin = xBegin + PrimeMath.mod(k + nMod4 - xBegin, 4);
-				//				}
-			}
-			for(long x = xBegin; x <= xEnd; x+= xStep) {
+			//			//			else{
+			//			//				xBegin &= (Integer.MAX_VALUE -1);
+			//			//			}
+			//			else{
+			//				//				if (k*16 < kMax) {
+			//				// TODO use the k%8 cases as well
+			//				xStep = 4;
+			//				xBegin = xBegin + PrimeMath.mod(k + nMod4 - xBegin, 4);
+			//				//				}
+			//			}
+			//			for(long x = xBegin; x <= xEnd; x+= xStep) {
+			final long x = xBegin;
+			//			if(x <= xEnd)
+			{
 				// in java the trick to replace the multiplication with an addition does not help
 				final long x2 = x * x;
 				final long right = x2 -  k * n4;
@@ -175,79 +180,75 @@ public class LehmanApproxFact extends FindPrimeFact {
 				}
 			}
 			// now we check the value for 2*k
-//			final double xRange2k = .35f;
-			final float xRange2k = xRange * SQRT2INV;
-			double sqrt8kn = sqrt4kn * SQRT2;
-			long x = (long) Math.ceil(sqrt8kn);
-			final long xf = ((int) sqrt8kn) + 1;
-			if (xf != x)
-				System.out.println();
-			if (x - sqrt8kn < xRange2k) {
-//				if (Math.ceil(sqrt8kn) - sqrt8kn < xRange2k) {
-//				int x = (int) (Math.ceil(sqrt8kn - 0.001));
-				// since 2k is even x must be odd
-					final long x2 = x * x;
-					final long right = x2 - k * 2 * n4;
-					if (PrimeMath.isSquare(right)) {
-						final long y = (long) Math.sqrt(right);
-						final long factor = PrimeMath.gcd(n, x - y);
-						if (factor != 1) {
-							factors.add(factor);
-							return n / factor;
-						}
-					}
-			}
-		}
-		int kBegin = kMax/2 | 1;
-		for (int k = kBegin; k <= kMax; k +=2) {
-			final double sqrt4kn = multiplierSqrt * SQRT[k] * sqrtN;
-			// to avoid rounding issues we subtract a small number here.
-			int xBegin = (int) (Math.ceil(sqrt4kn - 0.001));
-			// use only multiplications instead of division here
-			// TODO use a float here
-			final float xRange = nPow1Sixth * SQRT_INV[k];
-			// since it is much bigger as SQRT (Long.MaxValue) we have to take a long
-			// for k > kMax / 16 xRange is less then 1 unfortunately i can not use this fact to
-			// speed up the runtime. Since the range for x is very small applying mod arguments to the x values
-			// makes not much sense.
-			final long xEnd = (long) (sqrt4kn + xRange);
-			// instead of using a step 1 here we use the mod argument from lehman
-			// to reduce the possible numbers to verify. But reducing the numbers by a factor
-			// 2 or 4 the runtime is only reduced by  something like 10%. This might be due to the Hotspot
-			// Behavior of java?
-			int xStep = 2;
-			if (k % 2 == 0) {
-				xBegin |= 1;
-			}
-			//			else{
-			//				xBegin &= (Integer.MAX_VALUE -1);
+			//			final double xRange2k = .30f;
+			//			final float xRange2k = xRange * SQRT2INV;
+			//			final double sqrt8kn = sqrt4kn * SQRT2;
+			//			x = (long) Math.ceil(sqrt8kn);
+			//			//			final long xf = ((int) sqrt8kn) + 1;
+			//			//			if (xf != x)
+			//			//				System.out.println();
+			//			if (x - sqrt8kn < xRange2k) {
+			//				//				if (Math.ceil(sqrt8kn) - sqrt8kn < xRange2k) {
+			//				//				int x = (int) (Math.ceil(sqrt8kn - 0.001));
+			//				// since 2k is even x must be odd
+			//				final long x2 = x * x;
+			//				final long right = x2 - k * 2 * n4;
+			//				if (PrimeMath.isSquare(right)) {
+			//					final long y = (long) Math.sqrt(right);
+			//					final long factor = PrimeMath.gcd(n, x - y);
+			//					if (factor != 1) {
+			//						factors.add(factor);
+			//						return n / factor;
+			//					}
+			//				}
 			//			}
-			else {
-				//				if (k*16 < kMax) {
-				// TODO use the k%8 cases as well
-				xStep = 4;
-				xBegin = xBegin + PrimeMath.mod(k + nMod4 - xBegin, 4);
-				//				}
-			}
-			for (long x = xBegin; x <= xEnd; x += xStep) {
-				// in java the trick to replace the multiplication with an addition does not help
-				final long x2 = x * x;
-				final long right = x2 - k * n4;
-				// TODO use a less restrictive is square check and apply the error shift
-				if (PrimeMath.isSquare(right)) {
-					final long y = (long) Math.sqrt(right);
-					final long factor = PrimeMath.gcd(n, x - y);
-					if (factor != 1) {
-						factors.add(factor);
-						return n / factor;
-						// we know that the remaining factor has to be a prime factor
-						// but this gives no speedup for ramdom numbers
-						//						if (n != factor)
-						//							factors.add(n / factor);
-						//						return 1;
-					}
-				}
-			}
+			//		}
+			//		final int kBegin = kMax/2 | 1;
+			//		for (int k = kBegin; k <= kMax; k +=2) {
+			//			final double sqrt4kn = multiplierSqrt * SQRT[k] * sqrtN;
+			//			// to avoid rounding issues we subtract a small number here.
+			//			final int xBegin = (int) (sqrt4kn + 0.9999999665);
+			//			// use only multiplications instead of division here
+			//			// TODO use a float here
+			//			final float xRange = nPow1Sixth * SQRT_INV[k];
+			//			// since it is much bigger as SQRT (Long.MaxValue) we have to take a long
+			//			// for k > kMax / 16 xRange is less then 1 unfortunately i can not use this fact to
+			//			// speed up the runtime. Since the range for x is very small applying mod arguments to the x values
+			//			// makes not much sense.
+			//			final long xEnd = (long) (sqrt4kn + xRange);
+			//			// instead of using a step 1 here we use the mod argument from lehman
+			//			// to reduce the possible numbers to verify. But reducing the numbers by a factor
+			//			// 2 or 4 the runtime is only reduced by  something like 10%. This might be due to the Hotspot
+			//			// Behavior of java?
+			//			//			int xStep = 2;
+			//			//			if (k % 2 == 0) {
+			//			//				xBegin |= 1;
+			//			//			}
+			//			//			//			else{
+			//			//			//				xBegin &= (Integer.MAX_VALUE -1);
+			//			//			//			}
+			//			//			else {
+			//			//				//				if (k*16 < kMax) {
+			//			//				// TODO use the k%8 cases as well
+			//			//				xStep = 4;
+			//			//				xBegin = xBegin + PrimeMath.mod(k + nMod4 - xBegin, 4);
+			//			//				//				}
+			//			//			}
+			//			final long x = xBegin;
+			//			if ( x <= xEnd) {
+			//				// in java the trick to replace the multiplication with an addition does not help
+			//				final long x2 = x * x;
+			//				final long right = x2 - k * n4;
+			//				// TODO use a less restrictive is square check and apply the error shift
+			//				if (PrimeMath.isSquare(right)) {
+			//					final long y = (long) Math.sqrt(right);
+			//					final long factor = PrimeMath.gcd(n, x - y);
+			//					if (factor != 1) {
+			//						factors.add(factor);
+			//						return n / factor;
+			//					}
+			//				}
+			//			}
 		}
 		return n;
 	}
