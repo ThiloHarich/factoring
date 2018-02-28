@@ -4,7 +4,7 @@ import java.util.Collection;
 
 import factoring.FindPrimeFact;
 import factoring.math.PrimeMath;
-import factoring.trial.TrialWithPrimesFact;
+import factoring.trial.TrialPrimesDynamicFact;
 /**
  * This is a version of the lehman factorization, which is a variant of the fermat
  * factorization.
@@ -21,45 +21,51 @@ import factoring.trial.TrialWithPrimesFact;
  */
 public class LehmanNoSqrtFact extends FindPrimeFact {
 
+	protected static final double ROUND_UP_DOUBLE = 0.9999999665;
 	static double ONE_THIRD = 1.0/3;
 	// TODO see if it works for values above the precision/scale of the algorithm as well
 	// If not check BigInteger
 	// to initialize the square roots we have to determine the maximal k
-	static int K_MAX = (int) (Math.ceil(Math.pow((4.0*Long.MAX_VALUE) /3.0, ONE_THIRD)));
 
-	// if we know sqrt(k) sqrt(k+1) = sqrt(k * (k+1)/k) = sqrt(k) * sqrt((k+1)/k) = sqrt(k) * sqrt(1+1/k)
-	// ~  sqrt(k) * (1+1/2k)= sqrt(k) + sqrt(k)^-1 / 2 so if we know sqrt(k) and sqrt(k)^-1 it is just an addition
-	//  ~  sqrt(k) * (1+ 1/2k + 1/8 k-^2) =  sqrt(k) * (1+ 1/2k + (1/2 k)^2/2) -> we need a division and a multiplication
-	// but better then calculating the sqrt
-	// the error is < 1/8 * 1/k^2 < n^-2/3 , since k < n^1/3
+	double [] sqrt;
+	double [] sqrtInv;
 
-	static double [] SQRT = new double[K_MAX + 1];
-	static double [] SQRT_INV = new double[K_MAX + 1];
-	// precalculate the square of all possible multipliers. This takes at most n^1/3
-	static {
-		for(int i = 1; i< SQRT.length; i++)
+	final FindPrimeFact smallFactoriser;
+	int maxTrialFactor;
+
+	/**
+	 * create a instance that can handle factorizations of numbers up to 2^bits
+	 * This uses memory 2^(bits/3)
+	 * more then 48 bits are not allowed since the precision of long does not allow more here
+	 * @param bits
+	 */
+	public LehmanNoSqrtFact(int bits) {
+		maxTrialFactor =  (int) Math.ceil(Math.pow(1L << bits, ONE_THIRD));
+		smallFactoriser = new TrialPrimesDynamicFact(maxTrialFactor);
+
+		// precalculate the square of all possible multipliers. This takes at most n^1/3
+		sqrt = new double[maxTrialFactor + 1];
+		sqrtInv = new double[maxTrialFactor + 1];
+		for(int i = 1; i< sqrt.length; i++)
 		{
 			final double sqrtI = Math.sqrt(i);
-			SQRT[i] = sqrtI;
+			sqrt[i] = sqrtI;
 			// Since a multiplication is
 			// faster then the division we also calculate the  root and the inverse
-			SQRT_INV[i] = 1.0d / sqrtI;
+			sqrtInv[i] = 1.0d / sqrtI;
 		}
-		System.out.printf(" sqrt table[0..%d] built: ", SQRT.length);
-		for(int i=0; i<5; i++){ System.out.printf("%f ", SQRT[i]); }
-		System.out.printf("%f ... %f %f\n", SQRT[5],SQRT[SQRT.length-2],SQRT[SQRT.length-1]);
+		System.out.printf(" sqrt table[0..%d] built: ", sqrt.length);
+		for(int i=0; i<5; i++){ System.out.printf("%f ", sqrt[i]); }
+		System.out.printf("%f ... %f %f\n", sqrt[5],sqrt[sqrt.length-2],sqrt[sqrt.length-1]);
 	}
 
 	@Override
-	public long findPrimeFactors(long n, Collection<Long> factors) {
-		final TrialWithPrimesFact smallFactoriser = new TrialWithPrimesFact();
+	public long findPrimeFactors(long nOrig, Collection<Long> factors) {
 		// with this implementation the lehman part is not slower then the trial division
 		// we do not have to use a multiplier for the maximal factor were we apply the
 		// trial division phase
-		double maxTrialFactor =  Math.ceil(Math.pow(n, ONE_THIRD));
-		smallFactoriser.setMaxFactor((int) maxTrialFactor);
 		// factor out all small factors
-		n = smallFactoriser.findPrimeFactors(n, factors);
+		final long n = smallFactoriser.findPrimeFactors(nOrig, factors);
 
 		if (n<maxTrialFactor)
 			return n;
@@ -73,8 +79,7 @@ public class LehmanNoSqrtFact extends FindPrimeFact {
 		}
 		// re-adjust the maximal factor we have to search for. If factors were found, which is quite
 		// often the case for arbitrary numbers, this cuts down the runtime dramatically.
-		maxTrialFactor =  Math.pow(n, ONE_THIRD);
-		final int kMax = (int) (Math.ceil(maxTrialFactor));
+		final int kMax = (int) (Math.pow(n, ONE_THIRD) + ROUND_UP_DOUBLE);
 		final int multiplier = 4;
 		final long n4 = n * multiplier;
 		final int multiplierSqrt = 2;
@@ -87,13 +92,13 @@ public class LehmanNoSqrtFact extends FindPrimeFact {
 		// surprisingly it gives no speedup when using k's with many prime factors as lehman suggests
 		// for k=2 we know that x has to be even
 		for (int k = 1; k <= kMax; k++) {
-			final double sqrt4kn = multiplierSqrt * SQRT[k] * sqrtN;
+			final double sqrt4kn = multiplierSqrt * sqrt[k] * sqrtN;
 			// adding a small constant to avoid rounding issues and rounding up is much slower then
 			// using the downcast and adding a constant close to 1. Took the constant from the yafu code
-			int xBegin = (int) (sqrt4kn + 0.9999999665);
+			int xBegin = (int) (sqrt4kn + ROUND_UP_DOUBLE);
 			// use only multiplications instead of division here
 			// TODO use a float here
-			final double xRange = nPow1Sixth * SQRT_INV[k];
+			final double xRange = nPow1Sixth * sqrtInv[k];
 			// since it is much bigger as SQRT (Long.MaxValue) we have to take a long
 			// for k > kMax / 16 xRange is less then 1 unfortunately i can not use this fact to
 			// speed up the runtime. Since the range for x is very small applying mod arguments to the x values
