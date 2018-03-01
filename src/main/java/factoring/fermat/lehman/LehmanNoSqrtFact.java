@@ -21,6 +21,7 @@ import factoring.trial.TrialPrimesDynamicFact;
  */
 public class LehmanNoSqrtFact extends FindPrimeFact {
 
+	// This is a constant that is below 1 for rounding up double values to long
 	protected static final double ROUND_UP_DOUBLE = 0.9999999665;
 	static double ONE_THIRD = 1.0/3;
 	// TODO see if it works for values above the precision/scale of the algorithm as well
@@ -30,7 +31,7 @@ public class LehmanNoSqrtFact extends FindPrimeFact {
 	double [] sqrt;
 	double [] sqrtInv;
 
-	final FindPrimeFact smallFactoriser;
+	final TrialPrimesDynamicFact smallFactoriser;
 	int maxTrialFactor;
 
 	/**
@@ -43,6 +44,10 @@ public class LehmanNoSqrtFact extends FindPrimeFact {
 		maxTrialFactor =  (int) Math.ceil(Math.pow(1L << bits, ONE_THIRD));
 		smallFactoriser = new TrialPrimesDynamicFact(maxTrialFactor);
 
+		initSquares();
+	}
+
+	protected void initSquares() {
 		// precalculate the square of all possible multipliers. This takes at most n^1/3
 		sqrt = new double[maxTrialFactor + 1];
 		sqrtInv = new double[maxTrialFactor + 1];
@@ -55,8 +60,10 @@ public class LehmanNoSqrtFact extends FindPrimeFact {
 			sqrtInv[i] = 1.0d / sqrtI;
 		}
 		System.out.printf(" sqrt table[0..%d] built: ", sqrt.length);
-		for(int i=0; i<5; i++){ System.out.printf("%f ", sqrt[i]); }
-		System.out.printf("%f ... %f %f\n", sqrt[5],sqrt[sqrt.length-2],sqrt[sqrt.length-1]);
+		for(int i=0; i<Math.min(5, maxTrialFactor); i++){
+			System.out.printf("%f ", sqrt[i]);
+		}
+		System.out.printf(" ... %f %f\n", sqrt[sqrt.length-2],sqrt[sqrt.length-1]);
 	}
 
 	@Override
@@ -64,6 +71,8 @@ public class LehmanNoSqrtFact extends FindPrimeFact {
 		// with this implementation the lehman part is not slower then the trial division
 		// we do not have to use a multiplier for the maximal factor were we apply the
 		// trial division phase
+		double maxTrialFactor =  Math.ceil(Math.pow(nOrig, ONE_THIRD));
+		smallFactoriser.setMaxFactor((int) maxTrialFactor);
 		// factor out all small factors
 		final long n = smallFactoriser.findPrimeFactors(nOrig, factors);
 
@@ -79,7 +88,8 @@ public class LehmanNoSqrtFact extends FindPrimeFact {
 		}
 		// re-adjust the maximal factor we have to search for. If factors were found, which is quite
 		// often the case for arbitrary numbers, this cuts down the runtime dramatically.
-		final int kMax = (int) (Math.pow(n, ONE_THIRD) + ROUND_UP_DOUBLE);
+		maxTrialFactor =  Math.pow(n, ONE_THIRD);
+		final int kMax = (int) (Math.ceil(maxTrialFactor));
 		final int multiplier = 4;
 		final long n4 = n * multiplier;
 		final int multiplierSqrt = 2;
