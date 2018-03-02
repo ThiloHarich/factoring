@@ -7,7 +7,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
-import factoring.fermat.lehman.LehmanSqrtSuccFact;
 import org.junit.Test;
 
 import com.google.common.collect.Multiset;
@@ -16,7 +15,7 @@ import com.google.common.collect.TreeMultiset;
 import factoring.fermat.FermatFact;
 import factoring.fermat.lehman.LehmanNoSqrtFact;
 import factoring.fermat.lehman.LehmanYafuFact;
-import factoring.trial.TrialWithPrimesFact;
+import factoring.trial.TrialPrimesDynamicFact;
 
 public class ErrorShiftTest {
 
@@ -40,19 +39,19 @@ public class ErrorShiftTest {
 	@Test
 	public void testCorrect() {
 		final int bits = 16;
+		final int bitsMax = 32;
 
-		final Factorizer factorizer2 = new LehmanYafuFact();
+		final Factorizer factorizer1 = new TrialPrimesDynamicFact(1 << bits + 4);
 		//		Factorizer factorizer1 = new Fermat24();
 		//		Factorizer factorizer1 = new HartFloorFact();
 		//		final Factorizer factorizer2 = new LehmanApproxFact();
-		final Factorizer factorizer1 = new LehmanSqrtSuccFact();
+		final Factorizer factorizer2 = new LehmanNoSqrtFact(bitsMax);
 		//		Factorizer factorizer1 = new LehmanYafuFact();
 		//		Factorizer factorizer2 = new Lehman8kFirstFact();
 
 		//		for (int i = 65538; i < 1 << (bits + 1); i++)
-		final int exp = 41;
-		long begin = (1L << exp) +1;  // = 2^4 * 3^2 * 5
-//				begin = 549755813891L	; // * 23
+		long begin = (1L << bits) +1;  // = 2^4 * 3^2 * 5
+		begin = 65538L	; // * 23
 		// 29*23 * 53
 		// 29*53 * 23 ->
 		while (begin < Long.MAX_VALUE / 1000)
@@ -91,9 +90,9 @@ public class ErrorShiftTest {
 		//		Factorizer factorizer2 = new FermatResiduesRec();
 		//		Factorizer factorizer2 = new FermatResiduesSieve();
 		//		Factorizer factorizer2 = new FermatFact();
-		final Factorizer factorizer1 = new LehmanNoSqrtFact();
-//		final Factorizer factorizer2 = new TrialWithPrimesFact();
-				final Factorizer factorizer2 = new LehmanYafuFact();
+		final Factorizer factorizer1 = new LehmanNoSqrtFact(bits);
+		//		final Factorizer factorizer2 = new TrialWithPrimesFact();
+		final Factorizer factorizer2 = new LehmanYafuFact();
 		//		Factorizer factorizer1 = new LehmanSquaresFact();
 
 		//		((TrialFactMod)factorizer1).setLimit(1 << 16);

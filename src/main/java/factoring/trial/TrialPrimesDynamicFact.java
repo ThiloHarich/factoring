@@ -24,21 +24,18 @@ public class TrialPrimesDynamicFact extends FindPrimeFact {
 
 	private int maxFactor = 65535;
 	int[] primes;
-	// we keep the index so that we can continue with the factoring after applying
-	// other algorithms like lehman, not so nice
-	int primeIndex = 0;
 
 	void initPrimes()
 	{
 		final double logMaxFactor = Math.log(maxFactor);
-		final int maxPrimeIndex = (int) ((maxFactor) / (logMaxFactor - 1.1));
+		final int maxPrimeIndex = (int) ((maxFactor) / (logMaxFactor - 1.1)) + 1;
 		primes = new int [maxPrimeIndex]; //the 6542 primes up to 65536=2^16, then sentinel 65535 at end
 		// TODO we do not need 2
 		primes[0]=2;
 		primes[1]=3;
 		primes[2]=5;
 		int k = 3;
-		for(int i=7; i<maxPrimeIndex; i+=2){
+		for(int i=7; i<maxFactor; i+=2){
 			boolean isPime = true;
 			for(int j=0; primes[j]* primes[j] <= i && isPime; j++){
 				if(i%primes[j]==0)
@@ -52,11 +49,14 @@ public class TrialPrimesDynamicFact extends FindPrimeFact {
 		//		assert(k==6542);
 		//		primes[k] = 65535; //sentinel
 		System.out.printf("Prime table[0..%d] built: ", k);
-		for(int i=0; i<20; i++)
+		for(int i=0; i<Math.min(20,maxPrimeIndex) ; i++)
 		{
 			System.out.printf("%d,", primes[i]);
 		}
-		System.out.printf("%d,...,%d,(%d)%n", primes[20],primes[maxPrimeIndex-2],primes[maxPrimeIndex-1]);
+		if (maxPrimeIndex > 20)
+			System.out.printf(" ,..., %d,%d%n", primes[k-2],primes[k-1]);
+		else
+			System.out.println();
 	}
 
 
@@ -70,12 +70,18 @@ public class TrialPrimesDynamicFact extends FindPrimeFact {
 
 	@Override
 	public long findPrimeFactors(long n, Collection<Long> factors) {
-		for (; primes[primeIndex] < maxFactor; primeIndex++) {
+		// TODO fill the end of the array with Integer.MaxValue
+		for (int primeIndex = 0; primes[primeIndex] < maxFactor && primes[primeIndex] > 0; primeIndex++) {
 			while (n % primes[primeIndex] == 0) {
 				factors.add((long)primes[primeIndex]);
 				n /= primes[primeIndex];
 			}
 		}
 		return n;
+	}
+
+
+	public void setMaxFactor(int maxTrialFactor) {
+		maxFactor = maxTrialFactor;
 	}
 }
