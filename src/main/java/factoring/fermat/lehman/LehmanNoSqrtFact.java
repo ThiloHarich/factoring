@@ -42,7 +42,12 @@ public class LehmanNoSqrtFact extends FindPrimeFact {
 	public LehmanNoSqrtFact(int bits) {
 		maxTrialFactor =  (int) Math.ceil(Math.pow(1L << bits, ONE_THIRD));
 		smallFactoriser = new TrialPrimesDynamicFact(maxTrialFactor);
+		initSquares();
 
+
+	}
+
+	public void initSquares() {
 		// precalculate the square of all possible multipliers. This takes at most n^1/3
 		sqrt = new double[maxTrialFactor + 1];
 		sqrtInv = new double[maxTrialFactor + 1];
