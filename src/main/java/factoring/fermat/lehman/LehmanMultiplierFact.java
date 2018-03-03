@@ -13,7 +13,7 @@ public class LehmanMultiplierFact extends FermatFact {
     @Override
     public long findFactors(long n, Collection<Long> factors) {
         FermatFact fact24 = new LehmanBlockFact(4,1);
-        FindPrimeFact fact1 = new LehmanNoSqrtFact();
+        FindPrimeFact fact1 = new LehmanNoSqrtFact(1);
         long factor = fact24.findFactors(n, factors);
         if (factor != n)
             return factor;

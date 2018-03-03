@@ -10,7 +10,7 @@ import java.util.List;
 
 
 /**
- * This implementation uses a small set of primes
+ * This implementation uses a small set of primesInv
  * Created by Thilo Harich on 02.03.2017.
  */
 public class TrialFactMod extends TrialFact {
@@ -78,7 +78,7 @@ public class TrialFactMod extends TrialFact {
     }
 
     public long findSmallFactors(long n, Collection<Long> factors) {
-        // first check if the sieve primes divide n
+        // first check if the sieve primesInv divide n
         for (int i = 1; i < sievePrimes.length; i++) {
             while (n % sievePrimes[i] == 0) {
                 factors.add((long) sievePrimes[i]);

@@ -1,8 +1,8 @@
 package factoring.trial;
 
-import java.util.Collection;
-
 import factoring.FindPrimeFact;
+
+import java.util.Collection;
 
 /**
  * This implementation is generating a list of all primesInv up to a limit and will then check if the
@@ -20,29 +20,31 @@ import factoring.FindPrimeFact;
  *
  * Created by Thilo Harich on 02.03.2017.
  */
-public class TrialPrimesDynamicFact extends FindPrimeFact {
+public class TrialInvFact extends FindPrimeFact {
 
 	private int maxFactor = 65535;
-	int[] primes;
+	double[] primesInv;
 
 	void initPrimes()
 	{
 		final double logMaxFactor = Math.log(maxFactor);
 		final int maxPrimeIndex = (int) ((maxFactor) / (logMaxFactor - 1.1)) + 1;
-		primes = new int [maxPrimeIndex]; //the 6542 primesInv up to 65536=2^16, then sentinel 65535 at end
+		primesInv = new double [maxPrimeIndex]; //the 6542 primesInv up to 65536=2^16, then sentinel 65535 at end
 		// TODO we do not need 2
-		primes[0]=2;
-		primes[1]=3;
-		primes[2]=5;
+		primesInv[0]= 1.0 / 2.0;
+		primesInv[1]= 1.0 / 3.0;
+		primesInv[2]= 1.0 / 5.0;
 		int k = 3;
 		for(int i=7; i<maxFactor; i+=2){
 			boolean isPime = true;
-			for(int j=0; primes[j]* primes[j] <= i && isPime; j++){
-				if(i%primes[j]==0)
+			for(int j = 0; primesInv[j]* primesInv[j] >= (1.0 / (double)i) && isPime; j++){
+				double nDivPrime = i*primesInv[j];
+				if ( Math.round(nDivPrime) == nDivPrime) {
 					isPime = false;
+				}
 			}
 			if (isPime) {
-				primes[k] = i;
+				primesInv[k] = 1.0 / (double)i;
 				k++;
 			}
 		}
@@ -51,16 +53,16 @@ public class TrialPrimesDynamicFact extends FindPrimeFact {
 		System.out.printf("Prime table[0..%d] built: ", k);
 		for(int i=0; i<Math.min(20,maxPrimeIndex) ; i++)
 		{
-			System.out.printf("%d,", primes[i]);
+			System.out.printf("%f,", primesInv[i]);
 		}
 		if (maxPrimeIndex > 20)
-			System.out.printf(" ,..., %d,%d%n", primes[k-2],primes[k-1]);
+			System.out.printf(" ,..., %f,%f%n", primesInv[k-2], primesInv[k-1]);
 		else
 			System.out.println();
 	}
 
 
-	public TrialPrimesDynamicFact(int maxFactor) {
+	public TrialInvFact(int maxFactor) {
 		//        if (maxFactor > 65535)
 		//            throw new IllegalArgumentException("the maximal factor has to be lower then 65536");
 		this.maxFactor = maxFactor;
@@ -71,10 +73,14 @@ public class TrialPrimesDynamicFact extends FindPrimeFact {
 	@Override
 	public long findPrimeFactors(long n, Collection<Long> factors) {
 		// TODO fill the end of the array with Integer.MaxValue
-		for (int primeIndex = 0; primes[primeIndex] < maxFactor && primes[primeIndex] > 0; primeIndex++) {
-			while (n % primes[primeIndex] == 0) {
-				factors.add((long)primes[primeIndex]);
-				n /= primes[primeIndex];
+		double maxFactorInv = 1.0 / maxFactor;
+		for (int primeIndex = 0; primesInv[primeIndex] > maxFactorInv && primesInv[primeIndex] > 0; primeIndex++) {
+			double nDivPrime = n*primesInv[primeIndex];
+
+			while ( ((long)nDivPrime) == nDivPrime && n > 1) {
+				factors.add(Math.round(1.0 / primesInv[primeIndex]));
+				n = Math.round(nDivPrime);
+				nDivPrime = n*primesInv[primeIndex];
 			}
 		}
 		return n;

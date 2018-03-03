@@ -77,7 +77,7 @@ public class TrialFactMod2 extends TrialFact {
     }
 
     public long findSmallFactors(long n, Collection<Long> factors) {
-        // first check if the sieve primes divide n
+        // first check if the sieve primesInv divide n
         for (int i = 1; i < sievePrimes.length; i++) {
             while (n % sievePrimes[i] == 0) {
                 factors.add((long) sievePrimes[i]);

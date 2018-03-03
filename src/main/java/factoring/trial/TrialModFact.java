@@ -9,9 +9,9 @@ import java.util.List;
 
 
 /**
- * This implementation uses a small set of primes, calculates all
- * possible primes in the range of the product of all the primes by sieving.
- * Then this list of possible primes (which also contains non primes) is used
+ * This implementation uses a small set of primesInv, calculates all
+ * possible primesInv in the range of the product of all the primesInv by sieving.
+ * Then this list of possible primesInv (which also contains non primesInv) is used
  * to see if the number n is dividable by.
  * TODO do a proper Wheel factorization implementation.
  * Created by Thilo Harich on 02.03.2017.
@@ -76,15 +76,15 @@ public class TrialModFact extends TrialFact {
     }
 
     public long findSmallFactors(long n, Collection<Long> factors) {
-        // first check if the sieve primes divide n
+        // first check if the sieve primesInv divide n
         for (int i = 1; i < sievePrimes.length; i++) {
             while (n % sievePrimes[i] == 0) {
                 factors.add((long) sievePrimes[i]);
                 n = n / sievePrimes[i];
             }
         }
-//        for (int i = 0; factor * factor < n && i < primes.length; i++) {
-//            factor = primes[i];
+//        for (int i = 0; factor * factor < n && i < primesInv.length; i++) {
+//            factor = primesInv[i];
 //            while (n % factor == 0) {
 //                factors.add((long) factor);
 //                n = n / factor;

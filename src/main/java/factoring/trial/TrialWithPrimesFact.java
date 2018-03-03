@@ -5,7 +5,7 @@ import factoring.FindPrimeFact;
 import java.util.Collection;
 
 /**
- * This implementation is generating a list of all primes up to a limit and will then check if the
+ * This implementation is generating a list of all primesInv up to a limit and will then check if the
  * number is dividable. Here we us a limit of 65536=2^16.
  * We can only factorize numbers up to 2^32.
  * When calling it with bigger numbers only prime factors below
@@ -14,7 +14,7 @@ import java.util.Collection;
  * but it can be applied for finding the prime factors below 2^16 and applying other algorithms
  * to factor the returned remainder. This is exactly what the lehman and hart algorithms need.
  * We have choosen 2^16 because when factoring long numbers by the lehman method, they have to be
- * lower n =  2^48 = (2^16)^3, which means we can find all primes below n^1/3 with this algorithm.
+ * lower n =  2^48 = (2^16)^3, which means we can find all primesInv below n^1/3 with this algorithm.
  *
  * Create a new instance, unless you want to have control over the search interval by using {@link #setMaxFactor(int)}.
  *
@@ -22,7 +22,7 @@ import java.util.Collection;
  */
 public class TrialWithPrimesFact extends FindPrimeFact {
 
-    static int[] prime = new int [6543]; //the 6542 primes up to 65536=2^16, then sentinel 65535 at end
+    static int[] prime = new int [6543]; //the 6542 primesInv up to 65536=2^16, then sentinel 65535 at end
 
     static
     {
