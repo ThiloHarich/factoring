@@ -22,6 +22,7 @@ import factoring.FindPrimeFact;
  */
 public class TrialPrimesDynamicFact extends FindPrimeFact {
 
+	private static final int PRINT_NUM = 20000;
 	private int maxFactor = 65535;
 	int[] primes;
 
@@ -35,6 +36,7 @@ public class TrialPrimesDynamicFact extends FindPrimeFact {
 		primes[1]=3;
 		primes[2]=5;
 		int k = 3;
+		// TODO do sieve of erathostenes instead
 		for(int i=7; i<maxFactor; i+=2){
 			boolean isPime = true;
 			for(int j=0; primes[j]* primes[j] <= i && isPime; j++){
@@ -49,11 +51,11 @@ public class TrialPrimesDynamicFact extends FindPrimeFact {
 		//		assert(k==6542);
 		//		primesInv[k] = 65535; //sentinel
 		System.out.printf("Prime table[0..%d] built: ", k);
-		for(int i=0; i<Math.min(20,maxPrimeIndex) ; i++)
+		for(int i=0; i<Math.min(PRINT_NUM,maxPrimeIndex) ; i++)
 		{
 			System.out.printf("%d,", primes[i]);
 		}
-		if (maxPrimeIndex > 20)
+		if (maxPrimeIndex > PRINT_NUM)
 			System.out.printf(" ,..., %d,%d%n", primes[k-2],primes[k-1]);
 		else
 			System.out.println();
@@ -71,7 +73,7 @@ public class TrialPrimesDynamicFact extends FindPrimeFact {
 	@Override
 	public long findPrimeFactors(long n, Collection<Long> factors) {
 		// TODO fill the end of the array with Integer.MaxValue
-		for (int primeIndex = 0; primes[primeIndex] < maxFactor && primes[primeIndex] > 0; primeIndex++) {
+		for (int primeIndex = 0; primes[primeIndex] < maxFactor && primes[primeIndex] > 0 && n> 1; primeIndex++) {
 			while (n % primes[primeIndex] == 0) {
 				factors.add((long)primes[primeIndex]);
 				n /= primes[primeIndex];
