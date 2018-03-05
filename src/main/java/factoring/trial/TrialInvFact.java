@@ -34,9 +34,8 @@ public class TrialInvFact extends FindPrimeFact {
 	{
 		final double logMaxFactor = Math.log(maxFactor);
 		final int maxPrimeIndex = (int) ((maxFactor) / (logMaxFactor - 1.1)) + 100;
-		primesInv = new double [maxPrimeIndex]; //the 6542 primesInv up to 65536=2^16, then sentinel 65535 at end
-		primes = new int [maxPrimeIndex]; //the 6542 primesInv up to 65536=2^16, then sentinel 65535 at end
-		// TODO we do not need 2
+		primesInv = new double [maxPrimeIndex];
+		primes = new int [maxPrimeIndex];
 		primesInv[0]= 1.0 / 2.0;
 		primesInv[1]= 1.0 / 3.0;
 		primesInv[2]= 1.0 / 5.0;
