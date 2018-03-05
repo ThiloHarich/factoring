@@ -9,17 +9,28 @@ import factoring.trial.TrialInvFact;
 /**
  * This is a version of the lehman factorization, which is a variant of the fermat
  * factorization.
+ * It runs in O(n^1/3) and needs O(n^1/3) space.
  * It is about three times faster then the java version of the yafu lehman factorization.
- * By storing the square roots of the multiplier k the range checks can be speeded up.
+ * By storing the square roots of the multiplier k the range can be done faster.
  * It also uses a version of trial division, where the multiple inverse of the primes are stored.
  * So instead of a division a multiplication is needed to find out if a number is dividable
  * by a prime.
- * In the lehman algorithm only in 15 out of 16 cases (for k) only one value of x has to be considered, but
- * the calculation of the rages has to be done all the time.
+ * In the lehman algorithm in 15 out of 16 cases (for k) only one value of x has to be considered, but
+ * the calculation of the lower and upper rage has to be done all the time.
  * Since calculating the ranges of the inner loop requires at least one square root
  * and a division we try to reduce the cost for calculating this by precalculating the
  * square roots for the small multipliers k and the inversion of it.
- * adressing a small array that fits in the level 1 cache
+ *
+ * Like in the YAFU implementation we get no speed when using smooth multipliers first (like lehman has suggested it).
+ * The Hart variant always just one x per multiplier k, this eliminates the determination of the
+ * upper bound, but using it gives no extra speed.
+ *
+ * Open questions, possible improvements :
+ * - can we get rid of storing the square roots? how can we calculate them efficiently?
+ * - When we know sqrt(x) we can conclude sqrt(i*x) but seems to give no speed
+ * - In most of the cases (more then 93%) for k only one or none the value x^2 -n has to be calculated.
+ * Can we find them without trying if the value sqrt(k*n) fits in the range?
+ *
  * Since this is a java implementation we use just the basic operations "/" and "%"
  * and let the JVM do the optimization here. When adapting to other languages this should be done.
  * Created by Thilo Harich on 28.06.2017.
@@ -160,6 +171,8 @@ public class LehmanNoSqrtFact extends FindPrimeFact {
 				final long x2 = x * x;
 				final long right = x2 -  k * n4;
 				// TODO use a less restrictive is square check and apply the error shift
+				// instead of taking the square root (which is a very expensive operation)
+				// and squaring it, we do some mod arguments to filter out non squares
 				if (PrimeMath.isSquare(right)) {
 					final long y = (long) Math.sqrt(right);
 					final long factor = PrimeMath.gcd(n, x - y);

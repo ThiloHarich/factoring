@@ -15,13 +15,7 @@ package factoring.squfof;
 
 import java.math.BigInteger;
 
-import org.apache.log4j.Logger;
 
-import de.tilman_neumann.math.base.bigint.sequence.IntegerSequence;
-import de.tilman_neumann.math.base.bigint.sequence.SquarefreeSequence;
-import de.tilman_neumann.math.factor.FactorAlgorithmBase;
-
-import static de.tilman_neumann.math.base.bigint.BigIntConstants.*;
 
 /**
  * Shanks' SQUFOF algorithm, 63-bit version.<br/>
@@ -32,9 +26,7 @@ import static de.tilman_neumann.math.base.bigint.BigIntConstants.*;
  *
  * @author Tilman Neumann
  */
-public class SquFoF63 extends FactorAlgorithmBase {
-    @SuppressWarnings("unused")
-    private static final Logger LOG = Logger.getLogger(SquFoF63.class);
+public class SquFoF63 {
 
     // input
     private BigInteger N, kN;
@@ -43,10 +35,11 @@ public class SquFoF63 extends FactorAlgorithmBase {
     // maximum number of iterations
     private int maxI;
 
-    @Override
     public String getName() {
         return "SquFoF63";
     }
+
+
 
     public long findSingleFactor(long N) {
         return findSingleFactor(BigInteger.valueOf(N)).longValue();
@@ -157,6 +150,6 @@ public class SquFoF63 extends FactorAlgorithmBase {
 
         // result
         BigInteger gcd = N.gcd(BigInteger.valueOf(P_i));
-        return (gcd.compareTo(ONE)>0 && gcd.compareTo(N)<0) ? gcd : null;
+        return (gcd.compareTo(BigInteger.ONE)>0 && gcd.compareTo(N)<0) ? gcd : null;
     }
 }
