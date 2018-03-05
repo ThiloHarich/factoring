@@ -7,6 +7,8 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
+import factoring.fermat.lehman.LehmanNoSqrtFact;
+import factoring.fermat.lehman.LehmanYafuFact;
 import org.junit.Test;
 
 import com.google.common.collect.Multiset;
@@ -78,20 +80,20 @@ public class ErrorShiftTest {
 	@Test
 	public void testPerf()
 	{
-		//		final int bits = 41;
-		final int bits = 30;
+				final int bits = 41;
+//		final int bits = 35;
 
 
-		final Factorizer factorizer1 = new TrialPrimesDynamicFact(1 << bits/2);
+//		final Factorizer factorizer1 = new TrialPrimesDynamicFact(1 << bits/2);
 		//		Factorizer factorizer2 = new LehmanResidueFact();
 		//		final Factorizer factorizer2 = new LehmanRange1Fact();
 		//		Factorizer factorizer1 = new HartFact();
 		//		Factorizer factorizer2 = new FermatResiduesRec();
-		final Factorizer factorizer2 = new TrialInvFact(1 << bits/2);
+//		final Factorizer factorizer2 = new TrialInvFact(1 << bits/2);
 		//		Factorizer factorizer2 = new FermatFact();
-		//		final Factorizer factorizer1 = new LehmanNoSqrtFact(bits);
+				final Factorizer factorizer1 = new LehmanNoSqrtFact(bits, 1.0f);
 		//		final Factorizer factorizer2 = new TrialWithPrimesFact();
-		//		final Factorizer factorizer2 = new LehmanYafuFact();
+				final Factorizer factorizer2 = new LehmanYafuFact();
 		//		Factorizer factorizer1 = new LehmanSquaresFact();
 
 		//		((TrialFactMod)factorizer1).setLimit(1 << 16);

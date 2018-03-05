@@ -6,26 +6,26 @@ import factoring.FindPrimeFact;
 
 /**
  * This implementation is generating a list of all primes up to a limit.
- * Instead of storig the prime itself, it will store the reziprok value.
+ * Beside of storing the prime itself, it also store the reciprocal value.
  * When checking a number if it is dividable by the prime, we will not divide
  * the number by the prime, we will multiply by the inverse, since this is faster.
- * number is divideable. Here we us a limit of 65536=2^16.
- * We can only factorize numbers up to 2^32.
+ * Due to precision we have to check for a given range near an Integer.
+ * And then do a Long division.
+ * This implementation is around two times faster then a version  based on long numbers.
+ * Since Double only has 52 bis for the remainder, this can only work for numbers below 2^52.
+ * We can only factorize numbers up to maxFactor^2
  * When calling it with bigger numbers only prime factors below
- * 2^16 were added to the factors. {@link #findPrimeFactors(long, Collection)} then might return a
- * composite number. This strictly means it can not be applied for factoring big numbers,
- * but it can be applied for finding the prime factors below 2^16 and applying other algorithms
- * to factor the returned remainder. This is exactly what the lehman and hart algorithms need.
- * We have choosen 2^16 because when factoring long numbers by the lehman method, they have to be
- * lower n =  2^48 = (2^16)^3, which means we can find all primesInv below n^1/3 with this algorithm.
- *
- * Create a new instance, unless you want to have control over the search interval by using {@link #setMaxFactor(int)}.
+ * maxFactor were added to the factors. {@link #findPrimeFactors(long, Collection)} then might return a
+ * composite number.
  *
  * Created by Thilo Harich on 02.03.2017.
  */
 public class TrialInvFact extends FindPrimeFact {
 
+	// The number of values to be printed
 	private static final int PRINT_NUM = 20000;
+	// for printing we need a value a little bit above 1
+	public static final double PRINT_CONST = 1.0000001;
 	private int maxFactor = 65535;
 	double[] primesInv;
 	int[] primes;
@@ -66,12 +66,55 @@ public class TrialInvFact extends FindPrimeFact {
 		System.out.printf("Prime table[0..%d] built: ", k);
 		for(int i=0; i<Math.min(PRINT_NUM,maxPrimeIndex) ; i++)
 		{
-			System.out.printf("%d,", (int)(1.0000001 / primesInv[i]));
+			System.out.printf("%d,", (int)(PRINT_CONST / primesInv[i]));
 		}
 		if (maxPrimeIndex > PRINT_NUM)
-			System.out.printf(" ,..., %f,%f%n", 1.001 / primesInv[k-2], 1.0 / primesInv[k-1]);
+			System.out.printf(" ,..., %f,%f%n", PRINT_CONST / primesInv[k-2], PRINT_CONST / primesInv[k-1]);
 		else
 			System.out.println();
+	}
+
+	/**
+	 * finds the prime factors up to maxFactor by the sieve of eratosthenes.
+	 * Not optimized, since this is only called once when initializing.
+	 */
+	void initPrimesEratosthenes()
+	{
+		final double logMaxFactor = Math.log(maxFactor);
+		final int maxPrimeIndex = (int) ((maxFactor) / (logMaxFactor - 1.1)) + 1;
+		primesInv = new double [maxPrimeIndex]; //the 6542 primesInv up to 65536=2^16, then sentinel 65535 at end
+		primes = new int [maxPrimeIndex]; //the 6542 primesInv up to 65536=2^16, then sentinel 65535 at end
+		int primeIndex = 0;
+		boolean [] noPrimes = new boolean [maxFactor];
+		for (int i = 2; i <= Math.sqrt(maxFactor); i++) {
+			if (!noPrimes[i]) {
+				primes[primeIndex] = i;
+				primesInv[primeIndex++] = 1.0 / i;
+			}
+			for (int j = i * i; j < maxFactor; j += i) {
+				noPrimes[j] = true;
+			}
+		}
+		for (int i = (int) (Math.sqrt(maxFactor)+1); i < maxFactor; i++) {
+			if (!noPrimes[i]) {
+				primes[primeIndex] = i;
+				primesInv[primeIndex++] = 1.0 / i;
+			}
+		}
+		System.out.printf("Prime table[0..%d] built: ", primeIndex);
+		for(int i=0; i<Math.min(PRINT_NUM,maxPrimeIndex) ; i++)
+		{
+			System.out.printf("%d,", (int)(PRINT_CONST / primesInv[i]));
+		}
+		if (maxPrimeIndex > PRINT_NUM)
+			System.out.printf(" ,..., %f,%f%n", PRINT_CONST / primesInv[primeIndex-2], PRINT_CONST / primesInv[primeIndex-1]);
+		else
+			System.out.println();
+		for (;primeIndex < maxPrimeIndex; primeIndex++)
+		{
+			primes[primeIndex] = Integer.MAX_VALUE;
+//			primesInv[primeIndex++] = 1.0 / i;
+		}
 	}
 
 
@@ -79,24 +122,20 @@ public class TrialInvFact extends FindPrimeFact {
 		//        if (maxFactor > 65535)
 		//            throw new IllegalArgumentException("the maximal factor has to be lower then 65536");
 		this.maxFactor = maxFactor;
-		initPrimes();
+//		initPrimes();
+		initPrimesEratosthenes();
 	}
 
 
 	@Override
 	public long findPrimeFactors(long n, Collection<Long> factors) {
-		// TODO fill the end of the array with Integer.MaxValue
-		//		final double maxFactorInv = 1.0 / maxFactor;
-		for (int primeIndex = 0; primes[primeIndex] <= maxFactor && primesInv[primeIndex] > 0; primeIndex++) {
+		for (int primeIndex = 0; primes[primeIndex] <= maxFactor; primeIndex++) {
 			double nDivPrime = n*primesInv[primeIndex];
-			//			long nDivPrimeLong = (long) (nDivPrime + .0001);
-
-			//			while (Math.abs(nDivPrimeLong - nDivPrime) < 0.0001 && n > 1 && n % primes[primeIndex]==0) {
-			while (Math.round(nDivPrime) == nDivPrime && n > 1 && n % primes[primeIndex] == 0) {
-				factors.add(Math.round(1.0 / primesInv[primeIndex]));
+			// TODO choose the precision factor with respect to the maxFactor!?
+			while (Math.abs(Math.round(nDivPrime) - nDivPrime) < 0.01 && n > 1 && n % primes[primeIndex] == 0) {
+				factors.add((long) primes[primeIndex]);
 				n = Math.round(nDivPrime);
 				nDivPrime = n*primesInv[primeIndex];
-				//				nDivPrimeLong = (long) (n*primesInv[primeIndex]+ 0.0001);
 			}
 		}
 		return n;
