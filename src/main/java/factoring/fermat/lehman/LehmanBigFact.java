@@ -1,10 +1,11 @@
 package factoring.fermat.lehman;
 
-import java.util.Collection;
-
 import factoring.FindPrimeFact;
 import factoring.math.PrimeMath;
 import factoring.trial.TrialInvFact;
+
+import java.math.BigInteger;
+import java.util.Collection;
 
 /**
  * This is a version of the lehman factorization, which is a variant of the fermat
@@ -35,7 +36,7 @@ import factoring.trial.TrialInvFact;
  * and let the JVM do the optimization here. When adapting to other languages this should be done.
  * Created by Thilo Harich on 28.06.2017.
  */
-public class LehmanNoSqrtFact extends FindPrimeFact {
+public class LehmanBigFact extends FindPrimeFact {
 
 	static double ONE_THIRD = 1.0/3;
 
@@ -60,7 +61,7 @@ public class LehmanNoSqrtFact extends FindPrimeFact {
 	 * more then 48 bits are not allowed since the precision of long does not allow more here
 	 * @param bits
 	 */
-	public LehmanNoSqrtFact(int bits, float balanceTrial) {
+	public LehmanBigFact(int bits, float balanceTrial) {
 //		maxTrialFactor = (int) Math.ceil(balanceTrial * Math.pow(1L << bits, ONE_THIRD));
 		maxTrialFactor = (int) Math.ceil(Math.pow(1L << bits, ONE_THIRD));
 		// using the trial division algorithm more doe not help
@@ -78,8 +79,8 @@ public class LehmanNoSqrtFact extends FindPrimeFact {
 //		int kMax = (int) (Math.ceil(maxTrialFactor / balanceTrialCube));
 		int kMax = (int) (Math.ceil(maxTrialFactor));
 
-		sqrt = new double[kMax + 10];
-		sqrtInv = new double[kMax + 10];
+		sqrt = new double[kMax + 1];
+		sqrtInv = new double[kMax + 1];
 		for(int i = 1; i< sqrt.length; i++)
 		{
 			final double sqrtI = Math.sqrt(i);
@@ -123,7 +124,7 @@ public class LehmanNoSqrtFact extends FindPrimeFact {
 		final int kMax = (int) (Math.ceil(maxTrialFactor));
 //		int kMax = (int) (Math.ceil(maxTrialFactor / balanceTrialCube));
 		final int multiplier = 4;
-		final long n4 = n * multiplier;
+		final BigInteger n4 = BigInteger.valueOf(n * multiplier);
 		final int multiplierSqrt = 2;
 		final double sqrtN = Math.sqrt(n);
 		final int nMod4 = (int) (n % 4);
@@ -168,13 +169,15 @@ public class LehmanNoSqrtFact extends FindPrimeFact {
 			}
 			for(long x = xBegin; x <= xEnd; x+= xStep) {
 				// in java the trick to replace the multiplication with an addition does not help
-				final long x2 = x * x;
-				final long right = x2 -  k * n4;
+				BigInteger xBig = BigInteger.valueOf(x);
+				final BigInteger x2 = xBig.pow(2);
+				BigInteger kn4 = BigInteger.valueOf(k).multiply(n4);
+				final BigInteger right = x2.subtract(kn4);
 				// TODO use a less restrictive is square check and apply the error shift
 				// instead of taking the square root (which is a very expensive operation)
 				// and squaring it, we do some mod arguments to filter out non squares
-				if (PrimeMath.isSquare(right)) {
-					final long y = (long) Math.sqrt(right);
+				if (PrimeMath.isSquare(right.longValue())) {
+					final long y = (long) Math.sqrt(right.longValue());
 					final long factor = PrimeMath.gcd(n, x - y);
 					if (factor != 1) {
 						factors.add(factor);

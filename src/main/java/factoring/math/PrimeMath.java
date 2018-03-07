@@ -253,6 +253,105 @@ public class PrimeMath {
 		return sqrt*sqrt == n;
 	}
 
+	public static long gcd10 (long a, long b)
+	{
+		long rem, rem3, rem2;
+
+		if (b > a)
+		{
+			long tmp = a;
+			a = b;
+			b = tmp;
+		}
+		if (b == 0)
+			return a;
+
+		rem3 = a;
+		rem2 = b;
+		rem  = a % b;
+
+
+		while (rem > 0)
+		{
+			rem = rem3 - rem2;
+
+			if (rem >= rem2)
+			{
+				rem -= rem2;// q=1
+
+				if (rem >= rem2)
+				{
+					rem -= rem2;         // q=2
+
+					if (rem >= rem2)
+					{
+						if (rem >> 2 < rem2)
+						{
+							rem = remLower4 (rem, rem2);	// q=3,4,5
+						}
+						else
+						{
+							rem -= rem2 << 2;        // q=6
+
+							if (rem >> 2 < rem2)
+							{
+
+								rem = rem4 (rem, rem2);
+//								if (rem >= rem2)
+//								{
+//									rem = rem3 (rem, rem2);		// q=7,8,9
+//								}
+							}
+							else
+							{
+//								rem += rem2 << 2;
+								rem = rem3 % rem2 - 4;
+							}
+						}
+					}
+				}
+			}
+			rem3 = rem2;
+			rem2 = rem;
+		}
+		return rem3;
+	}
+	protected static long rem4 (long rem, long rem2)
+	{
+//		rem -= rem2;        // q=0
+
+		if (rem >= rem2)
+		{
+			rem = remLower4 (rem, rem2);
+		}
+		return rem;
+	}
+	protected static long rem2 (long rem, long rem2)
+	{
+		rem -= rem2;        // q=0
+
+		if (rem >= rem2)
+		{
+			rem -= rem2;    // q=1
+		}
+		return rem;
+	}
+	/**
+	 * @param rem
+	 * @param rem2
+	 * @return
+	 */
+	protected static long remLower4 (long rem, long rem2)
+	{
+		rem -= rem2;        // q=0
+
+		if (rem >= rem2)
+		{
+			rem = rem2 (rem, rem2);
+		}
+		return rem;
+	}
+
 	public static long gcd (long a, long b)
 	{
 		a = Math.abs (a);
