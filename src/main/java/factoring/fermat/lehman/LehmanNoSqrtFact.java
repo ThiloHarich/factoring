@@ -11,7 +11,7 @@ import factoring.trial.TrialInvFact;
  * factorization.
  * It runs in O(n^1/3) and needs O(n^1/3) space.
  * It is about three times faster then the java version of the yafu lehman factorization.
- * By storing the square roots of the multiplier k the range can be done faster.
+ * By storing the square roots of the multiplier k the range checks can be done faster.
  * It also uses a version of trial division, where the multiple inverse of the primes are stored.
  * So instead of a division a multiplication is needed to find out if a number is dividable
  * by a prime.
@@ -22,7 +22,7 @@ import factoring.trial.TrialInvFact;
  * square roots for the small multipliers k and the inversion of it.
  *
  * Like in the YAFU implementation we get no speed when using smooth multipliers first (like lehman has suggested it).
- * The Hart variant always just one x per multiplier k, this eliminates the determination of the
+ * The Hart variant always uses one x per multiplier k, this eliminates the determination of the
  * upper bound, but using it gives no extra speed.
  *
  * Open questions, possible improvements :
@@ -150,7 +150,6 @@ public class LehmanNoSqrtFact extends FindPrimeFact {
 			// to reduce the possible numbers to verify. But reducing the numbers by a factor
 			// 2 or 4 the runtime is only reduced by  something like 10%. This might be due to the Hotspot
 			// Behavior of java?
-
 			//			final int xStep = 1;
 			int xStep = 2;
 			if (k % 2 == 0) {
@@ -168,6 +167,8 @@ public class LehmanNoSqrtFact extends FindPrimeFact {
 			}
 			for(long x = xBegin; x <= xEnd; x+= xStep) {
 				// in java the trick to replace the multiplication with an addition does not help
+				// in fact it slows down the calculation
+				// (x+s)^2 = x^2 + 2xs + s^2
 				final long x2 = x * x;
 				final long right = x2 -  k * n4;
 				// TODO use a less restrictive is square check and apply the error shift

@@ -167,17 +167,20 @@ public class LehmanBigFact extends FindPrimeFact {
 				xBegin = xBegin + PrimeMath.mod(k + nMod4 - xBegin, 4);
 				//				}
 			}
+			long right = 0;
+			if (xBegin <= xEnd) {
+				BigInteger xBig = BigInteger.valueOf(xBegin);
+				final BigInteger x2 = xBig.multiply(xBig);
+				BigInteger kn4 = BigInteger.valueOf(k).multiply(n4);
+				right = x2.subtract(kn4).longValue();
+			}
 			for(long x = xBegin; x <= xEnd; x+= xStep) {
 				// in java the trick to replace the multiplication with an addition does not help
-				BigInteger xBig = BigInteger.valueOf(x);
-				final BigInteger x2 = xBig.pow(2);
-				BigInteger kn4 = BigInteger.valueOf(k).multiply(n4);
-				final BigInteger right = x2.subtract(kn4);
 				// TODO use a less restrictive is square check and apply the error shift
 				// instead of taking the square root (which is a very expensive operation)
 				// and squaring it, we do some mod arguments to filter out non squares
-				if (PrimeMath.isSquare(right.longValue())) {
-					final long y = (long) Math.sqrt(right.longValue());
+				if (PrimeMath.isSquare(right)) {
+					final long y = (long) Math.sqrt(right);
 					final long factor = PrimeMath.gcd(n, x - y);
 					if (factor != 1) {
 						factors.add(factor);
@@ -189,6 +192,7 @@ public class LehmanBigFact extends FindPrimeFact {
 						//						return 1;
 					}
 				}
+				right += x*xStep + xStep * xStep;
 			}
 		}
 		return n;

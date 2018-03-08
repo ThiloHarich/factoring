@@ -252,6 +252,129 @@ public class PrimeMath {
 
 		return sqrt*sqrt == n;
 	}
+	/**
+	 * calulates a^-1 mod modulus via a variant of the eucliedean algorithm.
+	 * we have to determine the quotien q = dividend / divisor;
+	 * One variant is to subtract divisor from the divident as long as this value
+	 * is grater then zero. So we have q subtractions if q = dividend / divisor.
+	 * We use a more balanced tree for the q. It looks like this:
+	 *      .
+	 *    /   \
+	 *   1      .
+	 *       /     \
+	 *     .         .
+	 *    / \       / \
+	 *   2   .     .  >8
+	 *      / \   / \
+	 *     3   4 5   .
+	 *              / \
+	 *             6   .
+	 *                / \
+	 *               7  8
+	 * @param a
+	 * @param modulus
+	 * @return
+	 */
+	public static long gcdKruppaTree10 (long a, long modulus)
+	{
+		long rem3, rem2, rem, q;
+
+		if (a == 1)
+			return 1;
+
+		q        = modulus / a;
+		rem      = modulus - a * q;
+		rem3 = a;
+		rem2  = rem;
+
+		while (rem2 > 1)
+		{
+			rem = rem3 - rem2;
+
+			if (rem >= rem2)
+			{
+				rem -= rem2;         // q=1
+
+				if (rem < rem2)
+				{
+//					q   += ps1;
+				}
+				else
+				{
+					long divisor4 = rem2 << 2;
+					if (rem < divisor4)
+					{
+						rem -= rem2;        // q=2
+
+//						long p2 = ps1<<1;
+						if (rem < rem2)
+						{
+//							q   += p2;
+						} else
+						{
+							rem -= rem2;        // q=3
+
+							if (rem < rem2)
+							{
+//								q   += p2 + ps1;
+							}else
+							{
+//								q   += ps1<<2;     // q=4
+								rem -= rem2;
+							}
+						}
+					}else
+					{
+						long divisor8 = rem2<<3;
+
+						if (rem < divisor8)
+						{
+							rem -= divisor4;        // q=5
+
+							if (rem < rem2)
+							{
+//								q   += ps1 * 5;
+							}
+							else
+							{
+								rem -= rem2;        // q=6
+
+								if (rem < rem2)
+								{
+//									q   += ps1 * 6;
+								} else
+								{
+									rem -= rem2;        // q=7
+
+									if (rem < rem2)
+									{
+//										q   += ps1 * 7;
+									}else
+									{
+//										q   += ps1<<3;     // q=8
+										rem -= rem2;
+									}
+								}
+							}
+						}else
+						{
+							q = rem3 / rem2;        // q >8
+							rem = rem3 - q * rem2;
+//							q *= ps1;
+						}
+					}
+				}
+			}
+			rem3 = rem2;
+			rem2 = rem;
+
+//			q += ps2;
+//			parity = ~parity;
+//			ps2 = ps1;
+//			ps1 = q;
+		}
+		return rem3;
+	}
 
 	public static long gcd10 (long a, long b)
 	{

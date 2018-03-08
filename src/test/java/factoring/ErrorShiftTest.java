@@ -10,6 +10,7 @@ import java.util.List;
 
 import de.tilman_neumann.math.factor.CombinedFactorAlgorithm;
 import de.tilman_neumann.math.factor.FactorAlgorithm;
+import factoring.fermat.lehman.LehmanBigFact;
 import factoring.fermat.lehman.LehmanNoSqrtFact;
 import factoring.fermat.lehman.LehmanYafuFact;
 import factoring.squfof.Squfof31;
@@ -89,7 +90,7 @@ public class ErrorShiftTest {
 
 
 //		final Factorizer factorizer1 = new TrialPrimesDynamicFact(1 << bits/2);
-		//		Factorizer factorizer2 = new LehmanResidueFact();
+				Factorizer factorizer2 = new LehmanBigFact(bits, 1);
 		//		final Factorizer factorizer2 = new LehmanRange1Fact();
 		//		Factorizer factorizer1 = new HartFact();
 		//		Factorizer factorizer2 = new FermatResiduesRec();
@@ -97,8 +98,8 @@ public class ErrorShiftTest {
 		//		Factorizer factorizer2 = new FermatFact();
 				final Factorizer factorizer1 = new LehmanNoSqrtFact(bits, 1.0f);
 		//		final Factorizer factorizer2 = new TrialWithPrimesFact();
-				final FactorAlgorithm factorizer2 = new CombinedFactorAlgorithm(1);
-				Factorizer factorizer3 = new LehmanYafuFact();
+//				final FactorAlgorithm factorizer2 = new CombinedFactorAlgorithm(1);
+//				Factorizer factorizer3 = new LehmanYafuFact();
 
 		//		((TrialFactMod)factorizer1).setLimit(1 << 16);
 
