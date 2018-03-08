@@ -61,6 +61,31 @@ public class LehmanApproxFact extends FindPrimeFact {
 		}
 		// readjust the maximal factor we have to search for. If factors were found, which is quite
 		// often the case for arbitrary numbers, this cuts down the runtime dramatically.
+		// xBegin = ceil ( sqrt( 4kn ) )
+		// xEnd   = floor( sqrt( 4kn + 1/4 * n^1/6 / sqrt(k) )
+		// k = a * n^1/3 , a <= 1
+		// xEnd   = floor( sqrt( 4kn + 1/4 * n^1/6 / (sqrt( a) * n^1/6) )
+		// xEnd   = floor( sqrt( 4kn + 1/(4 * sqrt( a) )
+		// -> fractional part ( yEnd) = < 1/(4 * sqrt( a))
+		// -> fractional part ( yEnd) = < 1/(4 * sqrt( a)) < 1/2 , a=1/4
+		// -> fractional part ( yEnd) = < 1/(4 * sqrt( a)) < 1   , a=1/16
+		// we will run the regular lehman only until k <= n^1/3 / 16 then we
+		// try to find all x' = 4k'n= 4mkn  where k' = k * m , 1 <= m <= 16 which fulfill the above condition
+		// so we miss all the numbers which do not have a factor 2,3,5,7,11,13, which is seldom -> can we live without it, by increasing the search range for k?
+		// for each x with a k > 1/16^2 calculate
+		// fractional part (x) and assign then to buckets b_i = {x|i/m <= x <= (i+1)/m} for a given m
+		// for each bucket we have a list of the numbers m_i with
+		// fractional part (m_i * b_i) <= 1/4 * sqrt(16/m_i) = 1/sqrt(m_i)
+		// fractional part (m_i * b_i) <= 1/sqrt(m_i) >= 1/4
+		// ~ 1/3 of the numbers provide this.
+		// if the number does not provide this flag it in a boolean array
+		// f(x) = 1/4 * n^/1/6 * x^-1/2, lower limit 1 upper limit n^1/3
+		// F(x) = - 1/2 * n^/1/6 * x^1/2
+		// F(n^1/3) = - 1/2 * n^/1/6 * n^(1/3*1/2)
+		// F(n^1/3) = - 1/2 * n^/1/6 * n^(1/6)
+		// F(n^1/3) = - 1/2
+		// F(1) = - 1/2 * n^/1/6 *1^(*1/2)
+		// F(1) = - 1/2 * n^/1/6
 		maxTrialFactor =  Math.pow(n, ONE_THIRD);
 		final int kMax = (int) (Math.ceil(maxTrialFactor));
 		final int multiplier = 4;

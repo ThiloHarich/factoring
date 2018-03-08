@@ -15,15 +15,20 @@ import factoring.trial.TrialInvFact;
  * It also uses a version of trial division, where the multiple inverse of the primes are stored.
  * So instead of a division a multiplication is needed to find out if a number is dividable
  * by a prime.
- * In the lehman algorithm in 15 out of 16 cases (for k) only one value of x has to be considered, but
+ * In the lehman algorithm in most of the cases i.e. k > n^1/3 / 16 the upper bound for x is less the
+ * The lower bound plus 1. In this case at most one value of x has to be considered, but
  * the calculation of the lower and upper rage has to be done all the time.
+ * Here we ignore the fact that we always increase x by 2 or 4.
  * Since calculating the ranges of the inner loop requires at least one square root
  * and a division we try to reduce the cost for calculating this by precalculating the
  * square roots for the small multipliers k and the inversion of it.
  *
- * Like in the YAFU implementation we get no speed when using smooth multipliers first (like lehman has suggested it).
+ * Like in the YAFU implementation we get no speed when using smooth multipliers (for k) first.
+ * This is surprising since most of the implementations use small multipliers, since they should
+ * increase the chance that a created number is a square.
+ *
  * The Hart variant always just one x per multiplier k, this eliminates the determination of the
- * upper bound, but using it gives no extra speed.
+ * upper bound, but using it gives no extra speed. Again why?
  *
  * Open questions, possible improvements :
  * - can we get rid of storing the square roots? how can we calculate them efficiently?
@@ -39,8 +44,8 @@ public class LehmanNoSqrtFact extends FindPrimeFact {
 
 	static double ONE_THIRD = 1.0/3;
 
-//	float balanceTrial = 1.0f;
-//	float balanceTrialCube;
+	//	float balanceTrial = 1.0f;
+	//	float balanceTrialCube;
 
 	// This is a constant that is below 1 for rounding up double values to long
 	protected static final double ROUND_UP_DOUBLE = 0.9999999665;
@@ -61,22 +66,22 @@ public class LehmanNoSqrtFact extends FindPrimeFact {
 	 * @param bits
 	 */
 	public LehmanNoSqrtFact(int bits, float balanceTrial) {
-//		maxTrialFactor = (int) Math.ceil(balanceTrial * Math.pow(1L << bits, ONE_THIRD));
+		//		maxTrialFactor = (int) Math.ceil(balanceTrial * Math.pow(1L << bits, ONE_THIRD));
 		maxTrialFactor = (int) Math.ceil(Math.pow(1L << bits, ONE_THIRD));
 		// using the trial division algorithm more doe not help
-//		this.balanceTrial = balanceTrial;
-//		balanceTrialCube = balanceTrial * balanceTrial * balanceTrial;
-//        smallFactoriser = new TrialPrimesDynamicFact(maxTrialFactor);
-        smallFactoriser = new TrialInvFact(maxTrialFactor);
+		//		this.balanceTrial = balanceTrial;
+		//		balanceTrialCube = balanceTrial * balanceTrial * balanceTrial;
+		//        smallFactoriser = new TrialPrimesDynamicFact(maxTrialFactor);
+		smallFactoriser = new TrialInvFact(maxTrialFactor);
 
 		initSquares();
 	}
 
 	protected void initSquares() {
 		// precalculate the square of all possible multipliers. This takes at most n^1/3
-//		float balanceTrialCube = balanceTrial * balanceTrial * balanceTrial;
-//		int kMax = (int) (Math.ceil(maxTrialFactor / balanceTrialCube));
-		int kMax = (int) (Math.ceil(maxTrialFactor));
+		//		float balanceTrialCube = balanceTrial * balanceTrial * balanceTrial;
+		//		int kMax = (int) (Math.ceil(maxTrialFactor / balanceTrialCube));
+		final int kMax = (int) (Math.ceil(maxTrialFactor));
 
 		sqrt = new double[kMax + 10];
 		sqrtInv = new double[kMax + 10];
@@ -100,7 +105,7 @@ public class LehmanNoSqrtFact extends FindPrimeFact {
 		// with this implementation the lehman part is not slower then the trial division
 		// we do not have to use a multiplier for the maximal factor were we apply the
 		// trial division phase
-//		double maxTrialFactor =  Math.ceil(balanceTrial * Math.pow(nOrig, ONE_THIRD));
+		//		double maxTrialFactor =  Math.ceil(balanceTrial * Math.pow(nOrig, ONE_THIRD));
 		double maxTrialFactor =  Math.ceil(Math.pow(nOrig, ONE_THIRD));
 		smallFactoriser.setMaxFactor((int) maxTrialFactor);
 		// factor out all small factors
@@ -118,10 +123,10 @@ public class LehmanNoSqrtFact extends FindPrimeFact {
 		}
 		// re-adjust the maximal factor we have to search for. If factors were found, which is quite
 		// often the case for arbitrary numbers, this cuts down the runtime dramatically.
-//		maxTrialFactor =  balanceTrial * Math.pow(n, ONE_THIRD);
+		//		maxTrialFactor =  balanceTrial * Math.pow(n, ONE_THIRD);
 		maxTrialFactor =  Math.pow(n, ONE_THIRD);
 		final int kMax = (int) (Math.ceil(maxTrialFactor));
-//		int kMax = (int) (Math.ceil(maxTrialFactor / balanceTrialCube));
+		//		int kMax = (int) (Math.ceil(maxTrialFactor / balanceTrialCube));
 		final int multiplier = 4;
 		final long n4 = n * multiplier;
 		final int multiplierSqrt = 2;
