@@ -54,7 +54,7 @@ public class LehmanNoSqrtFact extends FindPrimeFact {
 	// to initialize the square roots we have to determine the maximal k
 
 	double [] sqrt;
-	double [] sqrtInv;
+	float [] sqrtInv;
 
 	final TrialInvFact smallFactoriser;
 	int maxTrialFactor;
@@ -84,14 +84,14 @@ public class LehmanNoSqrtFact extends FindPrimeFact {
 		final int kMax = (int) (Math.ceil(maxTrialFactor));
 
 		sqrt = new double[kMax + 10];
-		sqrtInv = new double[kMax + 10];
+		sqrtInv = new float[kMax + 10];
 		for(int i = 1; i< sqrt.length; i++)
 		{
 			final double sqrtI = Math.sqrt(i);
 			sqrt[i] = sqrtI;
 			// Since a multiplication is
 			// faster then the division we also calculate the  root and the inverse
-			sqrtInv[i] = 1.0d / sqrtI;
+			sqrtInv[i] = (float) (1.0 / sqrtI);
 		}
 		System.out.printf(" sqrt table[0..%d] built: ", sqrt.length);
 		for(int i=0; i<Math.min(5, maxTrialFactor); i++){
@@ -138,19 +138,20 @@ public class LehmanNoSqrtFact extends FindPrimeFact {
 
 		// surprisingly it gives no speedup when using k's with many prime factors as lehman suggests
 		// for k=2 we know that x has to be even
+		final double sqrt4N = multiplierSqrt * sqrtN;
 		for (int k = 1; k <= kMax; k++) {
-			final double sqrt4kn = multiplierSqrt * sqrt[k] * sqrtN;
+			final double sqrt4kn = sqrt[k] * sqrt4N;
 			// adding a small constant to avoid rounding issues and rounding up is much slower then
 			// using the downcast and adding a constant close to 1. Took the constant from the yafu code
 			int xBegin = (int) (sqrt4kn + ROUND_UP_DOUBLE);
 			// use only multiplications instead of division here
 			// TODO use a float here
-			final double xRange = nPow1Sixth * sqrtInv[k];
+			final float xRange = nPow1Sixth * sqrtInv[k];
 			// since it is much bigger as SQRT (Long.MaxValue) we have to take a long
 			// for k > kMax / 16 xRange is less then 1 unfortunately i can not use this fact to
 			// speed up the runtime. Since the range for x is very small applying mod arguments to the x values
 			// makes not much sense.
-			final long xEnd = (long) (sqrt4kn + xRange);
+			final int xEnd = (int) (sqrt4kn + xRange);
 			// instead of using a step 1 here we use the mod argument from lehman
 			// to reduce the possible numbers to verify. But reducing the numbers by a factor
 			// 2 or 4 the runtime is only reduced by  something like 10%. This might be due to the Hotspot
