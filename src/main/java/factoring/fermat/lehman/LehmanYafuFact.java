@@ -1,9 +1,8 @@
 package factoring.fermat.lehman;
 
-import factoring.fermat.FermatFact;
-import factoring.math.PrimeMath;
-
 import java.util.Collection;
+
+import factoring.fermat.FermatFact;
 
 /****
  Code by Warren D. Smith, Dec 2011, to implement Lehman integer-factorization
@@ -123,268 +122,269 @@ import java.util.Collection;
  ***/
 public class LehmanYafuFact extends FermatFact {
 
-    static boolean[] issq1024;
-    static byte[] issq4199;
+	static boolean[] issq1024;
+	static byte[] issq4199;
 
-    static long gcd64(long a, long b){
-        long t;
-        if(a<b){ t=b; b=a; a=t; }
-        while(b != 0){
-            t = b;
-            b = a % b;
-            a = t;
-        }
-        return( a );
-    }
+	static long gcd64(long a, long b){
+		long t;
+		if(a<b){ t=b; b=a; a=t; }
+		while(b != 0){
+			t = b;
+			b = a % b;
+			a = t;
+		}
+		return( a );
+	}
 
-    static void MakeIssq(){
-        issq1024 = new boolean[1024];
-        issq4199 = new byte [4199];
-        int i;
-        for(i=0; i<1024; i++){ issq1024[i] = false; }
-        for(i=0; i<1024; i++){ issq1024[(i*i)%1024] = true; }
-        for(i=0; i<4199; i++){ issq4199[i] = 0; }
-        for(i=0; i<3465; i++){ issq4199[(i*i)%3465] |= 2; }
-        for(i=0; i<4199; i++){ issq4199[(i*i)%4199] |= 1; }
-        System.out.println("Square tables built.\n");
-    }
+	static void MakeIssq(){
+		issq1024 = new boolean[1024];
+		issq4199 = new byte [4199];
+		int i;
+		for(i=0; i<1024; i++){ issq1024[i] = false; }
+		for(i=0; i<1024; i++){ issq1024[(i*i)%1024] = true; }
+		for(i=0; i<4199; i++){ issq4199[i] = 0; }
+		for(i=0; i<3465; i++){ issq4199[(i*i)%3465] |= 2; }
+		for(i=0; i<4199; i++){ issq4199[(i*i)%4199] |= 1; }
+		System.out.println("Square tables built.\n");
+	}
 
-    static int[] prime = new int [6543]; //the 6542 primes up to 65536=2^16, then sentinel 65535 at end
+	static int[] prime = new int [6543]; //the 6542 primes up to 65536=2^16, then sentinel 65535 at end
 
-    static void MakePrimeTable(){
-        int i,j,k;
-        prime[0]=2;
-        prime[1]=3;
-        prime[2]=5;
-        k=3;
-        for(i=7; i<65536; i+=2){
-            boolean isPime = true;
-            for(j=0; prime[j]* prime[j] <= i && isPime; j++){
-                if(i%prime[j]==0)
-                    isPime = false;
-            }
-            if (isPime) {
-                prime[k] = i;
-                k++;
-            }
-        }
-        assert(k==6542);
-        prime[k] = 65535; //sentinel
-        System.out.printf("Prime table[0..%d] built: ", k);
-        for(i=0; i<20; i++){ System.out.printf("%d,", prime[i]); }
-        System.out.printf("%d,...,%d,(%d)\n", prime[20],prime[6541],prime[6542]);
-    }
+	static void MakePrimeTable(){
+		int i,j,k;
+		prime[0]=2;
+		prime[1]=3;
+		prime[2]=5;
+		k=3;
+		for(i=7; i<65536; i+=2){
+			boolean isPime = true;
+			for(j=0; prime[j]* prime[j] <= i && isPime; j++){
+				if(i%prime[j]==0)
+					isPime = false;
+			}
+			if (isPime) {
+				prime[k] = i;
+				k++;
+			}
+		}
+		assert(k==6542);
+		prime[k] = 65535; //sentinel
+		System.out.printf("Prime table[0..%d] built: ", k);
+		for(i=0; i<20; i++){ System.out.printf("%d,", prime[i]); }
+		System.out.printf("%d,...,%d,(%d)\n", prime[20],prime[6541],prime[6542]);
+	}
 
-    @Override
-    public long findFactors(long n, Collection<Long> factors) {
-        if (issq1024 == null) {
-            MakeIssq();
-            MakePrimeTable();
-        }
-        long factor = LehmanFactor(n, 2.5, 0.0, true, 1.0);
-        if (factor != n) {
-            factors.add(n / factor);
-        }
-        return factor;
-    }
+	@Override
+	public long findFactors(long n, Collection<Long> factors) {
+		if (issq1024 == null) {
+			MakeIssq();
+			MakePrimeTable();
+		}
+		final long factor = LehmanFactor(n, 1, 0.0, true, 1.0);
+		//        long factor = LehmanFactor(n, 2.5, 0.0, true, 1.0);
+		if (factor != n) {
+			factors.add(n / factor);
+		}
+		return factor;
+	}
 
-    static long LehmanFactor(long N, double Tune, double HartOLF, boolean DoTrial, double CutFrac){
-        int b,p,k,r,B,U,Bred,Bred2,inc,FirstCut,ip;
-        long a,c,kN,kN4,B2,N480,UU;
-        double Tune2, Tune3, x;
-        if((N&1)==0) return(2); //N is even
-        if(Tune<0.1){
-            System.out.printf("Sorry0, Lehman only implemented for Tune>=0.1\n");
-            return(0);
-        }
-        B = (int) (Tune * Math.pow(N, 1.0/3.0));
-        FirstCut = (int) (CutFrac*B);
-        if(FirstCut<84){ FirstCut=84; } //assures prime N will not activate "wrong" Lehman return
-        if(FirstCut>65535){ FirstCut = 65535; }
+	static long LehmanFactor(long N, double Tune, double HartOLF, boolean DoTrial, double CutFrac){
+		int b,p,k,r,B,U,Bred,Bred2,inc,FirstCut,ip;
+		long a,c,kN,kN4,B2,N480,UU;
+		double Tune2, Tune3, x;
+		if((N&1)==0) return(2); //N is even
+		if(Tune<0.1){
+			System.out.printf("Sorry0, Lehman only implemented for Tune>=0.1\n");
+			return(0);
+		}
+		B = (int) (Tune * Math.pow(N, 1.0/3.0));
+		FirstCut = (int) (CutFrac*B);
+		if(FirstCut<84){ FirstCut=84; } //assures prime N will not activate "wrong" Lehman return
+		if(FirstCut>65535){ FirstCut = 65535; }
 
-        if(DoTrial){
-            for(ip=1; ; ip++){ //trial division
-                p = prime[ip];
-                if(p>FirstCut) break;
-                if(N%p==0) {
-                    N = N/p;
-                    if (N == 1)
-                    return (p);
-                }
-            }
-        }
-        B = (int) (Tune * Math.pow(N, 1.0/3.0));
+		if(DoTrial){
+			for(ip=1; ; ip++){ //trial division
+				p = prime[ip];
+				if(p>FirstCut) break;
+				if(N%p==0) {
+					N = N/p;
+					if (N == 1)
+						return (p);
+				}
+			}
+		}
+		B = (int) (Tune * Math.pow(N, 1.0/3.0));
 
-        if(N>=8796393022207L){
-            System.out.printf("Sorry1, Lehman only implemented for N<8796393022207\n");
-            return(0);
-        }
-        Tune2 = Tune*Tune;
-        Tune3 = Tune2*Tune;
-        Bred = (int) (B / Tune3);
+		if(N>=8796393022207L){
+			System.out.printf("Sorry1, Lehman only implemented for N<8796393022207\n");
+			return(0);
+		}
+		Tune2 = Tune*Tune;
+		Tune3 = Tune2*Tune;
+		Bred = (int) (B / Tune3);
 
-        if(HartOLF>0.0){ // Hart's "OLF" algorithm is tried to get more speed on average...?
-            assert(gcd64(480, N)==1);
-            N480 = N*480;
-            UU = Long.MAX_VALUE / N480;
-            Bred2 = (int) (B * HartOLF);
-            if(UU>Bred2) UU=Bred2;
-            UU *= N480;
-            for(kN=N480; kN<UU; kN+=N480){
-                a = (long) (Math.sqrt((double)kN)+0.999999999999999);
-                c = (long)a*(long)a-kN;
-                assert(c>=0);
-                if(issq1024[(int)(c & 1023)]){
-                    if((issq4199[(int)(c%3465)]&2) != 0){
-                        if((issq4199[(int)(c%4199)]&1) != 0){
-                            b = (int) Math.sqrt(c+0.9);
-                            if(b*b==c){
-                                if(a>=b){
-                                    B2 = gcd64((long)(a-b), N);
-                                    if(1<B2 && B2<N){ return(B2); }
-                                }
-                                B2 = gcd64((long)(a+b), N);
-                                if(1<B2 && B2<N){ return(B2); }
-                            }
-                        }
-                    }
-                }
-//                        if(PrimeMath.isSquare(c)){
-//                            b = (int) Math.SQRT(c+0.9);
-//                            if(b*b==c){
-//                                if(a>=b){
-//                                    B2 = gcd64((long)(a-b), N);
-//                                    if(1<B2 && B2<N){ return(B2); }
-//                                }
-//                                B2 = gcd64((long)(a+b), N);
-//                                if(1<B2 && B2<N){ return(B2); }
-//                            }
-//                        }
-            }
-        }
+		if(HartOLF>0.0){ // Hart's "OLF" algorithm is tried to get more speed on average...?
+			assert(gcd64(480, N)==1);
+			N480 = N*480;
+			UU = Long.MAX_VALUE / N480;
+			Bred2 = (int) (B * HartOLF);
+			if(UU>Bred2) UU=Bred2;
+			UU *= N480;
+			for(kN=N480; kN<UU; kN+=N480){
+				a = (long) (Math.sqrt(kN)+0.999999999999999);
+				c = a*a-kN;
+				assert(c>=0);
+				if(issq1024[(int)(c & 1023)]){
+					if((issq4199[(int)(c%3465)]&2) != 0){
+						if((issq4199[(int)(c%4199)]&1) != 0){
+							b = (int) Math.sqrt(c+0.9);
+							if(b*b==c){
+								if(a>=b){
+									B2 = gcd64(a-b, N);
+									if(1<B2 && B2<N){ return(B2); }
+								}
+								B2 = gcd64(a+b, N);
+								if(1<B2 && B2<N){ return(B2); }
+							}
+						}
+					}
+				}
+				//                        if(PrimeMath.isSquare(c)){
+					//                            b = (int) Math.SQRT(c+0.9);
+				//                            if(b*b==c){
+				//                                if(a>=b){
+				//                                    B2 = gcd64((long)(a-b), N);
+				//                                    if(1<B2 && B2<N){ return(B2); }
+				//                                }
+				//                                B2 = gcd64((long)(a+b), N);
+				//                                if(1<B2 && B2<N){ return(B2); }
+				//                            }
+				//                        }
+			}
+		}
 
-        B2 = B*B;
-        kN = 0;
+		B2 = B*B;
+		kN = 0;
 
-        //Lehman suggested (to get more average speed) trying highly-divisible k first. However,
-        //my experiments on trying to to that have usually slowed things down versus this simple loop:
-        for(k=1; k<=Bred; k++){
-            if((k&1) != 0)
-            { inc=4; r= (int) ((k+N)%4); }
-            else{ inc=2; r=1; }
-            kN += N;
-            assert(kN == k*N);
-            if(kN >= Long.MAX_VALUE){
-                System.out.printf("Sorry2, overflow, N=%llu is too large\n", N);
-                return(0);
-            }
-            //Actually , even if overflow occurs here, one could still use approximate
-            //arithmetic to compute kN4's most-signif 64 bits only, then still exactly compute x...
-            //With appropriate code alterations is should be possible to extent the range... but
-            //I have not tried that idea for trying to "cheat" to gain more precision.
-            kN4 = kN*4;
-            x = Math.sqrt((double)kN);
-            a = (long) x;
-            if((long)a*(long)a==kN){
-                B2 = gcd64((long)a, N);
-                assert(B2>1);
-                assert(B2<N);
-                return(B2);
-            }
-            x *= 2;
-            a = (long) (x+0.9999999665); //very carefully chosen.
-//            a = (long) Math.ceil(x); //very carefully chosen.
-            //Let me repeat that: a = x+0.9999999665.  Really.
-            b= (int) (a%inc);  b = (int) (a + (inc+r-b)%inc);   //b is a but adjusted upward to make b%inc=r.
-            assert( b%inc == r );
-            assert( b>=a );
-            assert( b<=a+4 );
-            c = (long)b*(long)b - kN4;  //this is the precision bottleneck.
-            //At this point, I used to do a test:
-            //if( c+kN4 != (long)b*(long)b ) //overflow-caused failure: exit!
-            //	System.out.printf("Sorry3, unrepairable overflow, N=%llu is too large\n", N);
-            //  return(0);
-            //However, I've now reconsidered.  I claim C language computes c mod 2^64 correctly.
-            //If overflow happens, this is irrelevant because c is way smaller than 2^64, kN4, and b*b.
-            //Hence c should be correct, despite the overflow. Hence I am removing this error-exit.
+		//Lehman suggested (to get more average speed) trying highly-divisible k first. However,
+		//my experiments on trying to to that have usually slowed things down versus this simple loop:
+		for(k=1; k<=Bred; k++){
+			if((k&1) != 0)
+			{ inc=4; r= (int) ((k+N)%4); }
+			else{ inc=2; r=1; }
+			kN += N;
+			assert(kN == k*N);
+			if(kN >= Long.MAX_VALUE){
+				System.out.printf("Sorry2, overflow, N=%llu is too large\n", N);
+				return(0);
+			}
+			//Actually , even if overflow occurs here, one could still use approximate
+			//arithmetic to compute kN4's most-signif 64 bits only, then still exactly compute x...
+			//With appropriate code alterations is should be possible to extent the range... but
+			//I have not tried that idea for trying to "cheat" to gain more precision.
+			kN4 = kN*4;
+			x = Math.sqrt(kN);
+			a = (long) x;
+			if(a*a==kN){
+				B2 = gcd64(a, N);
+				assert(B2>1);
+				assert(B2<N);
+				return(B2);
+			}
+			x *= 2;
+			a = (long) (x+0.9999999665); //very carefully chosen.
+			//            a = (long) Math.ceil(x); //very carefully chosen.
+			//Let me repeat that: a = x+0.9999999665.  Really.
+			b= (int) (a%inc);  b = (int) (a + (inc+r-b)%inc);   //b is a but adjusted upward to make b%inc=r.
+			assert( b%inc == r );
+			assert( b>=a );
+			assert( b<=a+4 );
+			c = (long)b*(long)b - kN4;  //this is the precision bottleneck.
+			//At this point, I used to do a test:
+			//if( c+kN4 != (long)b*(long)b ) //overflow-caused failure: exit!
+			//	System.out.printf("Sorry3, unrepairable overflow, N=%llu is too large\n", N);
+			//  return(0);
+			//However, I've now reconsidered.  I claim C language computes c mod 2^64 correctly.
+			//If overflow happens, this is irrelevant because c is way smaller than 2^64, kN4, and b*b.
+			//Hence c should be correct, despite the overflow. Hence I am removing this error-exit.
 
-            U = (int) (x + B2/(2*x));
-            //old code was  U = SQRT((double)(B2+kN4+0.99));   and was 4% slower.
+			U = (int) (x + B2/(2*x));
+			//old code was  U = SQRT((double)(B2+kN4+0.99));   and was 4% slower.
 
-            //Below loop is: for(all integers a with 0<=a*a-kN4<=B*B and with a%inc==r)
-            for(a=b;  a<=U;  c+=inc*(a+a+inc), a+=inc ){
-                //again, even though this assert can fail due to overflow, that overflow should not matter:
-                //assert( c == (long)a*(long)a-kN4 );
-                /** Programming trick:    naive code:     c = a*a-kN4;
+			//Below loop is: for(all integers a with 0<=a*a-kN4<=B*B and with a%inc==r)
+			for(a=b;  a<=U;  c+=inc*(a+a+inc), a+=inc ){
+				//again, even though this assert can fail due to overflow, that overflow should not matter:
+				//assert( c == (long)a*(long)a-kN4 );
+				/** Programming trick:    naive code:     c = a*a-kN4;
                  In the inner loop c is bounded between 0 and T^2*N^(2/3)
                  and can be updated additively by adding inc*(anew+aold) to it
                  when we update a to anew=a+inc. This saves a multiplication in
                  the inner loop and/or allows us to reduce precision. **/
-                if(issq1024[(int)(c & 1023)]){
-                    if((issq4199[(int)(c%3465)]&2) != 0){
-                        if((issq4199[(int)(c%4199)]&1) != 0){
-                            b = (int) Math.sqrt(c + 0.9);
-                            if(b*b==c){ //square found
-                                B2 = gcd64((long)(a+b), N);
-                                assert(B2>1);
-//                                if(B2>=N){ System.out.printf("theorem failure: B2=%llu N=%llu\n", B2,N); }
-                                return(B2);
-                            }
-                        }
-                    }
-                }
-//                if(PrimeMath.isSquare(c)){
-//                            b = (int) Math.SQRT(c + 0.9);
-//                            if(b*b==c) { //square found
-//                                B2 = gcd64((long) (a + b), N);
-//                                assert (B2 > 1);
-//                                if (B2 >= N) {
-//                                    System.out.printf("theorem failure: B2=%llu N=%llu\n", B2, N);
-//                                }
-//                                return (B2);
-//                            }
-//                }
-            }
-        }
+				if(issq1024[(int)(c & 1023)]){
+					if((issq4199[(int)(c%3465)]&2) != 0){
+						if((issq4199[(int)(c%4199)]&1) != 0){
+							b = (int) Math.sqrt(c + 0.9);
+							if(b*b==c){ //square found
+								B2 = gcd64(a+b, N);
+								assert(B2>1);
+								//                                if(B2>=N){ System.out.printf("theorem failure: B2=%llu N=%llu\n", B2,N); }
+								return(B2);
+							}
+						}
+					}
+				}
+				//                if(PrimeMath.isSquare(c)){
+				//                            b = (int) Math.SQRT(c + 0.9);
+				//                            if(b*b==c) { //square found
+				//                                B2 = gcd64((long) (a + b), N);
+				//                                assert (B2 > 1);
+				//                                if (B2 >= N) {
+				//                                    System.out.printf("theorem failure: B2=%llu N=%llu\n", B2, N);
+				//                                }
+				//                                return (B2);
+				//                            }
+				//                }
+			}
+		}
 
-        //square-finding has failed so resume missing part of trial division:
-        if(DoTrial){
-            if(B>65535) B = 65535;
-            for(ip=0 ; ; ip++){
-                p = prime[ip];
-                if(p>=B) break;
-                if(N%p==0) return(p);
-            }
-        }
+		//square-finding has failed so resume missing part of trial division:
+		if(DoTrial){
+			if(B>65535) B = 65535;
+			for(ip=0 ; ; ip++){
+				p = prime[ip];
+				if(p>=B) break;
+				if(N%p==0) return(p);
+			}
+		}
 
-        return(N); //N is prime
-    }
-
-
-    public static void main(String [] args){
-        long N, M;
-        MakeIssq();
-        MakePrimeTable();
+		return(N); //N is prime
+	}
 
 
-        //Here are some typical calls to LehmanFactor.
-        //  LehmanFactor(N, (tune from 0.1 to 9.6), (tune from 0 to 5.0),
-        //            (TRUE unless want to skip trial factoring which would be unusual),
-        //            (TRUE if want to try OLF speculative speedup FALSE if skip it) );
-        N=3141592651L;
-        M = LehmanFactor(N, 2.5, 0.0, true, 0.4);
-        System.out.println("A factor of " + N + " is " + M);
+	public static void main(String [] args){
+		long N, M;
+		MakeIssq();
+		MakePrimeTable();
 
-        N=3141592661L; //prime
-        M = LehmanFactor(N, 2.5, 0.0, true, 0.5);
-        System.out.println("A factor of " + N + " is " + M);
 
-        N = 7919; N *= 10861;
-        M = LehmanFactor(N, 1.0, 0.0, true, 0.1);
-        System.out.println("A factor of " + N + " is " + M);
+		//Here are some typical calls to LehmanFactor.
+		//  LehmanFactor(N, (tune from 0.1 to 9.6), (tune from 0 to 5.0),
+		//            (TRUE unless want to skip trial factoring which would be unusual),
+		//            (TRUE if want to try OLF speculative speedup FALSE if skip it) );
+		N=3141592651L;
+		M = LehmanFactor(N, 2.5, 0.0, true, 0.4);
+		System.out.println("A factor of " + N + " is " + M);
 
-        N =  1299709; N *=  2750159;
-        M = LehmanFactor(N, 1.0, 0.0, false, 0.1);
-        System.out.println("A factor of " + N + " is " + M);
-    }
+		N=3141592661L; //prime
+		M = LehmanFactor(N, 2.5, 0.0, true, 0.5);
+		System.out.println("A factor of " + N + " is " + M);
+
+		N = 7919; N *= 10861;
+		M = LehmanFactor(N, 1.0, 0.0, true, 0.1);
+		System.out.println("A factor of " + N + " is " + M);
+
+		N =  1299709; N *=  2750159;
+		M = LehmanFactor(N, 1.0, 0.0, false, 0.1);
+		System.out.println("A factor of " + N + " is " + M);
+	}
 }

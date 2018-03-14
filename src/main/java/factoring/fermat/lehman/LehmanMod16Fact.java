@@ -41,51 +41,31 @@ import factoring.trial.TrialInvFact;
  * and let the JVM do the optimization here. When adapting to other languages this should be done.
  * Created by Thilo Harich on 28.06.2017.
  */
-public class LehmanNoSqrtFact extends FindPrimeFact {
+public class LehmanMod16Fact extends FindPrimeFact {
 
 	static double ONE_THIRD = 1.0/3;
-
-	float maxFactorMultiplier = 1.0f;
-	float maxFactorMultiplierCube;
 
 	// This is a constant that is below 1 for rounding up double values to long
 	protected static final double ROUND_UP_DOUBLE = 0.9999999665;
 
 	double [] sqrt;
 	float [] sqrtInv;
+	byte [][] nextX;
 	// a fast way to do the trial division phase
 	final TrialInvFact smallFactoriser;
 	int maxTrialFactor;
-
 
 	/**
 	 * create a instance that can handle factorizations of numbers up to 2^bits
 	 * This uses memory 2^(bits/3)
 	 * more then 42 bits are not allowed since the precision of long does not allow more here
-	 * @param bits the maximum number of bits the algorithm is going to work.
-	 * @param maxFactorMultiplier Defines the size of the factors the algorithm is first looking for.
-	 * The algorithm is working best for number where the lowest factor is
-	 * maxFactorMultiplier * n^1/3 or higher. If maxFactorMultiplier is 1 or lower we first do trial division for numbers below n^1/3 then
-	 * do the lehman factorization above n^1/3. In this case the running time is bounded by max(maximal factor, c*n^1/3 / log(n)).
-	 * For maxFactorMultiplier >= 1 we first inspect numbers above maxFactorMultiplier * n^1/3 with the lehman factorization.
-	 * The running time in this stage is 1/maxFactorMultiplier * n^1/3. After completing this phase we do
-	 * trial division for numbers below maxFactorMultiplier * n^1/3 in time maxFactorMultiplier * n^1/3  / log(n). This means if you know that there are
-	 * only factor above maxFactorMultiplier * n^1/3 the runtime is bounded by 1/maxFactorMultiplier * n^1/3.<br><br>
-	 * Use<br>
-	 * maxFactorMultiplier = 1<br>
-	 * - if you do not know anything about the numbers to factorize<br>
-	 * - if you know the maximal factors can not exceed n^1/3<br>
-	 * maxFactorMultiplier = a > 1<br>
-	 * - if you know for most of the numbers the maximal factors will exceed a*n^1/3<br>
-	 * In the last case {@link #findPrimeFactors(long, Collection)} might return a composite number
-	 * TODO fix this behaviour
+	 * @param bits
 	 */
-	public LehmanNoSqrtFact(int bits, float maxFactorMultiplierIN) {
-		if (bits > 41)
-			throw new IllegalArgumentException("numbers above 41 bits can not be factorized");
-		maxFactorMultiplier = maxFactorMultiplierIN < 1 ? 1 : maxFactorMultiplierIN;
-		maxTrialFactor = (int) Math.ceil(maxFactorMultiplier * Math.pow(1L << bits, ONE_THIRD));
-		maxFactorMultiplierCube = maxFactorMultiplier * maxFactorMultiplier * maxFactorMultiplier;
+	public LehmanMod16Fact(int bits) {
+		// in contrast to the YAFU impl it makes no sense to do more trial divisions
+		// and do not waste time in the slow lehman phase. This might be due to
+		// the more performant impl of the lehman phase
+		maxTrialFactor = (int) Math.ceil(Math.pow(1L << bits, ONE_THIRD));
 		smallFactoriser = new TrialInvFact(maxTrialFactor);
 		initSquares();
 	}
@@ -96,6 +76,7 @@ public class LehmanNoSqrtFact extends FindPrimeFact {
 
 		sqrt = new double[kMax + 10];
 		sqrtInv = new float[kMax + 10];
+		nextX = new byte[16][16];
 		for(int i = 1; i< sqrt.length; i++)
 		{
 			final double sqrtI = Math.sqrt(i);
@@ -109,20 +90,35 @@ public class LehmanNoSqrtFact extends FindPrimeFact {
 			System.out.printf("%f ", sqrt[i]);
 		}
 		System.out.printf(" ... %f %f\n", sqrt[sqrt.length-2],sqrt[sqrt.length-1]);
+
+		final int mod = 16;
+		final boolean [] squares = new boolean[16];
+		for (int i = 0; i< mod; i++)
+			squares [(i*i) % 16] = true;
+
+		for (int kn = 0; kn< mod; kn++)
+		{
+			int lastX = 16;
+			for (int x = mod-1; x >= 0; x--){
+				final int right = PrimeMath.mod(x*x - kn, 16);
+				nextX[kn][x] = (byte) (lastX - x -1);
+				if (squares[right]){
+					lastX = x;
+				}
+			}
+			nextX[kn][mod-1] = (byte) (lastX);
+		}
 	}
 
 	@Override
-	public long findPrimeFactors(long n, Collection<Long> factors) {
-		if (n > 1l << 41)
-			throw new IllegalArgumentException("numbers above 41 bits can not be factorized");
+	public long findPrimeFactors(long nOrig, Collection<Long> factors) {
 		// with this implementation the lehman part is not slower then the trial division
-		// we only apply the multiplier if we want to cut down the numbers to be tested
-		maxTrialFactor =  (int) Math.ceil(maxFactorMultiplier * Math.pow(n, ONE_THIRD));
-		//		maxTrialFactor =  (int) Math.ceil(Math.pow(nOrig, ONE_THIRD));
+		// we do not have to use a multiplier for the maximal factor were we apply the
+		// trial division phase
+		maxTrialFactor =  (int) Math.ceil(Math.pow(nOrig, ONE_THIRD));
 		smallFactoriser.setMaxFactor(maxTrialFactor);
-		// factor out all small factors if
-		if (maxFactorMultiplier <= 1)
-			n = smallFactoriser.findPrimeFactors(n, factors);
+		// factor out all small factors
+		final long n = smallFactoriser.findPrimeFactors(nOrig, factors);
 
 		if (n<maxTrialFactor)
 			return n;
@@ -137,14 +133,13 @@ public class LehmanNoSqrtFact extends FindPrimeFact {
 		// re-adjust the maximal factor we have to search for. If factors were found, which is quite
 		// often the case for arbitrary numbers, this cuts down the runtime dramatically.
 		// TODO maybe we can do even better here?
-		maxTrialFactor =  (int) Math.ceil(maxFactorMultiplier * Math.pow(n, ONE_THIRD));
-		//		final int kMax = maxTrialFactor;
-		final int kMax = (int) (Math.ceil(maxTrialFactor / maxFactorMultiplierCube));
+		maxTrialFactor =  (int) Math.pow(n, ONE_THIRD);
+		final int kMax = maxTrialFactor;
 		final long n4 = 4 * n;
 		final double sqrtN = Math.sqrt(n);
-		final int nMod4 = (int) (n % 4);
+		final int nMod16 = (int) (n % 16);
 		// we calculate n^1/6 = n^1/3*n^1/3 / n^1/2 -> we no not need to use Math
-		final long nPow2Third = ((long)maxTrialFactor) * ((long)maxTrialFactor);
+		final int nPow2Third = maxTrialFactor * maxTrialFactor;
 		final float nPow1Sixth = (float) ((nPow2Third / 4) / sqrtN);
 		// surprisingly it gives no speedup when using k's with many prime factors as lehman suggests
 		// for k=2 we know that x has to be even and results in a factor more often
@@ -160,20 +155,13 @@ public class LehmanNoSqrtFact extends FindPrimeFact {
 			// instead of using a step 1 here we use the mod argument from lehman
 			// to reduce the possible numbers to verify.
 			// TODO do a mod argument here.
-			// xBegin = nextX[kmodS, xModT], where S*T < n^1/6 fit in L1 cache example s,t = 32
-			int xStep = 2;
-			if (k % 2 == 0) {
-				xBegin |= 1;
-			}
-			else{
-				xStep = 4;
-				xBegin = xBegin + PrimeMath.mod(k + nMod4 - xBegin, 4);
-				//				if (xBegin % 2 == 1)
-				//					xBegin++;
-			}
-			// since the upper limit is the lower limit plus a number lower then 1
-			// in most of the cases checking the upper limit is very helpful
-			for(long x = xBegin; x <= xEnd; x+= xStep) {
+
+			final int knMod16 = k*nMod16 % 16;
+			int xMod16 = xBegin % 16;
+			xBegin += nextX[knMod16][xMod16];
+
+			long x = xBegin;
+			while(x <= xEnd) {
 				// here we start using long values
 				// in java the trick to replace the multiplication with an addition does not help
 				final long x2 = x * x;
@@ -193,12 +181,10 @@ public class LehmanNoSqrtFact extends FindPrimeFact {
 						//						return 1;
 					}
 				}
+				xMod16 = (int) (x+1 % 16);
+				x += nextX[knMod16][xMod16];
 			}
 		}
-		// if we have not found a factor we still have to do the trial division phase
-		if (maxFactorMultiplier > 1)
-			n = smallFactoriser.findPrimeFactors(n, factors);
-
 		return n;
 	}
 }
