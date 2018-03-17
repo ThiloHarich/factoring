@@ -7,19 +7,17 @@ import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Random;
 
-import de.tilman_neumann.math.factor.CombinedFactorAlgorithm;
-import de.tilman_neumann.math.factor.FactorAlgorithm;
-import factoring.fermat.lehman.LehmanBigFact;
-import factoring.fermat.lehman.LehmanNoSqrtFact;
-import factoring.fermat.lehman.LehmanYafuFact;
-import factoring.squfof.Squfof31;
 import org.junit.Test;
 
 import com.google.common.collect.Multiset;
 import com.google.common.collect.TreeMultiset;
 
 import factoring.fermat.FermatFact;
+import factoring.fermat.lehman.LehmanNoSqrtFact;
+import factoring.fermat.lehman.LehmanSmallRangeFact;
+import factoring.fermat.lehman.LehmanYafuFact;
 
 public class ErrorShiftTest {
 
@@ -45,18 +43,18 @@ public class ErrorShiftTest {
 		final int bits = 8;
 		final int bitsMax = 32;
 
-//		final Factorizer factorizer1 = new TrialPrimesDynamicFact(1 << bits + 4);
+		//		final Factorizer factorizer1 = new TrialPrimesDynamicFact(1 << bits + 4);
 		//		Factorizer factorizer1 = new Fermat24();
-//		Factorizer factorizer1 = new LehmanBigFact(bitsMax, 1);
-		Factorizer factorizer1 = new Squfof31();
+		//		Factorizer factorizer1 = new LehmanBigFact(bitsMax, 1);
+		//		final Factorizer factorizer2 = new LehmanMod16Fact(bitsMax);
 		//		final Factorizer factorizer2 = new LehmanApproxFact();
-				final Factorizer factorizer2 = new LehmanNoSqrtFact(bitsMax, 1);
-		//		Factorizer factorizer1 = new LehmanYafuFact();
-//		final Factorizer factorizer2 = new TrialInvFact(1 << bits + 4);
+		final Factorizer factorizer2 = new LehmanNoSqrtFact(bitsMax, 1.01f);
+		final Factorizer factorizer1 = new LehmanYafuFact();
+		//		final Factorizer factorizer2 = new TrialInvFact(1 << bits + 4);
 
 		//		for (int i = 65538; i < 1 << (bits + 1); i++)
 		long begin = (1L << bits) +1;  // = 2^4 * 3^2 * 5
-		begin = 105L	; // * 23
+		begin = 315l	; // * 23
 		// 29*23 * 53
 		// 29*53 * 23 ->
 		while (begin < Long.MAX_VALUE / 1000)
@@ -82,46 +80,94 @@ public class ErrorShiftTest {
 
 	}
 	@Test
+	public void testPerfHard(){
+		final int bits = 35;
+		final int numPrimes = 100000;
+		final long[] semiprimes = makeSemiPrimesList(bits, bits/2-1, numPrimes);
+
+		System.out.println("finished making hard numbers");
+		final long start = System.currentTimeMillis();
+		final Factorizer factorizer2 = new LehmanNoSqrtFact(bits, 3f);
+		final long end = System.currentTimeMillis();
+		System.out.println("time for setup : " + (end - start));
+		//		final Factorizer factorizer1 = new LehmanYafuFact();
+		final Factorizer factorizer1 = new LehmanNoSqrtFact(bits, 1f);
+
+		findFactors(factorizer1, semiprimes);
+		findFactors(factorizer2, semiprimes);
+
+		findFactors(factorizer1, semiprimes);
+		findFactors(factorizer2, semiprimes);
+
+		findFactors(factorizer1, semiprimes);
+		findFactors(factorizer2, semiprimes);
+
+
+	}
+
+	protected void findFactors(final Factorizer factorizer1, final long[] semiprimes) {
+		final long start = System.nanoTime();
+		for (final long semiprime : semiprimes) {
+			factorizer1.findAllPrimeFactors(semiprime);
+		}
+		final long time = System.nanoTime() - start;
+		final String name = String.format("%-20s", factorizer1.getClass().getSimpleName());
+		System.out.println(name + " :    \t" + (time));
+	}
+	private long[] makeSemiPrimesList(int bits, int smallFactorBits, int numPrimes) {
+		final long[] semiPrimes = new long[numPrimes];
+		for (int i=0; i< numPrimes; i++)
+		{
+			final Random rnd = new Random();
+			final BigInteger fact1 = BigInteger.probablePrime(smallFactorBits, rnd);
+			final BigInteger fact2 = BigInteger.probablePrime(bits - smallFactorBits, rnd);
+			semiPrimes[i] = fact1.longValue() * fact2.longValue();
+		}
+
+		return semiPrimes;
+	}
+
+	@Test
 	public void testPerf()
 	{
-				final int bits = 40;
-//		final int bits = 35;
+		final int bits = 40;
+		//		final int bits = 35;
 		final int range = 40000;
 
 
-//		final Factorizer factorizer1 = new TrialPrimesDynamicFact(1 << bits/2);
-				Factorizer factorizer2 = new LehmanBigFact(bits, 1);
+		//		final Factorizer factorizer1 = new TrialPrimesDynamicFact(1 << bits/2);
+		final Factorizer factorizer1 = new LehmanSmallRangeFact(bits, 1);
 		//		final Factorizer factorizer2 = new LehmanRange1Fact();
 		//		Factorizer factorizer1 = new HartFact();
 		//		Factorizer factorizer2 = new FermatResiduesRec();
-//		final Factorizer factorizer2 = new TrialInvFact(1 << bits/2);
+		//		final Factorizer factorizer2 = new TrialInvFact(1 << bits/2);
 		//		Factorizer factorizer2 = new FermatFact();
-				final Factorizer factorizer1 = new LehmanNoSqrtFact(bits, 1.0f);
+		final Factorizer factorizer2 = new LehmanNoSqrtFact(bits, 1.01f);
 		//		final Factorizer factorizer2 = new TrialWithPrimesFact();
-//				final FactorAlgorithm factorizer2 = new CombinedFactorAlgorithm(1);
-//				Factorizer factorizer3 = new LehmanYafuFact();
+		//				final FactorAlgorithm factorizer2 = new CombinedFactorAlgorithm(1);
+		//		final Factorizer factorizer1 = new LehmanYafuFact();
 
 		//		((TrialFactMod)factorizer1).setLimit(1 << 16);
 
 		final int factors = getFactors(factorizer1, bits, range);
 		final int factors2 =  getFactors(factorizer2, bits, range);
-//		final int factors13 =  getFactors(factorizer3, bits);
+		//		final int factors13 =  getFactors(factorizer3, bits);
 
-		assertEquals(factors, factors2);
+		//		assertEquals(factors, factors2);
 
 		final int factors3 = getFactors(factorizer1, bits,range);
 		final int factors4 =  getFactors(factorizer2, bits, range);
-//		final int factors14 =  getFactors(factorizer3, bits);
+		//		final int factors14 =  getFactors(factorizer3, bits);
 
 		//		assertEquals(factors3, factors4);
 
 		final int factors5 = getFactors(factorizer1, bits, range);
 		final int factors6 =  getFactors(factorizer2, bits, range);
-//		final int factors15 =  getFactors(factorizer3, bits);
+		//		final int factors15 =  getFactors(factorizer3, bits);
 
 		final int factors7 = getFactors(factorizer1, bits, range);
 		final int factors8 =  getFactors(factorizer2, bits, range);
-//		final int factors9 =  getFactors(factorizer3, bits);
+		//		final int factors9 =  getFactors(factorizer3, bits);
 
 		//		assertEquals(factors5, factors6);
 	}
@@ -129,12 +175,12 @@ public class ErrorShiftTest {
 	public int getFactors(Factorizer factorizer, int bits, int range) {
 
 		// warmup
-		final int factors = 0;
+		int factors = 0;
 		final long begin = (1l << bits) +1584;
 		final long start = System.nanoTime();
 		for (long i = begin; i < begin + range; i++)
 		{
-			factorizer.findAllPrimeFactors(i).size();
+			factors += factorizer.findAllPrimeFactors(i).size();
 		}
 		final long time = System.nanoTime() - start;
 		final String name = String.format("%-20s", factorizer.getClass().getSimpleName());
@@ -142,21 +188,21 @@ public class ErrorShiftTest {
 		return factors;
 	}
 
-	public int getFactors(FactorAlgorithm factorizer, int bits, int range) {
-
-		// warmup
-		final int factors = 0;
-		final long begin = (1l << bits) +1584;
-		final long start = System.nanoTime();
-		for (long i = begin; i < begin + range; i++)
-		{
-			factorizer.factor(BigInteger.valueOf(i)).size();
-		}
-		final long time = System.nanoTime() - start;
-		final String name = String.format("%-20s", factorizer.getClass().getSimpleName());
-		System.out.println(name + " :    \t" + (time));
-		return factors;
-	}
+	//	public int getFactors(FactorAlgorithm factorizer, int bits, int range) {
+	//
+	//		// warmup
+	//		final int factors = 0;
+	//		final long begin = (1l << bits) +1584;
+	//		final long start = System.nanoTime();
+	//		for (long i = begin; i < begin + range; i++)
+	//		{
+	//			factorizer.factor(BigInteger.valueOf(i)).size();
+	//		}
+	//		final long time = System.nanoTime() - start;
+	//		final String name = String.format("%-20s", factorizer.getClass().getSimpleName());
+	//		System.out.println(name + " :    \t" + (time));
+	//		return factors;
+	//	}
 
 
 	private void checkFactors(int p) {

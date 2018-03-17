@@ -62,15 +62,7 @@ public class TrialInvFact extends FindPrimeFact {
 		}
 		//		assert(k==6542);
 		//		primesInv[k] = 65535; //sentinel
-		System.out.printf("Prime table[0..%d] built: ", k);
-		for(int i=0; i<Math.min(PRINT_NUM,maxPrimeIndex) ; i++)
-		{
-			System.out.printf("%d,", (int)(PRINT_CONST / primesInv[i]));
-		}
-		if (maxPrimeIndex > PRINT_NUM)
-			System.out.printf(" ,..., %f,%f%n", PRINT_CONST / primesInv[k-2], PRINT_CONST / primesInv[k-1]);
-		else
-			System.out.println();
+		System.out.printf("Prime           table[0..%d]", k);
 	}
 
 	/**
@@ -84,7 +76,7 @@ public class TrialInvFact extends FindPrimeFact {
 		primesInv = new double [maxPrimeIndex]; //the 6542 primesInv up to 65536=2^16, then sentinel 65535 at end
 		primes = new int [maxPrimeIndex]; //the 6542 primesInv up to 65536=2^16, then sentinel 65535 at end
 		int primeIndex = 0;
-		boolean [] noPrimes = new boolean [maxFactor];
+		final boolean [] noPrimes = new boolean [maxFactor];
 		for (int i = 2; i <= Math.sqrt(maxFactor); i++) {
 			if (!noPrimes[i]) {
 				primes[primeIndex] = i;
@@ -100,20 +92,7 @@ public class TrialInvFact extends FindPrimeFact {
 				primesInv[primeIndex++] = 1.0 / i;
 			}
 		}
-		System.out.printf("Prime table[0..%d] built: ", primeIndex);
-		for(int i=0; i<Math.min(PRINT_NUM,maxPrimeIndex) ; i++)
-		{
-			System.out.printf("%d,", (int)(PRINT_CONST / primesInv[i]));
-		}
-		if (maxPrimeIndex > PRINT_NUM)
-			System.out.printf(" ,..., %f,%f%n", PRINT_CONST / primesInv[primeIndex-2], PRINT_CONST / primesInv[primeIndex-1]);
-		else
-			System.out.println();
-		for (;primeIndex < maxPrimeIndex; primeIndex++)
-		{
-			primes[primeIndex] = Integer.MAX_VALUE;
-//			primesInv[primeIndex++] = 1.0 / i;
-		}
+		System.out.println("Prime    table built                       bytes used : " + primeIndex);
 	}
 
 
@@ -121,7 +100,7 @@ public class TrialInvFact extends FindPrimeFact {
 		//        if (maxFactor > 65535)
 		//            throw new IllegalArgumentException("the maximal factor has to be lower then 65536");
 		this.maxFactor = maxFactor;
-//		initPrimes();
+		//		initPrimes();
 		initPrimesEratosthenes();
 	}
 

@@ -5,28 +5,29 @@ public class PrimeMath {
 
 	private static final long MATH_SQRT_WORKS = 10354000L;
 	//	private static final long MATH_SQRT_WORKS = 4503599627370496L;
-	static boolean [] squaresMod2Pow;
-	static boolean [] squaresModSmallPrimes;
-//	static boolean [] squaresModSmallPrimes2;
+	public static boolean [] squaresMod2Pow;
+	//	static boolean [] squaresModSmallPrimes;
+	//	static boolean [] squaresModSmallPrimes2;
 	static long squaresMask;
-//	static int mod2Pow = 8;
-	static int mod2Pow = 256;
-	static int modSmallPrimes = 3*3 * 5 * 7 * 11; // 1575
-//	static int modSmallPrimes2 = 11 * 13 * 17; // 2431
+	//	static int mod2Pow = 8;
+	static int mod2Pow = 1024;
+	static int modSmallPrimes = 3*3 * 5 * 7 * 11; // 3465
+	static int modSmallPrimes2 = 13 * 17 * 19; // 4212
 	static BitSet squares = new BitSet(mod2Pow);
 
 	static {
 		squaresMod2Pow = new boolean[mod2Pow];
-		squaresModSmallPrimes = new boolean[modSmallPrimes];
-//		squaresModSmallPrimes2 = new boolean[modSmallPrimes2];
-		for (int i = 0; i < squaresModSmallPrimes.length; i++) {
-			if (i < squaresMod2Pow.length)
-				squaresMod2Pow[(i*i) % mod2Pow] = true;
-			if (i < squaresModSmallPrimes.length)
-				squaresModSmallPrimes[(i*i) % modSmallPrimes] = true;
-//			squaresModSmallPrimes2[(i*i) % modSmallPrimes2] = true;
-//			squares.set(square);
-//			squaresMask |= 1l << square;
+		//		squaresModSmallPrimes = new boolean[modSmallPrimes];
+		//		squaresModSmallPrimes2 = new boolean[modSmallPrimes2];
+		//		for (int i = 0; i < squaresModSmallPrimes2.length; i++) {
+		for (int i = 0; i < squaresMod2Pow.length; i++) {
+			//			if (i < squaresMod2Pow.length)
+			squaresMod2Pow[(i*i) % mod2Pow] = true;
+			//			if (i < squaresModSmallPrimes.length)
+			//				squaresModSmallPrimes[(i*i) % modSmallPrimes] = true;
+			//			squaresModSmallPrimes2[(i*i) % modSmallPrimes2] = true;
+			//			squares.set(square);
+			//			squaresMask |= 1l << square;
 		}
 	}
 
@@ -48,7 +49,7 @@ public class PrimeMath {
 		final int nMod = (int) (n & (mod2Pow -1));
 		if ((squaresMask & 1l << nMod) == 0)
 			return false;
-		long sqrt = (long)Math.sqrt(n);
+		final long sqrt = (long)Math.sqrt(n);
 		return sqrt*sqrt == n;
 	}
 
@@ -64,11 +65,11 @@ public class PrimeMath {
 	 */
 	public static boolean isSquare(long n)
 	{
-		if (n < 0)
-			return false;
+		//		if (n < 0)
+		//			return false;
 		if (!isProbableSquare(n))
 			return false;
-		long sqrt = sqrt(n);
+		final long sqrt = sqrt(n);
 		return sqrt*sqrt == n;
 	}
 
@@ -124,12 +125,12 @@ public class PrimeMath {
 				}
 				else
 				{
-					long divisor4 = rem2 << 2;
+					final long divisor4 = rem2 << 2;
 					if (rem < divisor4)
 					{
 						rem -= rem2;        // q=2
 
-						long p2 = ps1<<1;
+						final long p2 = ps1<<1;
 						if (rem < rem2)
 						{
 							q   += p2;
@@ -148,7 +149,7 @@ public class PrimeMath {
 						}
 					}else
 					{
-						long divisor8 = rem2<<3;
+						final long divisor8 = rem2<<3;
 
 						if (rem < divisor8)
 						{
@@ -230,16 +231,17 @@ public class PrimeMath {
 	}
 
 	public static boolean isProbableSquare(long n) {
-		int nMod = (int) (n & (mod2Pow -1));
-		if (!squaresMod2Pow[nMod])
-			return false;
+		final int nMod = (int) (n & 1023);
+		return squaresMod2Pow[nMod];
+		//		if (!squaresMod2Pow[nMod])
+		//			return false;
 		// % (division) is still much faster then calculating the square root
-		nMod = (int) (n % modSmallPrimes);
-		if (!squaresModSmallPrimes[nMod])
-			return false;
-		return true;
-//		nMod = (int) (n % modSmallPrimes2);
-//		return squaresModSmallPrimes2[nMod];
+		//		nMod = (int) (n % modSmallPrimes);
+		//		if (!squaresModSmallPrimes[nMod])
+		//			return false;
+		//		return true;
+		//		nMod = (int) (n % modSmallPrimes2);
+		//		return squaresModSmallPrimes2[nMod];
 
 	}
 	public static boolean isSquareBitSet(long n)
@@ -382,7 +384,7 @@ public class PrimeMath {
 
 		if (b > a)
 		{
-			long tmp = a;
+			final long tmp = a;
 			a = b;
 			b = tmp;
 		}
@@ -420,14 +422,14 @@ public class PrimeMath {
 							{
 
 								rem = rem4 (rem, rem2);
-//								if (rem >= rem2)
-//								{
-//									rem = rem3 (rem, rem2);		// q=7,8,9
-//								}
+								//								if (rem >= rem2)
+								//								{
+								//									rem = rem3 (rem, rem2);		// q=7,8,9
+								//								}
 							}
 							else
 							{
-//								rem += rem2 << 2;
+								//								rem += rem2 << 2;
 								rem = rem3 % rem2 - 4;
 							}
 						}
@@ -441,7 +443,7 @@ public class PrimeMath {
 	}
 	protected static long rem4 (long rem, long rem2)
 	{
-//		rem -= rem2;        // q=0
+		//		rem -= rem2;        // q=0
 
 		if (rem >= rem2)
 		{
@@ -483,7 +485,7 @@ public class PrimeMath {
 
 		if (b > a)
 		{
-			long tmp = a;
+			final long tmp = a;
 			a = b;
 			b = tmp;
 		}
@@ -621,9 +623,9 @@ public class PrimeMath {
 		int count3 = 0;
 		split1 = System.currentTimeMillis();
 		for (long i = 0; i < maxValue; i+=9) {
-//			final boolean square = isSquareBitSet(i);
-//			if (square)
-				count3++;
+			//			final boolean square = isSquareBitSet(i);
+			//			if (square)
+			count3++;
 		}
 		split2 = System.currentTimeMillis();
 		System.out.println("time : "+ (Math.abs(0.0 + split1 - split2))/1000);
