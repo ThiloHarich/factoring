@@ -81,12 +81,17 @@ public class ErrorShiftTest {
 	}
 	@Test
 	public void testPerfHard(){
-		final int bits = 40;
-		final int numPrimes = 30000;
+		final int bits = 35;
+		final int numPrimes = 100000;
 		final long[] semiprimes = makeSemiPrimesList(bits, bits/2-1, numPrimes);
 
-		final Factorizer factorizer1 = new LehmanNoSqrtFact(bits, 1.7f);
-		final Factorizer factorizer2 = new LehmanNoSqrtFact(bits, 1f);
+		System.out.println("finished making hard numbers");
+		final long start = System.currentTimeMillis();
+		final Factorizer factorizer2 = new LehmanNoSqrtFact(bits, 3f);
+		final long end = System.currentTimeMillis();
+		System.out.println("time for setup : " + (end - start));
+		//		final Factorizer factorizer1 = new LehmanYafuFact();
+		final Factorizer factorizer1 = new LehmanNoSqrtFact(bits, 1f);
 
 		findFactors(factorizer1, semiprimes);
 		findFactors(factorizer2, semiprimes);

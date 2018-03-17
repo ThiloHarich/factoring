@@ -44,6 +44,18 @@ import factoring.trial.TrialInvFact;
 public class LehmanNoSqrtFact extends FindPrimeFact {
 
 	static double ONE_THIRD = 1.0/3;
+	// to be fast to decide if a number is a square we consider the
+	// number modulo some values. First filer/modulus is a power of 2
+	// since we can easily calculate the remainder
+	static int mod_1024 = 1024;
+	static int mod_9_5_7_11 = 3*3 * 5 * 7 * 11; // 3465
+	//	static int mod_9_5_7_11 = 3*3 * 5 * 7 * 11 * 13; // 45045
+
+	private static boolean[] isSquareMod_1024;
+	// for the other mod arguments we have to do a real expensive "%" operation
+	// so we might have time to do a bit more expensive but space saving representation
+	// of the squares
+	private static boolean[] isSquareMod_9_5_7_11;
 
 	float maxFactorMultiplier = 1.0f;
 	float maxFactorMultiplierCube;
@@ -56,6 +68,21 @@ public class LehmanNoSqrtFact extends FindPrimeFact {
 	// a fast way to do the trial division phase
 	final TrialInvFact smallFactoriser;
 	int maxTrialFactor;
+
+	static {
+		isSquareMod_1024 = new boolean[mod_1024];
+		//		isSquareMod9_5_7_11 = new BitSet(mod9_5_7_11);
+		isSquareMod_9_5_7_11 = new boolean[mod_9_5_7_11];
+		for (int i = 0; i < mod_9_5_7_11; i++) {
+			if (i < mod_1024)
+				//				isSquareMod_1024[(i*i) % mod_1024] = true;
+				isSquareMod_1024[(i*i) & 1023] = true;
+			//			isSquareMod_9_5_7_11[(i*i) % mod_9_5_7_11] = true;
+			isSquareMod_9_5_7_11[(i*i) % 3456] = true;
+		}
+		System.out.println("sqrt mod table built                       bytes used : " + isSquareMod_1024.length);
+	}
+
 
 
 	/**
@@ -92,7 +119,7 @@ public class LehmanNoSqrtFact extends FindPrimeFact {
 
 	protected void initSquares() {
 		// precalculate the square of all possible multipliers. This takes at most n^1/3
-		final int kMax = maxTrialFactor;
+		final int kMax = (int) (maxTrialFactor / maxFactorMultiplierCube);
 
 		sqrt = new double[kMax + 10];
 		sqrtInv = new float[kMax + 10];
@@ -104,11 +131,7 @@ public class LehmanNoSqrtFact extends FindPrimeFact {
 			// faster then the division we also calculate the square root and the inverse
 			sqrtInv[i] = (float) (1.0 / sqrtI);
 		}
-		System.out.printf(" sqrt table[0..%d] built: ", sqrt.length);
-		for(int i=0; i<Math.min(5, maxTrialFactor); i++){
-			System.out.printf("%f ", sqrt[i]);
-		}
-		System.out.printf(" ... %f %f\n", sqrt[sqrt.length-2],sqrt[sqrt.length-1]);
+		System.out.println("sqrt tables for max trial factor "  + maxFactorMultiplier + " built bytes used : " + sqrt.length);
 	}
 
 	@Override
@@ -159,8 +182,6 @@ public class LehmanNoSqrtFact extends FindPrimeFact {
 			final int xEnd = (int) (sqrt4kn + xRange);
 			// instead of using a step 1 here we use the mod argument from lehman
 			// to reduce the possible numbers to verify.
-			// TODO do a mod argument here.
-			// xBegin = nextX[kmodS, xModT], where S*T < n^1/6 fit in L1 cache example s,t = 32
 			int xStep = 2;
 			if (k % 2 == 0) {
 				xBegin |= 1;
@@ -180,19 +201,35 @@ public class LehmanNoSqrtFact extends FindPrimeFact {
 				final long right = x2 -  k * n4;
 				// instead of taking the square root (which is a very expensive operation)
 				// and squaring it, we do some mod arguments to filter out non squares
-				if (PrimeMath.isSquare(right)) {
+				//				if (PrimeMath.isSquare(right)) {
+				if (isProbableSquare(right)) {
 					final long y = (long) Math.sqrt(right);
-					final long factor = PrimeMath.gcd(n, x - y);
-					if (factor != 1) {
-						factors.add(factor);
-						return n / factor;
-						// we know that the remaining factor has to be a prime factor
-						// but this gives no speedup for ramdom numbers
-						//						if (n != factor)
-						//							factors.add(n / factor);
-						//						return 1;
+					if (y*y == right){
+						final long factor = PrimeMath.gcd(n, x - y);
+						if (factor != 1) {
+							factors.add(factor);
+							return n / factor;
+							// we know that the remaining factor has to be a prime factor
+							// but this gives no speedup for ramdom numbers
+							//						if (n != factor)
+							//							factors.add(n / factor);
+							//						return 1;
+						}
 					}
 				}
+				//				if(LehmanYafuFact.issq1024[(int)(right & 1023)]){
+				//					//					if((LehmanYafuFact.issq4199[(int)(right%3465)]&2) != 0){
+				//					//						if((LehmanYafuFact.issq4199[(int)(right%4199)]&1) != 0){
+				//					final int b = (int) Math.sqrt(right + 0.9);
+				//					if(b*b==right){ //square found
+				//						final long B2 = LehmanYafuFact.gcd64(x+b, n);
+				//						assert(B2>1);
+				//						//                                if(B2>=N){ System.out.printf("theorem failure: B2=%llu N=%llu\n", B2,N); }
+				//						return(B2);
+				//					}
+				//					//						}
+				//					//					}
+				//				}
 			}
 		}
 		// if we have not found a factor we still have to do the trial division phase
@@ -201,4 +238,19 @@ public class LehmanNoSqrtFact extends FindPrimeFact {
 
 		return n;
 	}
+
+	protected static boolean isProbableSquare(final long number) {
+		if (isSquareMod_1024[(int) (number & 1023)]){
+			// using mod9_5_7_11 instead of hard 15015 coded causes double run time
+			// using it saves ~ 10%
+			//			if (isSquareMod_9_5_7_11[(int) (number % 3465)]){
+			if (isSquareMod_9_5_7_11[(int) (number % 3456)]){
+
+				final long y = (long) Math.sqrt(number);
+				return y*y == number;
+			}
+		}
+		return false;
+	}
+
 }

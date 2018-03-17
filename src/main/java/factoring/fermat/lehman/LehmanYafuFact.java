@@ -180,7 +180,7 @@ public class LehmanYafuFact extends FermatFact {
 			MakeIssq();
 			MakePrimeTable();
 		}
-		final long factor = LehmanFactor(n, 1, 0.0, true, 1.0);
+		final long factor = LehmanFactor(n, 3, 0.0, false, 1.0);
 		//        long factor = LehmanFactor(n, 2.5, 0.0, true, 1.0);
 		if (factor != n) {
 			factors.add(n / factor);
@@ -249,17 +249,17 @@ public class LehmanYafuFact extends FermatFact {
 						}
 					}
 				}
-				//                        if(PrimeMath.isSquare(c)){
-					//                            b = (int) Math.SQRT(c+0.9);
-				//                            if(b*b==c){
-				//                                if(a>=b){
-				//                                    B2 = gcd64((long)(a-b), N);
-				//                                    if(1<B2 && B2<N){ return(B2); }
-				//                                }
-				//                                B2 = gcd64((long)(a+b), N);
-				//                                if(1<B2 && B2<N){ return(B2); }
-				//                            }
-				//                        }
+				//				if(PrimeMath.isSquare(c)){
+				//					b = (int) Math.sqrt(c+0.9);
+				//					if(b*b==c){
+				//						if(a>=b){
+				//							B2 = gcd64(a-b, N);
+				//							if(1<B2 && B2<N){ return(B2); }
+				//						}
+				//						B2 = gcd64(a+b, N);
+				//						if(1<B2 && B2<N){ return(B2); }
+				//					}
+				//				}
 			}
 		}
 
@@ -333,17 +333,17 @@ public class LehmanYafuFact extends FermatFact {
 						}
 					}
 				}
-				//                if(PrimeMath.isSquare(c)){
-				//                            b = (int) Math.SQRT(c + 0.9);
-				//                            if(b*b==c) { //square found
-				//                                B2 = gcd64((long) (a + b), N);
-				//                                assert (B2 > 1);
-				//                                if (B2 >= N) {
-				//                                    System.out.printf("theorem failure: B2=%llu N=%llu\n", B2, N);
-				//                                }
-				//                                return (B2);
-				//                            }
-				//                }
+				//				if(PrimeMath.isSquare(c)){
+				//					b = (int) Math.sqrt(c + 0.9);
+				//					if(b*b==c) { //square found
+				//						B2 = gcd64(a + b, N);
+				//						assert (B2 > 1);
+				//						if (B2 >= N) {
+				//							System.out.printf("theorem failure: B2=%llu N=%llu\n", B2, N);
+				//						}
+				//						return (B2);
+				//					}
+				//			}
 			}
 		}
 
