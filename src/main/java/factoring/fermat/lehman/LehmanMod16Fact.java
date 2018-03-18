@@ -111,14 +111,14 @@ public class LehmanMod16Fact extends FindPrimeFact {
 	}
 
 	@Override
-	public long findPrimeFactors(long nOrig, Collection<Long> factors) {
+	public long findPrimeFactors(long nOrig, Collection<Long> primeFactors) {
 		// with this implementation the lehman part is not slower then the trial division
 		// we do not have to use a multiplier for the maximal factor were we apply the
 		// trial division phase
 		maxTrialFactor =  (int) Math.ceil(Math.pow(nOrig, ONE_THIRD));
 		smallFactoriser.setMaxFactor(maxTrialFactor);
 		// factor out all small factors
-		final long n = smallFactoriser.findPrimeFactors(nOrig, factors);
+		final long n = smallFactoriser.findPrimeFactors(nOrig, primeFactors);
 
 		if (n<maxTrialFactor)
 			return n;
@@ -126,7 +126,7 @@ public class LehmanMod16Fact extends FindPrimeFact {
 		if (PrimeMath.isSquare(n)){
 			final long x = PrimeMath.sqrt(n);
 			if (x*x == n) {
-				factors.add(x);
+				primeFactors.add(x);
 				return x;
 			}
 		}
@@ -172,7 +172,7 @@ public class LehmanMod16Fact extends FindPrimeFact {
 					final long y = (long) Math.sqrt(right);
 					final long factor = PrimeMath.gcd(n, x - y);
 					if (factor != 1) {
-						factors.add(factor);
+						primeFactors.add(factor);
 						return n / factor;
 						// we know that the remaining factor has to be a prime factor
 						// but this gives no speedup for ramdom numbers

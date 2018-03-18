@@ -124,6 +124,11 @@ public class LehmanYafuFact extends FermatFact {
 
 	static boolean[] issq1024;
 	static byte[] issq4199;
+	private double tune;
+
+	public LehmanYafuFact(float tune) {
+		this.tune = tune;
+	}
 
 	static long gcd64(long a, long b){
 		long t;
@@ -180,7 +185,7 @@ public class LehmanYafuFact extends FermatFact {
 			MakeIssq();
 			MakePrimeTable();
 		}
-		final long factor = LehmanFactor(n, 3, 0.0, false, 1.0);
+		final long factor = LehmanFactor(n, tune, 0.0, true, 1);
 		//        long factor = LehmanFactor(n, 2.5, 0.0, true, 1.0);
 		if (factor != n) {
 			factors.add(n / factor);
@@ -353,7 +358,8 @@ public class LehmanYafuFact extends FermatFact {
 			for(ip=0 ; ; ip++){
 				p = prime[ip];
 				if(p>=B) break;
-				if(N%p==0) return(p);
+				if(N%p==0)
+					return(p);
 			}
 		}
 

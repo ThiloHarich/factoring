@@ -71,11 +71,11 @@ public class TrialPrimesDynamicFact extends FindPrimeFact {
 
 
 	@Override
-	public long findPrimeFactors(long n, Collection<Long> factors) {
+	public long findPrimeFactors(long n, Collection<Long> primeFactors) {
 		// TODO fill the end of the array with Integer.MaxValue
 		for (int primeIndex = 0; primes[primeIndex] < maxFactor && primes[primeIndex] > 0 && n> 1; primeIndex++) {
 			while (n % primes[primeIndex] == 0) {
-				factors.add((long)primes[primeIndex]);
+				primeFactors.add((long)primes[primeIndex]);
 				n /= primes[primeIndex];
 			}
 		}

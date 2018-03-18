@@ -62,8 +62,8 @@ public class TrialUnroll extends TrialFactMod {
         System.out.println("}");
     }
     @Override
-    public long findPrimeFactors(long n, Collection<Long> factors) {
-        n = findSmallFactors(n, factors);
+    public long findPrimeFactors(long n, Collection<Long> primeFactors) {
+        n = findSmallFactors(n, primeFactors);
 
         // adjust limit, if not set
         int sqrtN = (int) Math.sqrt(n) + 1;
@@ -78,7 +78,7 @@ public class TrialUnroll extends TrialFactMod {
                 break;
             if (n % factor == 0)
             {
-                factors.add((long)factor);
+                primeFactors.add((long)factor);
                 n = n/factor;
             }
             factor += 6;
@@ -86,7 +86,7 @@ public class TrialUnroll extends TrialFactMod {
                 break;
             if (n % factor == 0)
             {
-                factors.add((long)factor);
+                primeFactors.add((long)factor);
                 n = n/factor;
             }
             factor += 4;
@@ -94,7 +94,7 @@ public class TrialUnroll extends TrialFactMod {
                 break;
             if (n % factor == 0)
             {
-                factors.add((long)factor);
+                primeFactors.add((long)factor);
                 n = n/factor;
             }
             factor += 2;
@@ -102,7 +102,7 @@ public class TrialUnroll extends TrialFactMod {
                 break;
             if (n % factor == 0)
             {
-                factors.add((long)factor);
+                primeFactors.add((long)factor);
                 n = n/factor;
             }
             factor += 4;
@@ -110,7 +110,7 @@ public class TrialUnroll extends TrialFactMod {
                 break;
             if (n % factor == 0)
             {
-                factors.add((long)factor);
+                primeFactors.add((long)factor);
                 n = n/factor;
             }
             factor += 2;
@@ -118,7 +118,7 @@ public class TrialUnroll extends TrialFactMod {
                 break;
             if (n % factor == 0)
             {
-                factors.add((long)factor);
+                primeFactors.add((long)factor);
                 n = n/factor;
             }
             factor += 4;
@@ -126,7 +126,7 @@ public class TrialUnroll extends TrialFactMod {
                 break;
             if (n % factor == 0)
             {
-                factors.add((long)factor);
+                primeFactors.add((long)factor);
                 n = n/factor;
             }
             factor += 6;
@@ -134,7 +134,7 @@ public class TrialUnroll extends TrialFactMod {
                 break;
             if (n % factor == 0)
             {
-                factors.add((long)factor);
+                primeFactors.add((long)factor);
                 n = n/factor;
             }
         }

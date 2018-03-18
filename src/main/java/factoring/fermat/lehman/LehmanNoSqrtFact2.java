@@ -39,7 +39,7 @@ public class LehmanNoSqrtFact2 extends FindPrimeFact {
 	}
 
 	@Override
-	public long findPrimeFactors(long n, Collection<Long> factors) {
+	public long findPrimeFactors(long n, Collection<Long> primeFactors) {
 		final TrialWithPrimesFact smallFactoriser = new TrialWithPrimesFact();
 		// with this implementation the lehman part is not slower then the trial division
 		// we do not have to use a multiplier for the maximal factor were we apply the
@@ -47,7 +47,7 @@ public class LehmanNoSqrtFact2 extends FindPrimeFact {
 		double maxTrialFactor =  Math.ceil(Math.pow(n, ONE_THIRD));
 		smallFactoriser.setMaxFactor((int) maxTrialFactor);
 		// factor out all small factors
-		n = smallFactoriser.findPrimeFactors(n, factors);
+		n = smallFactoriser.findPrimeFactors(n, primeFactors);
 
 		if (n<maxTrialFactor)
 			return n;
@@ -55,7 +55,7 @@ public class LehmanNoSqrtFact2 extends FindPrimeFact {
 		if (PrimeMath.isSquare(n)){
 			final long x = PrimeMath.sqrt(n);
 			if (x*x == n) {
-				factors.add(x);
+				primeFactors.add(x);
 				return x;
 			}
 		}
@@ -102,7 +102,7 @@ public class LehmanNoSqrtFact2 extends FindPrimeFact {
 				final long y = (long) Math.sqrt(right);
 				final long factor = PrimeMath.gcd(n, x - y);
 				if (factor != 1) {
-					factors.add(factor);
+					primeFactors.add(factor);
 					return n / factor;
 					// we know that the remaining factor has to be a prime factor
 					// but this gives no speedup for ramdom numbers
@@ -139,7 +139,7 @@ public class LehmanNoSqrtFact2 extends FindPrimeFact {
 					final long y = (long) Math.sqrt(right);
 					final long factor = PrimeMath.gcd(n, x - y);
 					if (factor != 1) {
-						factors.add(factor);
+						primeFactors.add(factor);
 						return n / factor;
 						// we know that the remaining factor has to be a prime factor
 						// but this gives no speedup for ramdom numbers
@@ -177,7 +177,7 @@ public class LehmanNoSqrtFact2 extends FindPrimeFact {
 					final long y = (long) Math.sqrt(right);
 					final long factor = PrimeMath.gcd(n, x - y);
 					if (factor != 1) {
-						factors.add(factor);
+						primeFactors.add(factor);
 						return n / factor;
 						// we know that the remaining factor has to be a prime factor
 						// but this gives no speedup for ramdom numbers

@@ -39,8 +39,8 @@ public class LehmanRange1Fact extends FindPrimeFact {
 	private int k4XRange1;
 
 	@Override
-	public long findPrimeFactors(long nIn, Collection<Long> factorsIn) {
-		factors = factorsIn;
+	public long findPrimeFactors(long nIn, Collection<Long> primeFactors) {
+		factors = primeFactors;
 		n = nIn;
 		final TrialWithPrimesFact smallFactoriser = new TrialWithPrimesFact();
 		double maxTrialFactor =  Math.ceil(Math.pow(n, ONE_THIRD));

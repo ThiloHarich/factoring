@@ -14,7 +14,7 @@ public class TrialNewton extends FindPrimeFact {
 
 
     @Override
-    public long findPrimeFactors(long n, Collection<Long> factors) {
+    public long findPrimeFactors(long n, Collection<Long> primeFactors) {
         double inversIApprox = 1./2;
         long initialN = n;
         long nDivI = n/3 + 1;
@@ -39,7 +39,7 @@ public class TrialNewton extends FindPrimeFact {
                 nDivIMuliplyI = nDivI*i;
             }
             if (nDivIMuliplyI == n) {
-                factors.add((long)i);
+                primeFactors.add((long)i);
                 n = n / i;
             }
         }

@@ -55,8 +55,8 @@ public class TrialFactMod2 extends TrialFact {
     int limit = Integer.MAX_VALUE;
 
     @Override
-    public long findPrimeFactors(long n, Collection<Long> factors) {
-        n = findSmallFactors(n, factors);
+    public long findPrimeFactors(long n, Collection<Long> primeFactors) {
+        n = findSmallFactors(n, primeFactors);
 
         // adjust limit, if not set
         int sqrtN = (int) Math.sqrt(n) + 1;
@@ -67,7 +67,7 @@ public class TrialFactMod2 extends TrialFact {
                 int factor2 = factor;
                 while (factor2 <= maxFactor) {
                     while (n % factor2 == 0) {
-                        factors.add((long) factor2);
+                        primeFactors.add((long) factor2);
                         n = n / factor2;
                     }
                     factor2 += range;

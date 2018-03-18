@@ -62,12 +62,12 @@ public class TrialWithPrimesFact extends FindPrimeFact {
     }
 
     @Override
-    public long findPrimeFactors(long n, Collection<Long> factors) {
+    public long findPrimeFactors(long n, Collection<Long> primeFactors) {
         for (; prime[primeIndex] < maxFactor; primeIndex++) {
-//            if (primeIndex == 6542)
+//            if (maxFactorIndex == 6542)
 //                System.out.println();
             while (n%prime[primeIndex] == 0) {
-                factors.add((long)prime[primeIndex]);
+                primeFactors.add((long)prime[primeIndex]);
                 n /= prime[primeIndex];
             }
         }

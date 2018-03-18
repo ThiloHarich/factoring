@@ -11,7 +11,7 @@ public class TrialFactCond extends FindPrimeFact {
 
 
     @Override
-    public long findPrimeFactors(long n, Collection<Long> factors) {
+    public long findPrimeFactors(long n, Collection<Long> primeFactors) {
 //        for (int i = 2; i <= Math.sqrt(n); i++) {
         long initialN = n;
         long nDivI = n/3;
@@ -20,7 +20,7 @@ public class TrialFactCond extends FindPrimeFact {
             nDivI = initialN/i;
 //            if (n%i == 0) {
             if (nDivI * i == n) {
-                factors.add((long)i);
+                primeFactors.add((long)i);
                 n = n/i;
             }
         }
