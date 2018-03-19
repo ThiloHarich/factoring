@@ -1,10 +1,10 @@
 package factoring.fermat.lehman;
 
+import java.util.Collection;
+
 import factoring.FindPrimeFact;
 import factoring.math.PrimeMath;
-import factoring.trial.TrialReverseFact;
-
-import java.util.Collection;
+import factoring.trial.TrialRangeFact;
 
 /**
  * This is a version of the lehman factorization, which is a variant of the fermat
@@ -71,7 +71,7 @@ public class LehmanReverseFact extends FindPrimeFact {
 	double [] sqrt;
 	float [] sqrtInv;
 	// a fast way to do the trial division phase
-	final TrialReverseFact smallFactoriser;
+	final TrialRangeFact smallFactoriser;
 	int maxTrialFactor;
 
 	static {
@@ -121,7 +121,7 @@ public class LehmanReverseFact extends FindPrimeFact {
 		maxFactorMultiplier = maxFactorMultiplierIn < 1 ? 1 : maxFactorMultiplierIn;
 		maxTrialFactor = (int) Math.ceil(maxFactorMultiplier * Math.pow(1L << bits, ONE_THIRD));
 		maxFactorMultiplierCube = maxFactorMultiplier * maxFactorMultiplier * maxFactorMultiplier;
-		smallFactoriser = new TrialReverseFact(maxTrialFactor);
+		smallFactoriser = new TrialRangeFact(maxTrialFactor);
 		initSquares();
 	}
 
@@ -151,9 +151,8 @@ public class LehmanReverseFact extends FindPrimeFact {
 		maxTrialFactor =  (int) Math.ceil(maxFactorMultiplier * Math.pow(n, ONE_THIRD));
 		//		maxTrialFactor =  (int) Math.ceil(Math.pow(nOrig, ONE_THIRD));
 		smallFactoriser.setMaxFactor(maxTrialFactor);
-		// factor out all small factors if
-//		if (maxFactorMultiplier <= 1)
-		long nAfterTrial = smallFactoriser.findPrimeFactors(n, primeFactors, .5, 1.);
+		// factor out the factors around n^1/3 with trial division first is this faster?
+		final long nAfterTrial = smallFactoriser.findPrimeFactors(n, primeFactors, .5, 1.);
 		if (primeFactors == null && nAfterTrial != n)
 			return nAfterTrial;
 

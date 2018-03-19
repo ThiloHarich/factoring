@@ -18,7 +18,7 @@ import java.util.Collection;
  **
  * Created by Thilo Harich on 02.03.2017.
  */
-public class TrialReverseFact {
+public class TrialRangeFact {
 
 	// The number of values to be printed
 	private static final int PRINT_NUM = 20000;
@@ -65,7 +65,7 @@ public class TrialReverseFact {
 	}
 
 
-	public TrialReverseFact(int maxFactor) {
+	public TrialRangeFact(int maxFactor) {
 		//        if (maxFactor > 65535)
 		//            throw new IllegalArgumentException("the maximal factor has to be lower then 65536");
 		this.maxFactor = maxFactor;
