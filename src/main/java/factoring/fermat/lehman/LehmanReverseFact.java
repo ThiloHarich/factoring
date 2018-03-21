@@ -152,20 +152,25 @@ public class LehmanReverseFact extends FindPrimeFact {
 		//		maxTrialFactor =  (int) Math.ceil(Math.pow(nOrig, ONE_THIRD));
 		smallFactoriser.setMaxFactor(maxTrialFactor);
 		// factor out the factors around n^1/3 with trial division first is this faster?
-		final long nAfterTrial = smallFactoriser.findPrimeFactors(n, primeFactors, .5, 1.);
+		double nPowOneThirdFact = 1 / maxFactorMultiplier;
+		final long nAfterTrial = smallFactoriser.findPrimeFactors(n, primeFactors, nPowOneThirdFact, 1.);
 		if (primeFactors == null && nAfterTrial != n)
 			return nAfterTrial;
 
 		n = nAfterTrial;
 
+		// TODO this can not be
 		if (n<maxTrialFactor)
 			return n;
 
 		if (PrimeMath.isSquare(n)){
 			final long x = PrimeMath.sqrt(n);
 			if (x*x == n) {
+				if (primeFactors == null)
+					return x;
 				primeFactors.add(x);
-				return x;
+				primeFactors.add(x);
+				return 1;
 			}
 		}
 		// re-adjust the maximal factor we have to search for. If factors were found, which is quite
@@ -218,13 +223,16 @@ public class LehmanReverseFact extends FindPrimeFact {
 					if (y*y == right){
 						final long factor = PrimeMath.gcd(n, x - y);
 						if (factor != 1) {
-							primeFactors.add(factor);
-							return n / factor;
-							// we know that the remaining factor has to be a prime factor
-							// but this gives no speedup for ramdom numbers
-							//						if (n != factor)
-							//							factors.add(n / factor);
-							//						return 1;
+							if (primeFactors == null)
+								return factor;
+							// since maxTrialFactor >= n^1/3 we have done the trial division first -> the factor
+							// has to be a prime factor, n/factor is of size < n^2/3 and can not be a composite factor
+//							if (maxTrialFactor == 1) {
+//								primeFactors.add(factor);
+//								if (n != factor)
+//									primeFactors.add(n / factor);
+//								return 1;
+//							}
 						}
 					}
 				}
@@ -245,7 +253,7 @@ public class LehmanReverseFact extends FindPrimeFact {
 		}
 		// if we have not found a factor we still have to do the trial division phase
 		if (maxFactorMultiplier > 1)
-			n = smallFactoriser.findPrimeFactors(n, primeFactors, 0, .5);
+			n = smallFactoriser.findPrimeFactors(n, primeFactors, 0, nPowOneThirdFact);
 
 		return n;
 	}

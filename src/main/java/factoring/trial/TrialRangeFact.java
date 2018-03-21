@@ -74,8 +74,27 @@ public class TrialRangeFact {
 	}
 
 
+	/**
+	 * since
+	 * f(x) = x * ln (x)
+	 * f(x*b) = x*b * ln (x*b) = x*b * (ln (x) + ln(b)) = f(x)*b + x*b*ln(b) < =  f(x)*b * (1 +  b*ln(b)/ln(x))
+	 * b = begin - begin * Math.
+	 * begin - 1 =
+	 * primes [(int)(maxFactorIndex*begin)] < primes [maxFactorIndex]
+	 * @param n
+	 * @param primeFactors
+	 * @param begin
+	 * @param end
+	 * @return
+	 */
 	public long findPrimeFactors(long n, Collection<Long> primeFactors, double begin, double end) {
 
+		// adjust the begin and end value such that it begins/ends just below n^1/3
+		// this ensures we always have prime factors in the lehman phase as well
+		double b = end == 1 ? begin : end;
+		double correctFakt = b - b * Math.log(b) * 3 / Math.log(n);
+		begin = begin == 0 ? 0 : correctFakt;
+		end = end == 1 ? 1 : correctFakt;
 		for (int primeIndex = (int)(maxFactorIndex*begin); primeIndex <= maxFactorIndex*end; primeIndex++) {
 			double nDivPrime = n*primesInv[primeIndex];
 			// TODO choose the precision factor with respect to the maxFactor!?
@@ -88,7 +107,6 @@ public class TrialRangeFact {
 				n = Math.round(nDivPrime);
 				nDivPrime = n*primesInv[primeIndex];
 			}
-			return n;
 		}
 		return n;
 	}

@@ -153,9 +153,10 @@ public class LehmanNoSqrtFact extends FindPrimeFact {
 		smallFactoriser.setMaxFactor(maxTrialFactor);
 		// factor out all small factors if
 		if (maxFactorMultiplier <= 1) {
-			n = smallFactoriser.findPrimeFactors(n, primeFactors);
-			if (primeFactors == null)
-				return n;
+			long nAfterTrial = smallFactoriser.findPrimeFactors(n, primeFactors);
+			if (primeFactors == null && nAfterTrial != n)
+				return nAfterTrial;
+			n = nAfterTrial;
 		}
 
 		if (n<maxTrialFactor)
