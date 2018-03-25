@@ -166,11 +166,7 @@ public class LehmanReverseFact extends FindPrimeFact {
 		if (PrimeMath.isSquare(n)){
 			final long x = PrimeMath.sqrt(n);
 			if (x*x == n) {
-				if (primeFactors == null)
-					return x;
-				primeFactors.add(x);
-				primeFactors.add(x);
-				return 1;
+				return x;
 			}
 		}
 		// re-adjust the maximal factor we have to search for. If factors were found, which is quite
@@ -223,32 +219,10 @@ public class LehmanReverseFact extends FindPrimeFact {
 					if (y*y == right){
 						final long factor = PrimeMath.gcd(n, x - y);
 						if (factor != 1) {
-							if (primeFactors == null)
-								return factor;
-							// since maxTrialFactor >= n^1/3 we have done the trial division first -> the factor
-							// has to be a prime factor, n/factor is of size < n^2/3 and can not be a composite factor
-//							if (maxTrialFactor == 1) {
-//								primeFactors.add(factor);
-//								if (n != factor)
-//									primeFactors.add(n / factor);
-//								return 1;
-//							}
+							return factor;
 						}
 					}
 				}
-				//				if(LehmanYafuFact.issq1024[(int)(right & 1023)]){
-				//					//					if((LehmanYafuFact.issq4199[(int)(right%3465)]&2) != 0){
-				//					//						if((LehmanYafuFact.issq4199[(int)(right%4199)]&1) != 0){
-				//					final int b = (int) Math.sqrt(right + 0.9);
-				//					if(b*b==right){ //square found
-				//						final long B2 = LehmanYafuFact.gcd64(x+b, n);
-				//						assert(B2>1);
-				//						//                                if(B2>=N){ System.out.printf("theorem failure: B2=%llu N=%llu\n", B2,N); }
-				//						return(B2);
-				//					}
-				//					//						}
-				//					//					}
-				//				}
 			}
 		}
 		// if we have not found a factor we still have to do the trial division phase

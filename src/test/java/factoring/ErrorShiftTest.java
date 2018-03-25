@@ -48,12 +48,12 @@ public class ErrorShiftTest {
 		//		final Factorizer factorizer2 = new LehmanMod16Fact(bitsMax);
 		//		final Factorizer factorizer2 = new LehmanApproxFact();
 		final LehmanSingleFactorFinder factorizer2 = new LehmanSingleFactorFinder(bitsMax);
-		final Factorizer factorizer1 = new LehmanYafuFact(1);
+		final Factorizer factorizer1 = new LehmanYafuFact(1.5f);
 		//		final Factorizer factorizer2 = new TrialInvFact(1 << bits + 4);
 
 		//		for (int i = 65538; i < 1 << (bits + 1); i++)
 		long begin = (1L << bitsMax) +1;  // = 2^4 * 3^2 * 5
-//		begin = 315l	; // * 23
+		begin = 81L	; // * 23
 		// 29*23 * 53
 		// 29*53 * 23 ->
 		while (begin < Long.MAX_VALUE / 1000)

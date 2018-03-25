@@ -165,7 +165,6 @@ public class LehmanNoSqrtFact extends FindPrimeFact {
 		if (PrimeMath.isSquare(n)){
 			final long x = PrimeMath.sqrt(n);
 			if (x*x == n) {
-				primeFactors.add(x);
 				return x;
 			}
 		}

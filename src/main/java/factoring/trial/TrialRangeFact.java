@@ -91,11 +91,11 @@ public class TrialRangeFact {
 
 		// adjust the begin and end value such that it begins/ends just below n^1/3
 		// this ensures we always have prime factors in the lehman phase as well
-		double b = end == 1 ? begin : end;
-		double correctFakt = b - b * Math.log(b) * 3 / Math.log(n);
-		begin = begin == 0 ? 0 : correctFakt;
-		end = end == 1 ? 1 : correctFakt;
-		for (int primeIndex = (int)(maxFactorIndex*begin); primeIndex <= maxFactorIndex*end; primeIndex++) {
+//		double b = end == 1 ? begin : end;
+//		double correctFakt = b - b * Math.log(b) * 3 / Math.log(n);
+//		begin = begin == 0 ? 0 : correctFakt;
+//		end = end == 1 ? 1 : correctFakt;
+		for (int primeIndex = (int)(maxFactorIndex*begin); primeIndex < maxFactorIndex*end; primeIndex++) {
 			double nDivPrime = n*primesInv[primeIndex];
 			// TODO choose the precision factor with respect to the maxFactor!?
 			if (primes[primeIndex] == 0)
