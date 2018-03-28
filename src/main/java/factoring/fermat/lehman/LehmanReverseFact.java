@@ -2,6 +2,7 @@ package factoring.fermat.lehman;
 
 import java.util.Collection;
 
+import factoring.FactorFinderLong;
 import factoring.FindPrimeFact;
 import factoring.math.PrimeMath;
 import factoring.trial.TrialRangeFact;
@@ -41,7 +42,8 @@ import factoring.trial.TrialRangeFact;
  * and let the JVM do the optimization here. When adapting to other languages this should be done.
  * Created by Thilo Harich on 28.06.2017.
  */
-public class LehmanReverseFact extends FindPrimeFact {
+public class LehmanReverseFact implements FactorFinderLong {
+//	public class LehmanReverseFact extends FindPrimeFact {
 
 	static double ONE_THIRD = 1.0/3;
 	// to be fast to decide if a number is a square we consider the
@@ -112,7 +114,7 @@ public class LehmanReverseFact extends FindPrimeFact {
 	 * - if you know the maximal factors can not exceed n^1/3<br>
 	 * maxFactorMultiplier = 3 <br>
 	 * - if you know for most of the numbers the maximal factors will exceed 3*n^1/3<br>
-	 * In the last case {@link #findPrimeFactors(long, Collection)} might return a composite number
+	 * In the last case {@link #findFactors(long, Collection)} might return a composite number
 	 * TODO fix this behaviour
 	 */
 	public LehmanReverseFact(int bits, float maxFactorMultiplierIn) {
@@ -143,7 +145,7 @@ public class LehmanReverseFact extends FindPrimeFact {
 	}
 
 	@Override
-	public long findPrimeFactors(long n, Collection<Long> primeFactors) {
+	public long findFactors(long n, Collection<Long> primeFactors) {
 		if (n > 1l << 41)
 			throw new IllegalArgumentException("numbers above 41 bits can not be factorized");
 		// with this implementation the lehman part is not slower then the trial division
@@ -152,7 +154,7 @@ public class LehmanReverseFact extends FindPrimeFact {
 		//		maxTrialFactor =  (int) Math.ceil(Math.pow(nOrig, ONE_THIRD));
 		smallFactoriser.setMaxFactor(maxTrialFactor);
 		// factor out the factors around n^1/3 with trial division first is this faster?
-		double nPowOneThirdFact = 1 / maxFactorMultiplier;
+		double nPowOneThirdFact = 1. / maxFactorMultiplier;
 		final long nAfterTrial = smallFactoriser.findPrimeFactors(n, primeFactors, nPowOneThirdFact, 1.);
 		if (primeFactors == null && nAfterTrial != n)
 			return nAfterTrial;
@@ -184,7 +186,7 @@ public class LehmanReverseFact extends FindPrimeFact {
 		// surprisingly it gives no speedup when using k's with many prime factors as lehman suggests
 		// for k=2 we know that x has to be even and results in a factor more often
 		final double sqrt4N = 2 * sqrtN;
-		for (int k = 1; k <= kMax; k++) {
+			for (int k = 1; k <= kMax; k++) {
 			final double sqrt4kn = sqrt[k] * sqrt4N;
 			// adding a small constant to avoid rounding issues and rounding up is much slower then
 			// using the downcast and adding a constant close to 1. Took the constant from the yafu code

@@ -47,7 +47,7 @@ public class ErrorShiftTest {
 		//		Factorizer factorizer1 = new LehmanBigFact(bitsMax, 1);
 		//		final Factorizer factorizer2 = new LehmanMod16Fact(bitsMax);
 		//		final Factorizer factorizer2 = new LehmanApproxFact();
-		final LehmanSingleFactorFinder factorizer2 = new LehmanSingleFactorFinder(bitsMax);
+		final SingleFactorFinder factorizer2 = new LehmanSingleFactorFinder(bitsMax, 5f);
 		final Factorizer factorizer1 = new LehmanYafuFact(1.5f);
 		//		final Factorizer factorizer2 = new TrialInvFact(1 << bits + 4);
 
@@ -93,18 +93,18 @@ public class ErrorShiftTest {
 
 	@Test
 	public void testPerfHard(){
-		final int bits = 40;
+		final int bits = 30;
 		final int numPrimes = 1000;
-		int loop = 30;
-		final long[] semiprimes = makeSemiPrimesList(bits, bits/3+1, numPrimes);
+		int loop = 200;
+		final long[] semiprimes = makeSemiPrimesList(bits, bits/6+1, numPrimes);
 
 		System.out.println("finished making hard numbers");
 		final long start = System.currentTimeMillis();
-		final Factorizer factorizer2 = new LehmanNoSqrtFact(bits, 1.01f);
+//		final SingleFactorFinder factorizer1 = new LehmanSingleFactorFinder(bits, 1.01f);
 		final long end = System.currentTimeMillis();
 		System.out.println("time for setup : " + (end - start));
 //		final Factorizer factorizer1 = new LehmanYafuFact(2.8f);
-		final SingleFactorFinder factorizer1 = new LehmanSingleFactorFinder(bits);
+		final SingleFactorFinder factorizer1 = new LehmanSingleFactorFinder(bits, .15f);
 		final SingleFactorFinder factorizer3 = new CombinedFactorAlgorithm(1);
 
 		findFactors(factorizer1, semiprimes, loop);
@@ -177,10 +177,10 @@ public class ErrorShiftTest {
 		//		Factorizer factorizer2 = new FermatResiduesRec();
 		//		final Factorizer factorizer2 = new TrialInvFact(1 << bits/2);
 		//		Factorizer factorizer2 = new FermatFact();
-		final Factorizer factorizer2 = new LehmanNoSqrtFact(bits, 1);
-		final Factorizer factorizer1 = new LehmanNoSqrtFact(bits, 3f);
+		final SingleFactorFinder factorizer1 = new LehmanSingleFactorFinder(bits, 3f);
+		final SingleFactorFinder factorizer2 = new LehmanSingleFactorFinder(bits, 1f);
 		//		final Factorizer factorizer2 = new TrialWithPrimesFact();
-						final FactorAlgorithm factorizer3 = new CombinedFactorAlgorithm(1);
+		final FactorAlgorithm factorizer3 = new CombinedFactorAlgorithm(1);
 		//		final Factorizer factorizer1 = new LehmanYafuFact();
 
 		//		((TrialFactMod)factorizer1).setLimit(1 << 16);

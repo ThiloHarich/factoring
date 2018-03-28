@@ -2,6 +2,7 @@ package factoring.fermat.lehman;
 
 import java.util.Collection;
 
+import factoring.FactorFinderLong;
 import factoring.FindPrimeFact;
 import factoring.math.PrimeMath;
 import factoring.trial.TrialInvFact;
@@ -41,7 +42,7 @@ import factoring.trial.TrialInvFact;
  * and let the JVM do the optimization here. When adapting to other languages this should be done.
  * Created by Thilo Harich on 28.06.2017.
  */
-public class LehmanNoSqrtFact extends FindPrimeFact {
+public class LehmanNoSqrtFact implements FactorFinderLong {
 
 	static double ONE_THIRD = 1.0/3;
 	// to be fast to decide if a number is a square we consider the
@@ -101,19 +102,17 @@ public class LehmanNoSqrtFact extends FindPrimeFact {
 	 * for numbers below n^1/3 then do the lehman factorization above n^1/3. In this case the running time is
 	 * bounded by max(maximal factor, c*n^1/3 / log(n)).
 	 * For maxFactorMultiplier >= 1 we first inspect numbers above maxFactorMultiplier * n^1/3 with the lehman
-	 * factorization.
-	 * The running time in this stage is 1/maxFactorMultiplier * n^1/3. After completing this phase we do
-	 * trial division for numbers below maxFactorMultiplier * n^1/3 in time maxFactorMultiplier * n^1/3  / log(n).
-	 * This means if you know that there are
-	 * only factor above maxFactorMultiplier * n^1/3 the runtime is bounded by 1/maxFactorMultiplier * n^1/3.<br><br>
-	 * Use<br>
-	 * maxFactorMultiplier = 1<br>
+	 * factorization. After completing this phase we do
+	 * trial division for numbers below maxFactorMultiplier * n^1/3<br>
+     * Use<br>
+	 * maxFactorMultiplier <= 1<br>
 	 * - if you do not know anything about the numbers to factorize<br>
-	 * - if you know the maximal factors can not exceed n^1/3<br>
-	 * maxFactorMultiplier = 3 <br>
+	 * - if you know the maximal factors can not exceed n^maxFactorMultiplier < n^1/3<br>
+	 * here all found factors are prime factors and will be stored in the primeFactors Collection.
+	 * maxFactorMultiplier = 3 (this is the optimal value) <br>
 	 * - if you know for most of the numbers the maximal factors will exceed 3*n^1/3<br>
-	 * In the last case {@link #findPrimeFactors(long, Collection)} might return a composite number
-	 * TODO fix this behaviour
+	 * In the last case {@link #findFactors(long, Collection)} might return a composite number
+	 *
 	 */
 	public LehmanNoSqrtFact(int bits, float maxFactorMultiplierIn) {
 		if (bits > 41)
@@ -143,7 +142,7 @@ public class LehmanNoSqrtFact extends FindPrimeFact {
 	}
 
 	@Override
-	public long findPrimeFactors(long n, Collection<Long> primeFactors) {
+	public long findFactors(long n, Collection<Long> primeFactors) {
 		if (n > 1l << 41)
 			throw new IllegalArgumentException("numbers above 41 bits can not be factorized");
 		// with this implementation the lehman part is not slower then the trial division
