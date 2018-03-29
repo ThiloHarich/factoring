@@ -121,6 +121,13 @@ public class TrialInvFact extends FindPrimeFact {
 					return (long) primes[primeIndex];
 				primeFactors.add((long) primes[primeIndex]);
 				n = Math.round(nDivPrime);
+//				// if the remainder n is lower then the maximal prime factor and it can not be split it must also
+//				// be prime factor
+//				if (n < maxFactor && n*n > maxFactor) {
+//					primeFactors.add(n);
+//					return 1;
+//				}
+
 				nDivPrime = n*primesInv[primeIndex];
 			}
 		}
