@@ -117,7 +117,6 @@ public class LehmanNoSqrtFact implements FactorFinderLong {
 	public LehmanNoSqrtFact(int bits, float maxFactorMultiplierIn) {
 		if (bits > 41)
 			throw new IllegalArgumentException("numbers above 41 bits can not be factorized");
-		// a multiplier below 1 is theoretically possible, but it gives no good performance
 		maxFactorMultiplier = maxFactorMultiplierIn < 1 ? 1 : maxFactorMultiplierIn;
 		maxTrialFactor = (int) Math.ceil(maxFactorMultiplier * Math.pow(1L << bits, ONE_THIRD));
 		maxFactorMultiplierCube = maxFactorMultiplier * maxFactorMultiplier * maxFactorMultiplier;
@@ -159,11 +158,9 @@ public class LehmanNoSqrtFact implements FactorFinderLong {
 			n = nAfterTrial;
 		}
 
-		// if n is already factorized return early
 		if (n == 1)
 			return n;
 
-		// since lehman can not factorize squares check this case first
 		if (PrimeMath.isSquare(n)){
 			final long x = PrimeMath.sqrt(n);
 			if (x*x == n) {
@@ -220,23 +217,23 @@ public class LehmanNoSqrtFact implements FactorFinderLong {
 					if (y*y == right){
 						final long factor = PrimeMath.gcd(n, x - y);
 						if (factor != 1) {
-							// just looking for some factor or can not be sure that it is a prime factor just return the factor
-							if (primeFactors == null || maxTrialFactor > 1)
+							if (primeFactors == null)
 								return factor;
-							// else it is must prime factor
 							// when maxTrialFactor == 1 we have done the trial division first -> the factor
 							// has to be a prime factor, n/factor is of size < n^2/3 and can not be a composite factor
-							primeFactors.add(factor);
-							if (n != factor)
-								primeFactors.add(n / factor);
-							return 1;
+							if (maxTrialFactor == 1) {
+								primeFactors.add(factor);
+								if (n != factor)
+									primeFactors.add(n / factor);
+								return 1;
+							}
 						}
 					}
 				}
 			}
 		}
 		// if we have not found a factor we still have to do the trial division phase
-		if (maxFactorMultiplier > 1 )
+		if (maxFactorMultiplier > 1)
 			n = smallFactoriser.findPrimeFactors(n, primeFactors);
 
 		return n;

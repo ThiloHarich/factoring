@@ -98,13 +98,18 @@ public class TrialRangeFact {
 		for (int primeIndex = (int)(maxFactorIndex*begin); primeIndex < maxFactorIndex*end; primeIndex++) {
 			double nDivPrime = n*primesInv[primeIndex];
 			// TODO choose the precision factor with respect to the maxFactor!?
-			if (primes[primeIndex] == 0)
-				System.out.println();
+//			if (primes[primeIndex] == 0)
+//				System.out.println();
 			while (Math.abs(Math.round(nDivPrime) - nDivPrime) < 0.01 && n > 1 && n % primes[primeIndex] == 0) {
 				if (primeFactors == null)
 					return (long) primes[primeIndex];
 				primeFactors.add((long) primes[primeIndex]);
 				n = Math.round(nDivPrime);
+//				// if the remainder is lower then the maximal prime we can exit early
+//				if (n < maxFactor && primeFactors != null){
+//					primeFactors.add(n);
+//					return 1;
+//				}
 				nDivPrime = n*primesInv[primeIndex];
 			}
 		}

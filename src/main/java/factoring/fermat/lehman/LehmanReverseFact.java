@@ -154,8 +154,8 @@ public class LehmanReverseFact implements FactorFinderLong {
 		//		maxTrialFactor =  (int) Math.ceil(Math.pow(nOrig, ONE_THIRD));
 		smallFactoriser.setMaxFactor(maxTrialFactor);
 		// factor out the factors around n^1/3 with trial division first is this faster?
-		double nPowOneThirdFact = 1. / maxFactorMultiplier;
-		final long nAfterTrial = smallFactoriser.findPrimeFactors(n, primeFactors, nPowOneThirdFact, 1.);
+		double begin = 1. / maxFactorMultiplier;
+		final long nAfterTrial = smallFactoriser.findPrimeFactors(n, primeFactors, begin, 1.);
 		if (primeFactors == null && nAfterTrial != n)
 			return nAfterTrial;
 
@@ -186,7 +186,7 @@ public class LehmanReverseFact implements FactorFinderLong {
 		// surprisingly it gives no speedup when using k's with many prime factors as lehman suggests
 		// for k=2 we know that x has to be even and results in a factor more often
 		final double sqrt4N = 2 * sqrtN;
-			for (int k = 1; k <= kMax; k++) {
+		for (int k = 1; k <= kMax; k++) {
 			final double sqrt4kn = sqrt[k] * sqrt4N;
 			// adding a small constant to avoid rounding issues and rounding up is much slower then
 			// using the downcast and adding a constant close to 1. Took the constant from the yafu code
@@ -229,7 +229,7 @@ public class LehmanReverseFact implements FactorFinderLong {
 		}
 		// if we have not found a factor we still have to do the trial division phase
 		if (maxFactorMultiplier > 1)
-			n = smallFactoriser.findPrimeFactors(n, primeFactors, 0, nPowOneThirdFact);
+			n = smallFactoriser.findPrimeFactors(n, primeFactors, 0, begin);
 
 		return n;
 	}

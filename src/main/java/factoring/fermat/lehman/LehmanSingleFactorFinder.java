@@ -42,14 +42,13 @@ public class LehmanSingleFactorFinder implements SingleFactorFinder, Factorizati
 //		this.bitsOfNumber = bitsOfNumber;
 //		this.maxFactorMultiplier = maxFactorMultiplier;
 		if (factorExponent < .33)
-			// TODO or use 3????
-			impl = new LehmanNoSqrtFact(bitsOfNumber, 1);
+			// TODO find perfect factor
+			impl = new LehmanNoSqrtFact(bitsOfNumber, .2f);
 		else {
 			if (factorExponent <= .37)
 				// there is still place for improvement here
 				impl = new LehmanReverseFact(bitsOfNumber, 3f);
 			else
-				// For hard factors this is fast
 				impl = new LehmanNoSqrtFact(bitsOfNumber, 3f);
 		}
 	}
