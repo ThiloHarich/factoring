@@ -7,10 +7,10 @@ import factoring.math.PrimeMath;
 import factoring.trial.TrialInvFact;
 
 /**
- * This is a version of the lehman factorization, which is a variant of the fermat
- * factorization.
+ * This is a version of the lehman factorizationByFactors, which is a variant of the fermat
+ * factorizationByFactors.
  * It runs in O(n^1/3) and needs O(n^1/3) space.
- * It is about three times faster then the java version of the yafu lehman factorization.
+ * It is about three times faster then the java version of the yafu lehman factorizationByFactors.
  * By storing the square roots of the multiplier k the range can be done faster.
  * It also uses a version of trial division, where the multiple inverse of the primes are stored.
  * So instead of a division a multiplication is needed to find out if a number is dividable

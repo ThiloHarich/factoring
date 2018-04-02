@@ -111,7 +111,7 @@ public class TrialInvFact extends FindPrimeFact {
 
 	@Override
 	public long findPrimeFactors(long n, Collection<Long> primeFactors) {
-		for (int primeIndex = 0; primes[primeIndex] <= maxFactor; primeIndex++) {
+		for (int primeIndex = 1; primes[primeIndex] <= maxFactor; primeIndex++) {
 			double nDivPrime = n*primesInv[primeIndex];
 			// TODO choose the precision factor with respect to the maxFactor!?
 			if (primes[primeIndex] == 0)

@@ -9,6 +9,6 @@ public class AbstractFactorFinder {
 
     // TODO define an intrface
     LehmanReverseFact impl;
-//LehmanNoSqrtFact impl;
+//LehmanFactorFinder impl;
 
 }

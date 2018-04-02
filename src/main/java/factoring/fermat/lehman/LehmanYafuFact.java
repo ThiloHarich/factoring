@@ -5,8 +5,8 @@ import java.util.Collection;
 import factoring.fermat.FermatFact;
 
 /****
- Code by Warren D. Smith, Dec 2011, to implement Lehman integer-factorization
- algorithm.  Rigorous O(N^(1/3)) step factorization (also prime-proving) algorithm
+ Code by Warren D. Smith, Dec 2011, to implement Lehman integer-factorizationByFactors
+ algorithm.  Rigorous O(N^(1/3)) step factorizationByFactors (also prime-proving) algorithm
  invented by RS Lehman 1974.
  COMPILE:
  ========
@@ -24,7 +24,7 @@ import factoring.fermat.FermatFact;
  to reduce SQUFOF's failure rate is to add a trial division (TD) stage to it; but mine
  has no trial division.
  "Hard" Ns are products of two random primes with half the number of bits each.
- Average factorization times to factor "hard" Ns:
+ Average factorizationByFactors times to factor "hard" Ns:
  #bits..LEHMAN(TD).......LEHMAN(No TD)....PoorSQUFOF
  43.....190(tune=2.8)....85.9(tune=3.0)...82usec(4.5% fail)
  42.....152..............56.8(tune=4.0)...69....(4.6% fail)
@@ -71,7 +71,7 @@ import factoring.fermat.FermatFact;
  ===========================
  All above runs were using CutFrac=1.0 and are disappointing if DoTrial=TRUE.
  However, it then occurred to me that we could employ CutFrac=0.1 to get a
- speedup.  Using 0.1, Lehman will omit the last 90% of the trial factorization then just go directly
+ speedup.  Using 0.1, Lehman will omit the last 90% of the trial factorizationByFactors then just go directly
  to square-finding.  If square finding fails (which is rare), Lehman then returns to
  trial dividing to do the missing 90%.   Here is what happens:
  40-bit hard composite N, asserts off, Tune=2.75:
@@ -114,7 +114,7 @@ import factoring.fermat.FermatFact;
  ever hurt correctness.  (Comments inside code discuss why I believe that.)
  Factor Validity: testing 100 million N with N=A*B with
  2611953 <= A <= B <= 2965920
- LehmanFactor always succeeded in factorization.
+ LehmanFactor always succeeded in factorizationByFactors.
  This is highly reassuring but could be deceptive since
  (a) changing the tuning constants could alter the failure set.
  (b) It appears that Lehman can be sensitive to the distribution of N and
@@ -375,7 +375,7 @@ public class LehmanYafuFact extends FermatFact {
 
 		//Here are some typical calls to LehmanFactor.
 		//  LehmanFactor(N, (tune from 0.1 to 9.6), (tune from 0 to 5.0),
-		//            (TRUE unless want to skip trial factorization which would be unusual),
+		//            (TRUE unless want to skip trial factorizationByFactors which would be unusual),
 		//            (TRUE if want to try OLF speculative speedup FALSE if skip it) );
 		N=3141592651L;
 		M = LehmanFactor(N, 2.5, 0.0, true, 0.4);

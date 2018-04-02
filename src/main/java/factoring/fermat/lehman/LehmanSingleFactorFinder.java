@@ -15,6 +15,8 @@ import factoring.FactorizationOfLongs;
  */
 public class LehmanSingleFactorFinder implements SingleFactorFinder, FactorizationOfLongs {
 	private final FactorFinderLong impl;
+
+	boolean factorizationByPrimes = false;
 //	int bits;
 //	float maxFactorMultiplier;
 
@@ -25,37 +27,42 @@ public class LehmanSingleFactorFinder implements SingleFactorFinder, Factorizati
 
 	/**
 	 * Configure the algorithms to be used, depending on the size of the number to be factorized and the
-	 * size of the factors in the factorization. If the numbers are random, or are ascending
-	 * the expected exponent of the factors is a low number. In this case you should use
+	 * size of the factors in the factorization. In the Input is n and the second biggest number in the
+	 * factorization is n^a, use a as the factorExponent.
+	 * If the numbers are random, or are ascending
+	 * the second biggest number of the factorization is small compared to n. In this case you should use
 	 * 0 as factorExponent (or any number below .33). If you know the numbers n to be factorized are semiprimes -
 	 * both with roughly the same size - the number have size n^1/2. This is
-	 * the exponent of both primes are ~ .5. Use .5 as factorExponent here. Only if you know that the factorization
+	 * the exponent of both primes are ~ .5. Use .5 as factorExponent here. Only if you know that the factorizationByFactors
 	 * has two or three primes, where one prime has size around n^1/3, use 1/3 as factorExponent here.<br>
 	 * For factorExponent < 0.33f we do trial division beginning with small primes is used first, then we use the lehman algorithm.<br>
 	 * For factorExponent > 0.37f the lehman algorithm optimized for big factors is applied first.<br>
 	 * For  0.33 <= factorExponent <= .37 trial division with factors in this range is done first.<br>
 	 * @param bitsOfNumber the maximal number of bits of the number to be factorized
-	 * @param factorExponent the exponent of the second biggest factor of the factorization. If you factorize n
+	 * @param factorExponent the exponent of the second biggest factor of the factorizationByFactors. If you factorize n
 	 *                          this is factor should have size n ^ factorExponent.
 	 */
 	public LehmanSingleFactorFinder(int bitsOfNumber, float factorExponent) {
 //		this.bitsOfNumber = bitsOfNumber;
 //		this.maxFactorMultiplier = maxFactorMultiplier;
-		if (factorExponent < .33)
-			// TODO find perfect factor
-			impl = new LehmanNoSqrtFact(bitsOfNumber, .2f);
+		if (factorExponent < .33) {
+			impl = new LehmanFactorFinder(bitsOfNumber, 1f);
+			factorizationByPrimes = true;
+		}
 		else {
 			if (factorExponent <= .37)
 				// there is still place for improvement here
 				impl = new LehmanReverseFact(bitsOfNumber, 3f);
 			else
-				impl = new LehmanNoSqrtFact(bitsOfNumber, 3f);
+				// we use the same algorithm as for small numbers but configure it to first look for big numbers.
+				// in this case we will get no primes out of the algorithm, but since the numbers are big we do not care
+				impl = new LehmanFactorFinder(bitsOfNumber, 3f);
 		}
 	}
 
 	@Override
 	public BigInteger findSingleFactor(BigInteger n) {
-		//        LehmanNoSqrtFact impl = new LehmanNoSqrtFact(41, 1.001f);
+		//        LehmanFactorFinder impl = new LehmanFactorFinder(41, 1.001f);
 		final long factor = getImpl(n.longValue()).findFactors(n.longValue(), null);
 		return BigInteger.valueOf(factor);
 	}
@@ -70,8 +77,8 @@ public class LehmanSingleFactorFinder implements SingleFactorFinder, Factorizati
 	 */
 	@Override
 	public SortedMultiset<BigInteger> factor(BigInteger n) {
-		TreeMultiset<Long> allFactors = factorization(n.longValue());
-//		allFactors.addAll(primeFactors);
+		TreeMultiset<Long> allFactors;
+		allFactors = factorization(n.longValue());
 		SortedMultiset result = new SortedMultiset_BottomUp(allFactors);
 		return result;
 	}
@@ -79,6 +86,11 @@ public class LehmanSingleFactorFinder implements SingleFactorFinder, Factorizati
 	@Override
 	public String getName() {
 		return LehmanSingleFactorFinder.class.getSimpleName();
+	}
+
+	@Override
+	public boolean returnsOnlyPrimeFactors() {
+		return factorizationByPrimes;
 	}
 
 	@Override

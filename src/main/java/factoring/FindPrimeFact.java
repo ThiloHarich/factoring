@@ -37,7 +37,9 @@ public abstract class FindPrimeFact implements Factorizer {
 	 * The method always return a factor of n.
 	 * If you call the method with null as prime factors. A maybe composite factor of n will be returned.
 	 * If you call it with a collection of prime factors, the remainder of n when divided by the prime factors
-	 * will be returned. In each call, a set of prime factors might be added.
+	 * will be returned. If the Implementation always does a complete factorizationByFactors and always adds Prime Factors
+	 * (and no composite factors) the returned value must always be 1.
+	 * In each call, a set of prime factors might be added.
 	 *
 	 * each call either finds one ore more prime primeFactors of n and adds it to the primeFactors.
 	 * There might already be some primes stored in the collection.

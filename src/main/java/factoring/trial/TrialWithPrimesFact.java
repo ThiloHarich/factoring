@@ -10,10 +10,10 @@ import java.util.Collection;
  * We can only factorize numbers up to 2^32.
  * When calling it with bigger numbers only prime factors below
  * 2^16 were added to the factors. {@link #findPrimeFactors(long, Collection)} then might return a
- * composite number. This strictly means it can not be applied for factorization big numbers,
+ * composite number. This strictly means it can not be applied for factorizationByFactors big numbers,
  * but it can be applied for finding the prime factors below 2^16 and applying other algorithms
  * to factor the returned remainder. This is exactly what the lehman and hart algorithms need.
- * We have choosen 2^16 because when factorization long numbers by the lehman method, they have to be
+ * We have choosen 2^16 because when factorizationByFactors long numbers by the lehman method, they have to be
  * lower n =  2^48 = (2^16)^3, which means we can find all primesInv below n^1/3 with this algorithm.
  *
  * Create a new instance, unless you want to have control over the search interval by using {@link #setMaxFactor(int)}.
@@ -51,7 +51,7 @@ public class TrialWithPrimesFact extends FindPrimeFact {
     }
 
     private int maxFactor = 65535;
-    // we keep the index so that we can continue with the factorization after applying
+    // we keep the index so that we can continue with the factorizationByFactors after applying
     // other algorithms like lehman, not so nice
     int primeIndex = 0;
 

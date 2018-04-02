@@ -2,6 +2,7 @@ package factoring.fermat.lehman;
 
 import java.util.Collection;
 
+import factoring.FactorFinderLong;
 import factoring.FindPrimeFact;
 import factoring.math.PrimeMath;
 import factoring.trial.TrialInvFact;
@@ -41,7 +42,7 @@ import factoring.trial.TrialInvFact;
  * and let the JVM do the optimization here. When adapting to other languages this should be done.
  * Created by Thilo Harich on 28.06.2017.
  */
-public class LehmanNoSqrtFact extends FindPrimeFact {
+public class LehmanFactorFinder implements FactorFinderLong {
 
     static double ONE_THIRD = 1.0 / 3;
     // to be fast to decide if a number is a square we consider the
@@ -101,21 +102,18 @@ public class LehmanNoSqrtFact extends FindPrimeFact {
      *                              for numbers below n^1/3 then do the lehman factorizationByFactors above n^1/3. In this case the running time is
      *                              bounded by max(maximal factor, c*n^1/3 / log(n)).
      *                              For maxFactorMultiplier >= 1 we first inspect numbers above maxFactorMultiplier * n^1/3 with the lehman
-     *                              factorizationByFactors.
-     *                              The running time in this stage is 1/maxFactorMultiplier * n^1/3. After completing this phase we do
-     *                              trial division for numbers below maxFactorMultiplier * n^1/3 in time maxFactorMultiplier * n^1/3  / log(n).
-     *                              This means if you know that there are
-     *                              only factor above maxFactorMultiplier * n^1/3 the runtime is bounded by 1/maxFactorMultiplier * n^1/3.<br><br>
+     *                              factorizationByFactors. After completing this phase we do
+     *                              trial division for numbers below maxFactorMultiplier * n^1/3<br>
      *                              Use<br>
-     *                              maxFactorMultiplier = 1<br>
+     *                              maxFactorMultiplier <= 1<br>
      *                              - if you do not know anything about the numbers to factorize<br>
-     *                              - if you know the maximal factors can not exceed n^1/3<br>
-     *                              maxFactorMultiplier = 3 <br>
+     *                              - if you know the maximal factors can not exceed n^maxFactorMultiplier < n^1/3<br>
+     *                              here all found factors are prime factors and will be stored in the primeFactors Collection.
+     *                              maxFactorMultiplier = 3 (this is the optimal value) <br>
      *                              - if you know for most of the numbers the maximal factors will exceed 3*n^1/3<br>
-     *                              In the last case {@link #findPrimeFactors(long, Collection)} might return a composite number
-     *                              TODO fix this behaviour
+     *                              In the last case {@link #findFactors(long, Collection)} might return a composite number
      */
-    public LehmanNoSqrtFact(int bits, float maxFactorMultiplierIn) {
+    public LehmanFactorFinder(int bits, float maxFactorMultiplierIn) {
         if (bits > 41)
             throw new IllegalArgumentException("numbers above 41 bits can not be factorized");
         maxFactorMultiplier = maxFactorMultiplierIn < 1 ? 1 : maxFactorMultiplierIn;
@@ -142,7 +140,7 @@ public class LehmanNoSqrtFact extends FindPrimeFact {
     }
 
     @Override
-    public long findPrimeFactors(long n, Collection<Long> factors) {
+    public long findFactors(long n, Collection<Long> primeFactors) {
         if (n > 1l << 41)
             throw new IllegalArgumentException("numbers above 41 bits can not be factorized");
         // with this implementation the lehman part is not slower then the trial division
@@ -151,22 +149,24 @@ public class LehmanNoSqrtFact extends FindPrimeFact {
         //		maxTrialFactor =  (int) Math.ceil(Math.pow(nOrig, ONE_THIRD));
         smallFactoriser.setMaxFactor(maxTrialFactor);
         // factor out all small factors if
-        if (maxFactorMultiplier <= 1)
-            n = smallFactoriser.findPrimeFactors(n, factors);
+        if (maxFactorMultiplier <= 1) {
+            long nAfterTrial = smallFactoriser.findPrimeFactors(n, primeFactors);
+            if (primeFactors == null && nAfterTrial != n)
+                return nAfterTrial;
+            n = nAfterTrial;
+        }
 
-        if (n < maxTrialFactor)
+        if (n == 1)
             return n;
 
-        // For maxFactorMultiplier <= 1 this is the only case were we do not have a prime factor
 //        if (PrimeMath.isSquare(n)) {
 //            final long x = PrimeMath.sqrt(n);
 //            if (x * x == n) {
-////                factors.add(x);
 //                return x;
 //            }
 //        }
-        // re-adjust the maximal factor we have to search for. If factors were found, which is quite
-        // often the case for arbitrary numbers, this cuts down the runtime dramatically.
+        // re-adjust the maximal factor we have to search for. If small factors were found by trial division,
+        // which is quite often the case for arbitrary numbers, this cuts down the runtime dramatically.
         // TODO maybe we can do even better here?
         maxTrialFactor = (int) Math.ceil(maxFactorMultiplier * Math.pow(n, ONE_THIRD));
         //		final int kMax = maxTrialFactor;
@@ -214,34 +214,24 @@ public class LehmanNoSqrtFact extends FindPrimeFact {
                     if (y * y == right) {
                         final long factor = PrimeMath.gcd(n, x - y);
                         if (factor != 1) {
-                            factors.add(factor);
-                            return n / factor;
-                            // we know that the remaining factor has to be a prime factor
-                            // but this gives no speedup for ramdom numbers
-                            //						if (n != factor)
-                            //							factors.add(n / factor);
-                            //						return 1;
+                            if (primeFactors == null)
+                                return factor;
+                            // when maxFactorMultiplier == 1 we have done the trial division first -> the factor
+                            // has to be a prime factor, n/factor is of size < n^2/3 and can not be a composite factor
+                            if (maxFactorMultiplier == 1) {
+                                primeFactors.add(factor);
+                                if (n != factor)
+                                    primeFactors.add(n / factor);
+                                return 1;
+                            }
                         }
                     }
                 }
-                //				if(LehmanYafuFact.issq1024[(int)(right & 1023)]){
-                //					//					if((LehmanYafuFact.issq4199[(int)(right%3465)]&2) != 0){
-                //					//						if((LehmanYafuFact.issq4199[(int)(right%4199)]&1) != 0){
-                //					final int b = (int) Math.sqrt(right + 0.9);
-                //					if(b*b==right){ //square found
-                //						final long B2 = LehmanYafuFact.gcd64(x+b, n);
-                //						assert(B2>1);
-                //						//                                if(B2>=N){ System.out.printf("theorem failure: B2=%llu N=%llu\n", B2,N); }
-                //						return(B2);
-                //					}
-                //					//						}
-                //					//					}
-                //				}
             }
         }
         // if we have not found a factor we still have to do the trial division phase
         if (maxFactorMultiplier > 1)
-            n = smallFactoriser.findPrimeFactors(n, factors);
+            n = smallFactoriser.findPrimeFactors(n, primeFactors);
 
         return n;
     }
@@ -262,8 +252,8 @@ public class LehmanNoSqrtFact extends FindPrimeFact {
 
     @Override
     public String toString() {
-        return "LehmanNoSqrtFact{" +
-                "maxTrialFactor=" + maxTrialFactor +
+        return "LehmanFactorFinder{" +
+                "maxFactorMultiplier=" + maxFactorMultiplier +
                 '}';
     }
 }

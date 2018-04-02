@@ -13,7 +13,7 @@ import java.util.List;
  * possible primesInv in the range of the product of all the primesInv by sieving.
  * Then this list of possible primesInv (which also contains non primesInv) is used
  * to see if the number n is dividable by.
- * TODO do a proper Wheel factorization implementation.
+ * TODO do a proper Wheel factorizationByFactors implementation.
  * Created by Thilo Harich on 02.03.2017.
  */
 public class TrialModFact extends TrialFact {

@@ -6,9 +6,9 @@ import factoring.FindPrimeFact;
 import factoring.math.PrimeMath;
 import factoring.trial.TrialWithPrimesFact;
 /**
- * This is a version of the lehman factorization, which is a variant of the fermat
- * factorization.
- * It is twice as fats as the java version of lehman factorization written by Warren D. Smith used in yafu.
+ * This is a version of the lehman factorizationByFactors, which is a variant of the fermat
+ * factorizationByFactors.
+ * It is twice as fats as the java version of lehman factorizationByFactors written by Warren D. Smith used in yafu.
  *
  * Since calculating the ranges of the inner loop requires at least one square root
  * and a division we precalculate the square roots for the multipliers k and the inversion of it.

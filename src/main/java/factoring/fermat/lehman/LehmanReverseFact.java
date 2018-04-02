@@ -8,10 +8,10 @@ import factoring.math.PrimeMath;
 import factoring.trial.TrialRangeFact;
 
 /**
- * This is a version of the lehman factorization, which is a variant of the fermat
- * factorization.
+ * This is a version of the lehman factorizationByFactors, which is a variant of the fermat
+ * factorizationByFactors.
  * It runs in O(n^1/3) and needs O(n^1/3) space.
- * It is about three times faster then the java version of the yafu lehman factorization.
+ * It is about three times faster then the java version of the yafu lehman factorizationByFactors.
  * By storing the square roots of the multiplier k the range can be done faster.
  * It also uses a version of trial division, where the multiple inverse of the primes are stored.
  * So instead of a division a multiplication is needed to find out if a number is dividable
@@ -100,10 +100,10 @@ public class LehmanReverseFact implements FactorFinderLong {
 	 * @param maxFactorMultiplierIn Defines the size of the factors the algorithm is first looking for.
 	 * The algorithm is working best for number where the lowest factor is
 	 * maxFactorMultiplier * n^1/3 or higher. If maxFactorMultiplier is 1 or lower we first do trial division
-	 * for numbers below n^1/3 then do the lehman factorization above n^1/3. In this case the running time is
+	 * for numbers below n^1/3 then do the lehman factorizationByFactors above n^1/3. In this case the running time is
 	 * bounded by max(maximal factor, c*n^1/3 / log(n)).
 	 * For maxFactorMultiplier >= 1 we first inspect numbers above maxFactorMultiplier * n^1/3 with the lehman
-	 * factorization.
+	 * factorizationByFactors.
 	 * The running time in this stage is 1/maxFactorMultiplier * n^1/3. After completing this phase we do
 	 * trial division for numbers below maxFactorMultiplier * n^1/3 in time maxFactorMultiplier * n^1/3  / log(n).
 	 * This means if you know that there are
@@ -250,7 +250,7 @@ public class LehmanReverseFact implements FactorFinderLong {
 
 	@Override
 	public String toString() {
-		return "LehmanNoSqrtFact{" +
+		return "LehmanFactorFinder{" +
 				"maxFactorMultiplier=" + maxFactorMultiplier +
 				'}';
 	}

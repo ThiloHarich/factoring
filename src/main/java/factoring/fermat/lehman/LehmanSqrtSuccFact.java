@@ -7,9 +7,9 @@ import factoring.trial.TrialWithPrimesFact;
 import java.util.Collection;
 
 /**
- * This is a version of the lehman factorization, which is a variant of the fermat
- * factorization.
- * It is more twice as fats as the java version of the yafu lehman factorization.
+ * This is a version of the lehman factorizationByFactors, which is a variant of the fermat
+ * factorizationByFactors.
+ * It is more twice as fats as the java version of the yafu lehman factorizationByFactors.
  * In 15 out of 16 cases (for k) only one value of x has to be considered, but
  * the calculation of the rages has to be done all the time.
  * Since calculating the ranges of the inner loop requires at least one square root

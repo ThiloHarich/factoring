@@ -8,7 +8,7 @@ import factoring.trial.TrialWithPrimesFact;
 import java.util.Collection;
 
 /**
- * This is a variant of the Lehman factorization were we only take into account solutions for x modulo
+ * This is a variant of the Lehman factorizationByFactors were we only take into account solutions for x modulo
  * certain powers of 2. The original lehman algorithm does this only for modulo 2 and 4. This
  * variant can be applied also to higher mods. The possible solutions for such mods are stored in an
  * array. Lehman has solved the equations for 2 and 4 explicitly.

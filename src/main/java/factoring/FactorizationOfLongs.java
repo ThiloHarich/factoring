@@ -3,6 +3,7 @@ package factoring;
 import com.google.common.collect.Multiset;
 import com.google.common.collect.TreeMultiset;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -14,12 +15,39 @@ public interface FactorizationOfLongs {
 
 
     /**
-     * prints out the factorization in a nice ways starting with the lowest factors.
+     * If the {@link FactorFinderLong#findFactors(long, Collection)} of the underlying {@link #getImpl(long)}
+     * always retuns prime Factors this method returns true.
+     * It then fills the prime factors of the given collection only with prime factors or always retuns a prime
+     * factor if no prime factors are passed over.
+     * @return
+     */
+    boolean returnsOnlyPrimeFactors();
+
+    /**
+     * returns a full prime factorization of the number.
+     * The factorization is given as a TreeMultiset of the prime factors.
+     * If the underlying algorithm returns only prime factors, we do not have to factorize the factors we have found.
+     *
+     * @param n
+     * @return
+     */
+    default TreeMultiset<Long> factorization(long n) {
+        TreeMultiset<Long> allFactors;
+        if (returnsOnlyPrimeFactors())
+            allFactors = factorizationByPrimes(n);
+        else
+            allFactors = factorizationByFactors(n);
+        return allFactors;
+    }
+
+
+    /**
+     * prints out the factorizationByFactors in a nice ways starting with the lowest factors.
      * @param n
      * @return
      */
     default String printFactorization(long n) {
-        final TreeMultiset<Long> factors = factorization(n);
+        final TreeMultiset<Long> factors = factorizationByFactors(n);
 
         final List<String> s = new ArrayList<String>();
         for (final Multiset.Entry<Long> entry : factors.entrySet()) {
@@ -36,7 +64,7 @@ public interface FactorizationOfLongs {
     }
 
     /**
-     * This method returns a complete factorization of n.
+     * This method returns a complete factorizationByFactors of n.
      * It uses the implementation returned by {@link #getImpl(long)} and calls
      * {@link FactorFinderLong#findFactors(long, Collection)}. This will return a factor.
      * This factor does not have to be a prime factor, and has to be factorized again by
@@ -44,7 +72,7 @@ public interface FactorizationOfLongs {
      * @param n
      * @return
      */
-    default TreeMultiset<Long> factorization(long n) {
+    default TreeMultiset<Long> factorizationByFactors(long n) {
         // if we have a prime return an empty set
         TreeMultiset<Long> factorsEven = TreeMultiset.create();
         while ((n & 1) == 0)
@@ -68,12 +96,32 @@ public interface FactorizationOfLongs {
         for (long factor : primeFactors) {
             factor2 /= factor;
         }
-        TreeMultiset<Long> subFactors1 = factorization(factor1);
-        TreeMultiset<Long> subFactors2 = factorization(factor2);
+        TreeMultiset<Long> subFactors1 = factorizationByFactors(factor1);
+        TreeMultiset<Long> subFactors2 = factorizationByFactors(factor2);
         factorsEven.addAll(subFactors1);
         factorsEven.addAll(subFactors2);
         factorsEven.addAll(primeFactors);
         return factorsEven;
+    }
+
+    default TreeMultiset<Long> factorizationByPrimes(long n) {
+        TreeMultiset<Long> primeFactors = TreeMultiset.create();
+        while ((n & 1) == 0)
+        {
+            primeFactors.add(2l);
+            n = n >> 1;
+        }
+        if (n == 1) {
+            return primeFactors;
+        }
+        // try to find all prime factors
+        long remainder = getImpl(n).findFactors(n, primeFactors);
+        // if we do not find a trivial divisor add it; this should only be the case if n
+        // without the powers of 2 is a prime
+        if (remainder != 1){
+            primeFactors.add(n);
+        }
+        return primeFactors;
     }
 
     /**
