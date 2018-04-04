@@ -16,4 +16,5 @@ public interface FactorFinderLong {
      * @return a factor of n if there is one. If n is prime n will be returned.
      */
     long findFactors (long n, Collection<Long> primeFactors);
+
 }

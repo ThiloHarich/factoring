@@ -9,6 +9,8 @@ import java.util.Collection;
 import java.util.List;
 
 /**
+ * This is an Interface which gives an {@link #factorization(long)} of a long number.
+ * It calls {@link FactorFinderLong#findFactors(long, Collection)} at the Implementation returned by {@link #getImpl(long)}.
  * Created by Thilo Harich on 26.03.2018.
  */
 public interface FactorizationOfLongs {
@@ -69,6 +71,10 @@ public interface FactorizationOfLongs {
      * {@link FactorFinderLong#findFactors(long, Collection)}. This will return a factor.
      * This factor does not have to be a prime factor, and has to be factorized again by
      * findFactors().
+     * 
+     * @deprecated ("due to performance reasons this should no be used. It can be called to check correctness of an algorithm or if there is no algorithm available
+     * where {@link #returnsOnlyPrimeFactors} returns false.")
+     * @see use {@link #factorizationByPrimes} if possible.
      * @param n
      * @return
      */

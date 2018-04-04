@@ -10,7 +10,19 @@ import factoring.FactorFinderLong;
 import factoring.FactorizationOfLongs;
 
 /**
- *
+ * This algorithm combines different fast Implementation of the lehman factoring algorithm.
+ * It uses a fast implementaion of a trial division algorithm as well.
+ * Usually it is 3 times faster then the YAFU implementation by... 
+ * It works for numbers up to 41 bits.
+ * For numbers up to around 34 bits it faster then the java implementation of the SQUAFU algorithm provided 
+ * by til neuman. But you have to know about the size of the factors in the factorization. Where as in the SQUAFU
+ * implementation usually the running time is independent of the size of the numbers.
+ * For small factors (below n^1/3 if the number to factorize is n) the algorithm basically uses trial division.
+ * Here it is much faster then the SQUAFU algorithm. If n consists of only two factors in the area of n^1/2 it 
+ * uses the lehman algorithm first preferably high numbers > 3*n^1/3, then switching to trial division.
+ * For numbers in between a mixed approach is going to be applied.
+ * For random numbers it should always be faster then the SQUAFU up
+ * 
  * Created by Thilo Harich on 18.03.2018.
  */
 public class LehmanSingleFactorFinder implements SingleFactorFinder, FactorizationOfLongs {
@@ -86,7 +98,7 @@ public class LehmanSingleFactorFinder implements SingleFactorFinder, Factorizati
 
 	@Override
 	public String getName() {
-		return LehmanSingleFactorFinder.class.getSimpleName();
+		return impl.toString();
 	}
 
 	@Override

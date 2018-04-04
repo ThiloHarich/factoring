@@ -250,7 +250,7 @@ public class LehmanReverseFact implements FactorFinderLong {
 
 	@Override
 	public String toString() {
-		return "LehmanFactorFinder{" +
+		return "LehmanReverseFact{" +
 				"maxFactorMultiplier=" + maxFactorMultiplier +
 				'}';
 	}
