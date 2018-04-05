@@ -50,6 +50,7 @@ public class LehmanSingleFactorFinder implements SingleFactorFinder, Factorizati
 			factorizationByPrimes = true;
 		}
 		else {
+			// TODO find the right boarder here
 			if (factorExponent <= .37)
 				// there is still place for improvement here
 				impl = new LehmanReverseFact(bitsOfNumber, 3f);
