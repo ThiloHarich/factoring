@@ -74,7 +74,7 @@ public interface FactorizationOfLongs {
      * 
      * @deprecated ("due to performance reasons this should no be used. It can be called to check correctness of an algorithm or if there is no algorithm available
      * where {@link #returnsOnlyPrimeFactors} returns false.")
-     * @see use {@link #factorizationByPrimes} if possible.
+     * @see #factorizationByPrimes if possible.
      * @param n
      * @return
      */

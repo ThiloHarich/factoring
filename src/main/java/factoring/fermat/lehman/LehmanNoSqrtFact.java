@@ -152,7 +152,7 @@ public class LehmanNoSqrtFact extends FindPrimeFact {
         smallFactoriser.setMaxFactor(maxTrialFactor);
         // factor out all small factors if
         if (maxFactorMultiplier <= 1)
-            n = smallFactoriser.findPrimeFactors(n, factors);
+            n = smallFactoriser.findFactors(n, factors);
 
         if (n < maxTrialFactor)
             return n;
@@ -241,7 +241,7 @@ public class LehmanNoSqrtFact extends FindPrimeFact {
         }
         // if we have not found a factor we still have to do the trial division phase
         if (maxFactorMultiplier > 1)
-            n = smallFactoriser.findPrimeFactors(n, factors);
+            n = smallFactoriser.findFactors(n, factors);
 
         return n;
     }

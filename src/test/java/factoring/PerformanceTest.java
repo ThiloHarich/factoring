@@ -3,6 +3,7 @@ package factoring;
 import java.math.BigInteger;
 import java.util.Random;
 
+import factoring.fermat.lehman.LehmanYafuFact;
 import org.junit.Test;
 
 import de.tilman_neumann.math.factor.CombinedFactorAlgorithm;
@@ -17,16 +18,17 @@ public class PerformanceTest {
 	public void testPerfHard(){
 		final int bits = 34;
 		final int numPrimes = 1000;
-		int loop = 180;
-		final long[] semiprimes = makeSemiPrimesList(bits, bits/2, numPrimes);
+		int loop = 100;
+		final long[] semiprimes = makeSemiPrimesList(bits, bits/3+4, numPrimes);
 
 		System.out.println("finished making hard numbers");
 		final long start = System.currentTimeMillis();
 		final SingleFactorFinder factorizer2 = new LehmanSingleFactorFinder(bits, .44f);
 		final long end = System.currentTimeMillis();
 		System.out.println("time for setup : " + (end - start));
-//		final Factorizer factorizer1 = new LehmanYafuFact(2.8f);
-		final SingleFactorFinder factorizer1 = new LehmanSingleFactorFinder(bits, .34f);
+		final Factorizer factorizer1 = new LehmanYafuFact(2.8f);
+		// TODO couple or decouple from til neuman ??
+//		final SingleFactorFinder factorizer1 = new LehmanSingleFactorFinder(bits, .34f);
 		final SingleFactorFinder factorizer3 = new CombinedFactorAlgorithm(1);
 
 		findFactors(factorizer1, semiprimes, loop);

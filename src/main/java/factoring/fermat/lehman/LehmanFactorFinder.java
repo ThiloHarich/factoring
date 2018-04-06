@@ -150,26 +150,20 @@ public class LehmanFactorFinder implements FactorFinderLong {
         smallFactoriser.setMaxFactor(maxTrialFactor);
         // factor out all small factors if
         if (maxFactorMultiplier <= 1) {
-            long nAfterTrial = smallFactoriser.findPrimeFactors(n, primeFactors);
+            long nAfterTrial = smallFactoriser.findFactors(n, primeFactors);
             if (primeFactors == null && nAfterTrial != n)
                 return nAfterTrial;
             n = nAfterTrial;
         }
 
+        // if number is already factorized return immediately without calling lehman
         if (n == 1)
             return n;
 
-//        if (PrimeMath.isSquare(n)) {
-//            final long x = PrimeMath.sqrt(n);
-//            if (x * x == n) {
-//                return x;
-//            }
-//        }
         // re-adjust the maximal factor we have to search for. If small factors were found by trial division,
         // which is quite often the case for arbitrary numbers, this cuts down the runtime dramatically.
         // TODO maybe we can do even better here?
         maxTrialFactor = (int) Math.ceil(maxFactorMultiplier * Math.pow(n, ONE_THIRD));
-        //		final int kMax = maxTrialFactor;
         final int kMax = (int) (Math.ceil(maxTrialFactor / maxFactorMultiplierCube));
         final long n4 = 4 * n;
         final double sqrtN = Math.sqrt(n);
@@ -231,7 +225,7 @@ public class LehmanFactorFinder implements FactorFinderLong {
         }
         // if we have not found a factor we still have to do the trial division phase
         if (maxFactorMultiplier > 1)
-            n = smallFactoriser.findPrimeFactors(n, primeFactors);
+            n = smallFactoriser.findFactors(n, primeFactors);
 
         return n;
     }

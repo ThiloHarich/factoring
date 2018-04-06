@@ -118,7 +118,7 @@ public class LehmanMod16Fact extends FindPrimeFact {
 		maxTrialFactor =  (int) Math.ceil(Math.pow(nOrig, ONE_THIRD));
 		smallFactoriser.setMaxFactor(maxTrialFactor);
 		// factor out all small factors
-		final long n = smallFactoriser.findPrimeFactors(nOrig, primeFactors);
+		final long n = smallFactoriser.findFactors(nOrig, primeFactors);
 
 		if (n<maxTrialFactor)
 			return n;

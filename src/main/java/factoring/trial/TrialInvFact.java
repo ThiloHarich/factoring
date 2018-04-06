@@ -2,6 +2,7 @@ package factoring.trial;
 
 import java.util.Collection;
 
+import factoring.FactorFinderLong;
 import factoring.FindPrimeFact;
 
 /**
@@ -15,12 +16,12 @@ import factoring.FindPrimeFact;
  * Since Double only has 52 bis for the remainder, this can only work for numbers below 2^52.
  * We can only factorize numbers up to maxFactor^2
  * When calling it with bigger numbers only prime factors below
- * maxFactor were added to the factors. {@link #findPrimeFactors(long, Collection)} then might return a
+ * maxFactor were added to the factors. {@link #findFactors(long, Collection)} then might return a
  * composite number.
  *
  * Created by Thilo Harich on 02.03.2017.
  */
-public class TrialInvFact extends FindPrimeFact {
+public class TrialInvFact implements FactorFinderLong{
 
 	// The number of values to be printed
 	private static final int PRINT_NUM = 20000;
@@ -110,7 +111,7 @@ public class TrialInvFact extends FindPrimeFact {
 
 
 	@Override
-	public long findPrimeFactors(long n, Collection<Long> primeFactors) {
+	public long findFactors(long n, Collection<Long> primeFactors) {
 		for (int primeIndex = 1; primes[primeIndex] <= maxFactor; primeIndex++) {
 			double nDivPrime = n*primesInv[primeIndex];
 			// TODO choose the precision factor with respect to the maxFactor!?

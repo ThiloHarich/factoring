@@ -121,7 +121,7 @@ public class LehmanSmallRangeFact extends FindPrimeFact {
 		double maxTrialFactor =  Math.ceil(Math.pow(nOrig, ONE_THIRD));
 		smallFactoriser.setMaxFactor((int) maxTrialFactor);
 		// factor out all small factors
-		final long n = smallFactoriser.findPrimeFactors(nOrig, primeFactors);
+		final long n = smallFactoriser.findFactors(nOrig, primeFactors);
 
 		if (n<maxTrialFactor)
 			return n;
