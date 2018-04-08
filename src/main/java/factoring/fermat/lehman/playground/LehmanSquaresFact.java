@@ -1,15 +1,16 @@
-package factoring.fermat.lehman;
+package factoring.fermat.lehman.playground;
 
+import factoring.FactorizationOfLongs;
 import factoring.fermat.FermatFact;
 import factoring.math.PrimeMath;
-import factoring.trial.TrialWithPrimesFact;
+import factoring.trial.playgound.TrialWithPrimesFact;
 
 import java.util.Collection;
 
 /**
  * Created by Thilo Harich on 28.06.2017.
  */
-public class LehmanSquaresFact extends FermatFact {
+public class LehmanSquaresFact  implements FactorizationOfLongs {
 
     double balanceTrial = 1.9;
     int multiplier = 4;
@@ -19,7 +20,7 @@ public class LehmanSquaresFact extends FermatFact {
         TrialWithPrimesFact smallFactoriser = new TrialWithPrimesFact();
         int maxTrialFactor =  (int) Math.ceil(balanceTrial * Math.pow(n, 1.0/3));
         smallFactoriser.setMaxFactor(maxTrialFactor);
-        n = smallFactoriser.findPrimeFactors(n, factors);
+        n = smallFactoriser.findFactors(n, factors);
 
         if (n<maxTrialFactor)
             return n;

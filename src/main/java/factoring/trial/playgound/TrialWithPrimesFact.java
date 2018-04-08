@@ -1,6 +1,6 @@
-package factoring.trial;
+package factoring.trial.playgound;
 
-import factoring.FindPrimeFact;
+import factoring.FactorizationOfLongs;
 
 import java.util.Collection;
 
@@ -9,7 +9,7 @@ import java.util.Collection;
  * number is dividable. Here we us a limit of 65536=2^16.
  * We can only factorize numbers up to 2^32.
  * When calling it with bigger numbers only prime factors below
- * 2^16 were added to the factors. {@link #findPrimeFactors(long, Collection)} then might return a
+ * 2^16 were added to the factors. {@link #findFactors(long, Collection)} then might return a
  * composite number. This strictly means it can not be applied for factorizationByFactors big numbers,
  * but it can be applied for finding the prime factors below 2^16 and applying other algorithms
  * to factor the returned remainder. This is exactly what the lehman and hart algorithms need.
@@ -20,7 +20,7 @@ import java.util.Collection;
  *
  * Created by Thilo Harich on 02.03.2017.
  */
-public class TrialWithPrimesFact extends FindPrimeFact {
+public class TrialWithPrimesFact implements FactorizationOfLongs {
 
     static int[] prime = new int [6543]; //the 6542 primesInv up to 65536=2^16, then sentinel 65535 at end
 
@@ -62,7 +62,7 @@ public class TrialWithPrimesFact extends FindPrimeFact {
     }
 
     @Override
-    public long findPrimeFactors(long n, Collection<Long> primeFactors) {
+    public long findFactors(long n, Collection<Long> primeFactors) {
         for (; prime[primeIndex] < maxFactor; primeIndex++) {
 //            if (maxFactorIndex == 6542)
 //                System.out.println();

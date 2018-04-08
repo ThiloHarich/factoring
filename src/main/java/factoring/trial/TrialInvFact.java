@@ -2,8 +2,7 @@ package factoring.trial;
 
 import java.util.Collection;
 
-import factoring.FactorFinderLong;
-import factoring.FindPrimeFact;
+import factoring.FactorizationOfLongs;
 
 /**
  * This implementation is generating a list of all primes up to a limit.
@@ -21,7 +20,7 @@ import factoring.FindPrimeFact;
  *
  * Created by Thilo Harich on 02.03.2017.
  */
-public class TrialInvFact implements FactorFinderLong{
+public class TrialInvFact implements FactorizationOfLongs {
 
 	// The number of values to be printed
 	private static final int PRINT_NUM = 20000;

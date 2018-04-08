@@ -1,16 +1,13 @@
-package factoring.trial;
-
-import factoring.FindPrimeFact;
+package factoring.trial.playgound;
 
 import java.util.Collection;
 
 /**
  * Created by Thilo Harich on 02.03.2017.
  */
-public class TrialFactCond extends FindPrimeFact {
+public class TrialFactCond {
 
 
-    @Override
     public long findPrimeFactors(long n, Collection<Long> primeFactors) {
 //        for (int i = 2; i <= Math.sqrt(n); i++) {
         long initialN = n;

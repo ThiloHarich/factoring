@@ -2,8 +2,7 @@ package factoring.fermat.lehman;
 
 import java.util.Collection;
 
-import factoring.FactorFinderLong;
-import factoring.FindPrimeFact;
+import factoring.SingleLongFactorFinder;
 import factoring.math.PrimeMath;
 import factoring.trial.TrialInvFact;
 
@@ -42,7 +41,7 @@ import factoring.trial.TrialInvFact;
  * and let the JVM do the optimization here. When adapting to other languages this should be done.
  * Created by Thilo Harich on 28.06.2017.
  */
-public class LehmanFactorFinder implements FactorFinderLong {
+public class LehmanLongFactorFinder implements SingleLongFactorFinder {
 
     static double ONE_THIRD = 1.0 / 3;
     // to be fast to decide if a number is a square we consider the
@@ -113,7 +112,7 @@ public class LehmanFactorFinder implements FactorFinderLong {
      *                              - if you know for most of the numbers the maximal factors will exceed 3*n^1/3<br>
      *                              In the last case {@link #findFactors(long, Collection)} might return a composite number
      */
-    public LehmanFactorFinder(int bits, float maxFactorMultiplierIn) {
+    public LehmanLongFactorFinder(int bits, float maxFactorMultiplierIn) {
         if (bits > 41)
             throw new IllegalArgumentException("numbers above 41 bits can not be factorized");
         maxFactorMultiplier = maxFactorMultiplierIn < 1 ? 1 : maxFactorMultiplierIn;
@@ -164,6 +163,7 @@ public class LehmanFactorFinder implements FactorFinderLong {
         // which is quite often the case for arbitrary numbers, this cuts down the runtime dramatically.
         // TODO maybe we can do even better here?
         maxTrialFactor = (int) Math.ceil(maxFactorMultiplier * Math.pow(n, ONE_THIRD));
+        // effectively kMax is reduced by maxFactorMultiplier^2 ->
         final int kMax = (int) (Math.ceil(maxTrialFactor / maxFactorMultiplierCube));
         final long n4 = 4 * n;
         final double sqrtN = Math.sqrt(n);
@@ -246,7 +246,7 @@ public class LehmanFactorFinder implements FactorFinderLong {
 
     @Override
     public String toString() {
-        return "LehmanFactorFinder{" +
+        return "LehmanLongFactorFinder{" +
                 "maxFactorMultiplier=" + maxFactorMultiplier +
                 '}';
     }

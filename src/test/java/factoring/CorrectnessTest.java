@@ -3,23 +3,18 @@ package factoring;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.Random;
 
-import de.tilman_neumann.math.factor.CombinedFactorAlgorithm;
-import de.tilman_neumann.math.factor.FactorAlgorithm;
-import factoring.fermat.lehman.LehmanReverseFact;
+import factoring.old.Factorizer;
+import factoring.shift.ErrorShiftFact;
 import org.junit.Test;
 
 import com.google.common.collect.Multiset;
 import com.google.common.collect.TreeMultiset;
 
-import factoring.fermat.FermatFact;
 import factoring.fermat.lehman.LehmanNoSqrtFact;
-import factoring.fermat.lehman.LehmanSmallRangeFact;
 import factoring.fermat.lehman.LehmanYafuFact;
 
 public class CorrectnessTest {

@@ -4,9 +4,7 @@ import com.google.common.collect.Multiset;
 import com.google.common.collect.TreeMultiset;
 import de.tilman_neumann.math.base.bigint.primes.probable.BPSWTest;
 import de.tilman_neumann.math.factor.squfof.SquFoF31;
-import de.tilman_neumann.math.factor.squfof.SquFoF63;
-import factoring.Factorizer;
-import factoring.math.PrimeMath;
+import factoring.old.Factorizer;
 
 import java.util.Collection;
 

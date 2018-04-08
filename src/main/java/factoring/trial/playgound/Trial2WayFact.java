@@ -1,6 +1,4 @@
-package factoring.trial;
-
-import factoring.FindPrimeFact;
+package factoring.trial.playgound;
 
 import java.util.Collection;
 

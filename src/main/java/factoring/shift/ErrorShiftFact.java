@@ -1,4 +1,4 @@
-package factoring;
+package factoring.shift;
 
 import factoring.fermat.FermatFact;
 import factoring.math.PrimeMath;

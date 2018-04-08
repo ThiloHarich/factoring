@@ -3,6 +3,7 @@ package factoring;
 import java.math.BigInteger;
 import java.util.Random;
 
+import factoring.fermat.lehman.LehmanSingleLongFactorFinder;
 import factoring.fermat.lehman.LehmanYafuFact;
 import org.junit.Test;
 
@@ -10,7 +11,6 @@ import de.tilman_neumann.math.factor.CombinedFactorAlgorithm;
 import de.tilman_neumann.math.factor.FactorAlgorithm;
 import de.tilman_neumann.math.factor.SingleFactorFinder;
 import factoring.fermat.lehman.LehmanNoSqrtFact;
-import factoring.fermat.lehman.LehmanSingleFactorFinder;
 
 public class PerformanceTest {
 
@@ -23,12 +23,11 @@ public class PerformanceTest {
 
 		System.out.println("finished making hard numbers");
 		final long start = System.currentTimeMillis();
-		final SingleFactorFinder factorizer2 = new LehmanSingleFactorFinder(bits, .44f);
+		final SingleLongFactorFinder factorizer2 = new LehmanSingleLongFactorFinder(bits, .44f);
 		final long end = System.currentTimeMillis();
 		System.out.println("time for setup : " + (end - start));
-		final Factorizer factorizer1 = new LehmanYafuFact(2.8f);
-		// TODO couple or decouple from til neuman ??
-//		final SingleFactorFinder factorizer1 = new LehmanSingleFactorFinder(bits, .34f);
+		final SingleLongFactorFinder factorizer1 = new LehmanYafuFact(2.8f);
+//		final SingleFactorFinder factorizer1 = new LehmanSingleLongFactorFinder(bits, .34f);
 		final SingleFactorFinder factorizer3 = new CombinedFactorAlgorithm(1);
 
 		findFactors(factorizer1, semiprimes, loop);
@@ -62,11 +61,11 @@ public class PerformanceTest {
 		System.out.println(name + " :    \t" + (time));
 	}
 
-	protected void findFactors(final Factorizer factorizer1, final long[] semiprimes, int loop) {
+	protected void findFactors(final SingleLongFactorFinder factorizer1, final long[] semiprimes, int loop) {
 		final long start = System.nanoTime();
 		for (int i = 0; i < loop; i++) {
 			for (final long semiprime : semiprimes) {
-				factorizer1.findAllPrimeFactors(semiprime);
+				factorizer1.findSingleFactor(semiprime);
 			}
 		}
 		final long time = System.nanoTime() - start;
@@ -97,13 +96,13 @@ public class PerformanceTest {
 
 		//		final Factorizer factorizer1 = new TrialPrimesDynamicFact(1 << bits/2);
 //		final Factorizer factorizer1 = new LehmanSmallRangeFact(bits, 1);
-				final Factorizer factorizer1 = new LehmanNoSqrtFact(bits,1f);
+				final FactorizationOfLongs factorizer1 = new LehmanNoSqrtFact(bits,1f);
 		//		Factorizer factorizer1 = new HartFact();
 		//		Factorizer factorizer2 = new FermatResiduesRec();
 		//		final Factorizer factorizer2 = new TrialInvFact(1 << bits/2);
 		//		Factorizer factorizer2 = new FermatFact();
-//		final SingleFactorFinder factorizer1 = new LehmanSingleFactorFinder(bits, 1f);
-		final FactorizationOfLongs factorizer3 = new LehmanSingleFactorFinder(bits, 0f);
+//		final SingleFactorFinder factorizer1 = new LehmanSingleLongFactorFinder(bits, 1f);
+		final FactorizationOfLongs factorizer3 = new LehmanSingleLongFactorFinder(bits, 0f);
 		//		final Factorizer factorizer2 = new TrialWithPrimesFact();
 		final FactorAlgorithm factorizer2 = new CombinedFactorAlgorithm(1);
 //				final Factorizer factorizer1 = new LehmanYafuFact(2.8f);
@@ -133,21 +132,6 @@ public class PerformanceTest {
 		//		assertEquals(factors5, factors6);
 	}
 
-	public int getFactors(Factorizer factorizer, int bits, int range) {
-
-		// warmup
-		int factors = 0;
-		final long begin = (1l << bits) +1584;
-		final long start = System.nanoTime();
-		for (long i = begin; i < begin + range; i++)
-		{
-			factors += factorizer.findAllPrimeFactors(i).size();
-		}
-		final long time = System.nanoTime() - start;
-		final String name = String.format("%-20s", factorizer);
-		System.out.println(name + " :    \t" + (time));
-		return factors;
-	}
 
     public int getFactors(FactorizationOfLongs factorizer, int bits, int range) {
 

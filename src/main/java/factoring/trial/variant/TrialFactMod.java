@@ -1,24 +1,22 @@
-package factoring.trial;
+package factoring.trial.variant;
 
 import com.google.common.primitives.Bytes;
+import factoring.trial.TrialFact;
 
 import java.util.ArrayList;
+
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
 
 /**
- * This implementation uses a small set of primesInv, calculates all
- * possible primesInv in the range of the product of all the primesInv by sieving.
- * Then this list of possible primesInv (which also contains non primesInv) is used
- * to see if the number n is dividable by.
- * TODO do a proper Wheel factorizationByFactors implementation.
+ * This implementation uses a small set of primesInv
  * Created by Thilo Harich on 02.03.2017.
  */
-public class TrialModFact extends TrialFact {
+public class TrialFactMod extends TrialFact {
 
-    static int[] primes;
+    static byte[] primeDist;
     static int[] sievePrimes = {2,3,5,7};
     static int range = 1;
 
@@ -36,42 +34,47 @@ public class TrialModFact extends TrialFact {
                 }
             }
         }
-        List<Integer> primesList = new ArrayList();
+        List<Byte> primesDist = new ArrayList();
+        int lastPrime = -1;
         for (int i = 0; i < range; i++) {
             if (!nonPrimes[i]) {
-                primesList.add(i);
+                primesDist.add((byte)(i - lastPrime));
+                lastPrime = i;
             }
         }
         // convert to int
-        primes = primesList.stream().mapToInt(i->i).toArray();
+//        primeDist = primesDist.stream().mapToInt(i->i).toArray();
+        primeDist = Bytes.toArray(primesDist);
     }
-    int factor;
+    protected int factor;
 
     public void setLimit(int limit) {
         this.limit = limit;
     }
 
-    int limit = Integer.MAX_VALUE;
+    protected int limit = Integer.MAX_VALUE;
 
     @Override
-    public long findPrimeFactors(long n, Collection<Long> primeFactors) {
+    public long findFactors(long n, Collection<Long> primeFactors) {
         n = findSmallFactors(n, primeFactors);
 
         // adjust limit, if not set
         int sqrtN = (int) Math.sqrt(n) + 1;
         int maxFactor = Math.min(sqrtN, limit);
 
-        for (int i = 0; i < primes.length; i++) {
-            factor = primes[i];
-            while (factor <= maxFactor) {
-                if (n % factor == 0 && factor != 1) {
+        while (factor <= maxFactor) {
+            for (int i = 0; i < primeDist.length; i++) {
+                factor += primeDist[i];
+                if (factor > maxFactor)
+                    break;
+                while (n % factor == 0) {
                     primeFactors.add((long) factor);
-//                    n = n/factor;
+                    n = n/factor;
+                    if (n == 1)
+                        return n;
                 }
-                factor += range;
             }
         }
-        // TODO find if the bigger factors can be split up.
         return n;
     }
 
@@ -83,13 +86,18 @@ public class TrialModFact extends TrialFact {
                 n = n / sievePrimes[i];
             }
         }
-//        for (int i = 0; factor * factor < n && i < primesInv.length; i++) {
-//            factor = primesInv[i];
-//            while (n % factor == 0) {
-//                factors.add((long) factor);
-//                n = n / factor;
-//            }
-//        }
+        factor = 1;
+//        int factor = maxFactorTested;
+        // find the right place to to start with the sieve
+        // 1 + primeDist[1] = 1 + 6 = 7 = next factor > sievePrimes
+        // 1 + primeDist[1] = 1 + 10 = 11 = next factor > sievePrimes
+        for (int i = 1; factor * factor < n && i < primeDist.length; i++) {
+            factor += primeDist[i];
+            while (n % factor == 0) {
+                factors.add((long) factor);
+                n = n / factor;
+            }
+        }
         return n;
     }
 }

@@ -1,6 +1,7 @@
-package factoring.trial;
+package factoring.trial.playgound;
 
 import com.google.common.primitives.Bytes;
+import factoring.trial.TrialFact;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -46,16 +47,16 @@ public class TrialFactMod2 extends TrialFact {
 //        primeDist = primesDist.stream().mapToInt(i->i).toArray();
         primeDist = Bytes.toArray(primesDist);
     }
-    int factor;
+    protected int factor;
 
     public void setLimit(int limit) {
         this.limit = limit;
     }
 
-    int limit = Integer.MAX_VALUE;
+    protected int limit = Integer.MAX_VALUE;
 
     @Override
-    public long findPrimeFactors(long n, Collection<Long> primeFactors) {
+    public long findFactors(long n, Collection<Long> primeFactors) {
         n = findSmallFactors(n, primeFactors);
 
         // adjust limit, if not set

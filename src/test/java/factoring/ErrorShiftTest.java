@@ -3,18 +3,10 @@ package factoring;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import java.math.BigInteger;
 import java.util.*;
 
-import de.tilman_neumann.math.factor.CombinedFactorAlgorithm;
-import de.tilman_neumann.math.factor.FactorAlgorithm;
-import de.tilman_neumann.math.factor.SingleFactorFinder;
-import de.tilman_neumann.types.SortedMultiset;
-import factoring.fermat.lehman.*;
+import factoring.shift.ErrorShiftFact;
 import org.junit.Test;
-
-import com.google.common.collect.Multiset;
-import com.google.common.collect.TreeMultiset;
 
 import factoring.fermat.FermatFact;
 

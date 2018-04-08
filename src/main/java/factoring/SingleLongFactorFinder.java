@@ -3,9 +3,11 @@ package factoring;
 import java.util.Collection;
 
 /**
+ * This tries to find only one factor of a long value n.
+ * It is a simplified version of de.tilman_neumann.math.factor.SingleFactorFinder
  * Created by Thilo Harich on 27.03.2018.
  */
-public interface FactorFinderLong {
+public interface SingleLongFactorFinder {
 
     /**
      * This is an interface which is optimized for Integer values lower then 64 bits, which fit in a Long
@@ -17,4 +19,15 @@ public interface FactorFinderLong {
      */
     long findFactors (long n, Collection<Long> primeFactors);
 
+    /**
+     * Find a single factor of the given N, which is composite and odd.
+     * It is a simplified version of de.tilman_neumann.math.factor.SingleFactorFinder
+     * It is like calling findFactors with no prime Factor list
+     * @param n
+     * @return factor
+     */
+
+    default long findSingleFactor(long n) {
+        return findFactors(n, null);
+    }
 }

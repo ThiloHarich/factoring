@@ -1,12 +1,8 @@
 package factoring.fermat.lehman;
 
-import java.math.BigInteger;
+import java.util.Collection;
 
-import com.google.common.collect.TreeMultiset;
-import de.tilman_neumann.math.factor.SingleFactorFinder;
-import de.tilman_neumann.types.SortedMultiset;
-import de.tilman_neumann.types.SortedMultiset_BottomUp;
-import factoring.FactorFinderLong;
+import factoring.SingleLongFactorFinder;
 import factoring.FactorizationOfLongs;
 
 /**
@@ -25,8 +21,8 @@ import factoring.FactorizationOfLongs;
  * 
  * Created by Thilo Harich on 18.03.2018.
  */
-public class LehmanSingleFactorFinder implements SingleFactorFinder, FactorizationOfLongs {
-	private final FactorFinderLong impl;
+public class LehmanSingleLongFactorFinder implements FactorizationOfLongs {
+	private final SingleLongFactorFinder impl;
 
 	boolean factorizationByPrimes = false;
 //	int bits;
@@ -54,11 +50,11 @@ public class LehmanSingleFactorFinder implements SingleFactorFinder, Factorizati
 	 * @param factorExponent the exponent of the second biggest factor of the factorizationByFactors. If you factorize n
 	 *                          this is factor should have size n ^ factorExponent.
 	 */
-	public LehmanSingleFactorFinder(int bitsOfNumber, float factorExponent) {
+	public LehmanSingleLongFactorFinder(int bitsOfNumber, float factorExponent) {
 //		this.bitsOfNumber = bitsOfNumber;
 //		this.maxFactorMultiplier = maxFactorMultiplier;
 		if (factorExponent < .33) {
-			impl = new LehmanFactorFinder(bitsOfNumber, 1f);
+			impl = new LehmanLongFactorFinder(bitsOfNumber, 1f);
 			factorizationByPrimes = true;
 		}
 		else {
@@ -69,35 +65,40 @@ public class LehmanSingleFactorFinder implements SingleFactorFinder, Factorizati
 			else
 				// we use the same algorithm as for small numbers but configure it to first look for big numbers.
 				// in this case we will get no primes out of the algorithm, but since the numbers are big we do not care
-				impl = new LehmanFactorFinder(bitsOfNumber, 3f);
+				impl = new LehmanLongFactorFinder(bitsOfNumber, 3f);
 		}
 	}
 
 	@Override
-	public BigInteger findSingleFactor(BigInteger n) {
-		//        LehmanFactorFinder impl = new LehmanFactorFinder(41, 1.001f);
-		final long factor = getImpl(n.longValue()).findFactors(n.longValue(), null);
-		return BigInteger.valueOf(factor);
+	public long findFactors(long n, Collection<Long> primeFactors) {
+		return getImpl(n).findFactors(n, primeFactors);
 	}
 
-	/**
-	 * This is just for be compatible with SingleFactorFinder.
-	 * has the drawback to convert BigInteger to long and the conversion from
-	 * TreeMultiset to SortedMultiset_BottomUp
-	 * TODO what is the performance drawback
-	 * @param n
-	 * @return
-	 */
-	@Override
-	public SortedMultiset<BigInteger> factor(BigInteger n) {
-		TreeMultiset<Long> allFactors;
-		allFactors = factorization(n.longValue());
-		SortedMultiset result = new SortedMultiset_BottomUp(allFactors);
-		return result;
-	}
+	//	@Override
+//	public BigInteger findSingleFactor(BigInteger n) {
+//		//        LehmanLongFactorFinder impl = new LehmanLongFactorFinder(41, 1.001f);
+//		final long factor = getImpl(n.longValue()).findFactors(n.longValue(), null);
+//		return BigInteger.valueOf(factor);
+//	}
 
-	@Override
-	public String getName() {
+//	/**
+//	 * This is just for be compatible with SingleFactorFinder.
+//	 * has the drawback to convert BigInteger to long and the conversion from
+//	 * TreeMultiset to SortedMultiset_BottomUp
+//	 * TODO what is the performance drawback
+//	 * @param n
+//	 * @return
+//	 */
+//	@Override
+//	public SortedMultiset<BigInteger> factor(BigInteger n) {
+//		TreeMultiset<Long> allFactors;
+//		allFactors = factorization(n.longValue());
+//		SortedMultiset result = new SortedMultiset_BottomUp(allFactors);
+//		return result;
+//	}
+
+
+	public String toString() {
 		return impl.toString();
 	}
 
@@ -107,7 +108,7 @@ public class LehmanSingleFactorFinder implements SingleFactorFinder, Factorizati
 	}
 
 	@Override
-	public FactorFinderLong getImpl(long n) {
+	public SingleLongFactorFinder getImpl(long n) {
 		// TODO return the best possible impl here,
 		return impl;
 	}

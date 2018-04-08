@@ -1,6 +1,7 @@
-package factoring.trial;
+package factoring.trial.variant;
 
 import com.google.common.primitives.Bytes;
+import factoring.trial.variant.TrialFactMod;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -62,7 +63,7 @@ public class TrialUnroll extends TrialFactMod {
         System.out.println("}");
     }
     @Override
-    public long findPrimeFactors(long n, Collection<Long> primeFactors) {
+    public long findFactors(long n, Collection<Long> primeFactors) {
         n = findSmallFactors(n, primeFactors);
 
         // adjust limit, if not set

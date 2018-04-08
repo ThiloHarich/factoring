@@ -1,10 +1,10 @@
-package factoring.fermat.lehman;
+package factoring.fermat.lehman.playground;
 
 import java.util.Collection;
 
-import factoring.FindPrimeFact;
+import factoring.FactorizationOfLongs;
 import factoring.math.PrimeMath;
-import factoring.trial.TrialWithPrimesFact;
+import factoring.trial.playgound.TrialWithPrimesFact;
 /**
  * This is a version of the lehman factorizationByFactors, which is a variant of the fermat
  * factorizationByFactors.
@@ -19,7 +19,7 @@ import factoring.trial.TrialWithPrimesFact;
  * It first uses a factor of 1 and tries to find factors we have a range of n^1/6 here.
  * The height (kMax) of the calculation is much higher we can not expect much out of it
  */
-public class LehmanNoSqrtFact2 extends FindPrimeFact {
+public class LehmanNoSqrtFact2 implements FactorizationOfLongs {
 
 	static double ONE_THIRD = 1.0/3;
 	// to initialize the square roots we have to determine the maximal k
@@ -39,7 +39,7 @@ public class LehmanNoSqrtFact2 extends FindPrimeFact {
 	}
 
 	@Override
-	public long findPrimeFactors(long n, Collection<Long> primeFactors) {
+	public long findFactors(long n, Collection<Long> primeFactors) {
 		final TrialWithPrimesFact smallFactoriser = new TrialWithPrimesFact();
 		// with this implementation the lehman part is not slower then the trial division
 		// we do not have to use a multiplier for the maximal factor were we apply the
@@ -47,7 +47,7 @@ public class LehmanNoSqrtFact2 extends FindPrimeFact {
 		double maxTrialFactor =  Math.ceil(Math.pow(n, ONE_THIRD));
 		smallFactoriser.setMaxFactor((int) maxTrialFactor);
 		// factor out all small factors
-		n = smallFactoriser.findPrimeFactors(n, primeFactors);
+		n = smallFactoriser.findFactors(n, primeFactors);
 
 		if (n<maxTrialFactor)
 			return n;

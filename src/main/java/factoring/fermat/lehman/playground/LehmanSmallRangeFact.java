@@ -1,8 +1,8 @@
-package factoring.fermat.lehman;
+package factoring.fermat.lehman.playground;
 
 import java.util.Collection;
 
-import factoring.FindPrimeFact;
+import factoring.FactorizationOfLongs;
 import factoring.math.PrimeMath;
 import factoring.trial.TrialInvFact;
 
@@ -49,7 +49,7 @@ import factoring.trial.TrialInvFact;
  *		F(16) = 2*1/4 = 1/2
  * -> we will strike out half of the candidates
  */
-public class LehmanSmallRangeFact extends FindPrimeFact {
+public class LehmanSmallRangeFact implements FactorizationOfLongs {
 
 	static double ONE_THIRD = 1.0/3;
 
@@ -113,7 +113,7 @@ public class LehmanSmallRangeFact extends FindPrimeFact {
 	}
 
 	@Override
-	public long findPrimeFactors(long nOrig, Collection<Long> primeFactors) {
+	public long findFactors(long nOrig, Collection<Long> primeFactors) {
 		// with this implementation the lehman part is not slower then the trial division
 		// we do not have to use a multiplier for the maximal factor were we apply the
 		// trial division phase

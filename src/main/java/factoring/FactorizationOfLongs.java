@@ -3,27 +3,28 @@ package factoring;
 import com.google.common.collect.Multiset;
 import com.google.common.collect.TreeMultiset;
 
-import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
 /**
  * This is an Interface which gives an {@link #factorization(long)} of a long number.
- * It calls {@link FactorFinderLong#findFactors(long, Collection)} at the Implementation returned by {@link #getImpl(long)}.
+ * It calls {@link SingleLongFactorFinder#findFactors(long, Collection)} at the Implementation returned by {@link #getImpl(long)}.
  * Created by Thilo Harich on 26.03.2018.
  */
-public interface FactorizationOfLongs {
+public interface FactorizationOfLongs extends SingleLongFactorFinder {
 
 
     /**
-     * If the {@link FactorFinderLong#findFactors(long, Collection)} of the underlying {@link #getImpl(long)}
+     * If the {@link SingleLongFactorFinder#findFactors(long, Collection)} of the underlying {@link #getImpl(long)}
      * always retuns prime Factors this method returns true.
      * It then fills the prime factors of the given collection only with prime factors or always retuns a prime
      * factor if no prime factors are passed over.
      * @return
      */
-    boolean returnsOnlyPrimeFactors();
+    default boolean returnsOnlyPrimeFactors(){
+        return true;
+    }
 
     /**
      * returns a full prime factorization of the number.
@@ -68,7 +69,7 @@ public interface FactorizationOfLongs {
     /**
      * This method returns a complete factorizationByFactors of n.
      * It uses the implementation returned by {@link #getImpl(long)} and calls
-     * {@link FactorFinderLong#findFactors(long, Collection)}. This will return a factor.
+     * {@link SingleLongFactorFinder#findFactors(long, Collection)}. This will return a factor.
      * This factor does not have to be a prime factor, and has to be factorized again by
      * findFactors().
      * 
@@ -136,6 +137,8 @@ public interface FactorizationOfLongs {
      * @param n
      * @return
      */
-    FactorFinderLong getImpl(long n);
+    default SingleLongFactorFinder getImpl(long n){
+        return this;
+    }
 
 }

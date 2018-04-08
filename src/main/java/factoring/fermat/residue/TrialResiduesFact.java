@@ -1,7 +1,7 @@
 package factoring.fermat.residue;
 
 import factoring.fermat.FermatFact;
-import factoring.trial.TrialFactMod;
+import factoring.trial.variant.TrialFactMod;
 
 import java.util.Collection;
 

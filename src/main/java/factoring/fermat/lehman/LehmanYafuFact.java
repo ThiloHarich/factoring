@@ -180,20 +180,20 @@ public class LehmanYafuFact extends FermatFact {
 	}
 
 	@Override
-	public long findFactors(long n, Collection<Long> factors) {
+	public long findFactors(long n, Collection<Long> primeFactors) {
 		if (issq1024 == null) {
 			MakeIssq();
 			MakePrimeTable();
 		}
-		final long factor = LehmanFactor(n, tune, 0.0, true, 1);
+		final long factor = LehmanFactor(n, tune, 0.0, true, 1, primeFactors);
 		//        long factor = LehmanFactor(n, 2.5, 0.0, true, 1.0);
 		if (factor != n) {
-			factors.add(n / factor);
+			primeFactors.add(n / factor);
 		}
 		return factor;
 	}
 
-	static long LehmanFactor(long N, double Tune, double HartOLF, boolean DoTrial, double CutFrac){
+	static long LehmanFactor(long N, double Tune, double HartOLF, boolean DoTrial, double CutFrac, Collection<Long> primeFactors){
 		int b,p,k,r,B,U,Bred,Bred2,inc,FirstCut,ip;
 		long a,c,kN,kN4,B2,N480,UU;
 		double Tune2, Tune3, x;
@@ -212,9 +212,10 @@ public class LehmanYafuFact extends FermatFact {
 				p = prime[ip];
 				if(p>FirstCut) break;
 				if(N%p==0) {
+					if (primeFactors == null || N == p)
+						return p;
+					primeFactors.add((long) p);
 					N = N/p;
-					if (N == 1)
-						return (p);
 				}
 			}
 		}
@@ -333,7 +334,14 @@ public class LehmanYafuFact extends FermatFact {
 								B2 = gcd64(a+b, N);
 								assert(B2>1);
 								//                                if(B2>=N){ System.out.printf("theorem failure: B2=%llu N=%llu\n", B2,N); }
-								return(B2);
+								if (primeFactors == null)
+									return(B2);
+								if (Tune == 1) {
+									primeFactors.add(B2);
+									if (N != B2)
+										primeFactors.add(N/B2);
+									return 1;
+								}
 							}
 						}
 					}
@@ -378,19 +386,19 @@ public class LehmanYafuFact extends FermatFact {
 		//            (TRUE unless want to skip trial factorizationByFactors which would be unusual),
 		//            (TRUE if want to try OLF speculative speedup FALSE if skip it) );
 		N=3141592651L;
-		M = LehmanFactor(N, 2.5, 0.0, true, 0.4);
+		M = LehmanFactor(N, 2.5, 0.0, true, 0.4, null);
 		System.out.println("A factor of " + N + " is " + M);
 
 		N=3141592661L; //prime
-		M = LehmanFactor(N, 2.5, 0.0, true, 0.5);
+		M = LehmanFactor(N, 2.5, 0.0, true, 0.5, null);
 		System.out.println("A factor of " + N + " is " + M);
 
 		N = 7919; N *= 10861;
-		M = LehmanFactor(N, 1.0, 0.0, true, 0.1);
+		M = LehmanFactor(N, 1.0, 0.0, true, 0.1, null);
 		System.out.println("A factor of " + N + " is " + M);
 
 		N =  1299709; N *=  2750159;
-		M = LehmanFactor(N, 1.0, 0.0, false, 0.1);
+		M = LehmanFactor(N, 1.0, 0.0, false, 0.1, null);
 		System.out.println("A factor of " + N + " is " + M);
 	}
 }

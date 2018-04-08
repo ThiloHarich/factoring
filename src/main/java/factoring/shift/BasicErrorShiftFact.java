@@ -1,4 +1,4 @@
-package factoring;
+package factoring.shift;
 
 public class BasicErrorShiftFact {
 

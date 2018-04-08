@@ -1,7 +1,6 @@
-package factoring.trial;
+package factoring.trial.playgound;
 
-import factoring.FindPrimeFact;
-
+import factoring.FactorizationOfLongs;
 import java.util.Collection;
 
 /**
@@ -10,11 +9,11 @@ import java.util.Collection;
  * But it does not gain any speed improvement.
  * Created by Thilo Harich on 02.03.2017.
  */
-public class TrialNewton extends FindPrimeFact {
+public class TrialNewton implements FactorizationOfLongs {
 
 
     @Override
-    public long findPrimeFactors(long n, Collection<Long> primeFactors) {
+    public long findFactors(long n, Collection<Long> primeFactors) {
         double inversIApprox = 1./2;
         long initialN = n;
         long nDivI = n/3 + 1;

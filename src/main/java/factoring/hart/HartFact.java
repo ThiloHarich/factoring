@@ -2,7 +2,7 @@ package factoring.hart;
 
 import factoring.fermat.FermatFact;
 import factoring.math.PrimeMath;
-import factoring.trial.TrialFactMod;
+import factoring.trial.variant.TrialFactMod;
 
 import java.util.Collection;
 
