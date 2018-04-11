@@ -88,7 +88,7 @@ public class FermatResiudesTest {
 //            if (quality > 5)
             {
                 float ifl = (float)i;
-                String factors = String.format("%-20s", factorizer.printFactors(i));
+                String factors = String.format("%-20s", factorizer.printFactorization(i));
                 System.out.print(i + "(" + factors + ") \t: " + countSquares + " ; ");
                 System.out.print(" exp : " + (ifl+1)/(2*ifl) * ifl);
                 System.out.print(" max : " + max + " min : " + min + "(" + minIndex + ") avg : " + (avg/ num)  + " quality : " + quality + "              : " + details);

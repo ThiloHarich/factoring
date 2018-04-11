@@ -3,7 +3,8 @@ package factoring;
 import java.math.BigInteger;
 import java.util.Random;
 
-import factoring.fermat.lehman.LehmanSingleLongFactorFinder;
+import factoring.fermat.lehman.LehmanFactorization;
+import factoring.fermat.lehman.LehmanPowFactorization;
 import factoring.fermat.lehman.LehmanYafuFact;
 import org.junit.Test;
 
@@ -23,11 +24,11 @@ public class PerformanceTest {
 
 		System.out.println("finished making hard numbers");
 		final long start = System.currentTimeMillis();
-		final SingleLongFactorFinder factorizer2 = new LehmanSingleLongFactorFinder(bits, .44f);
+		final SingleLongFactorFinder factorizer2 = new LehmanFactorization(bits, .44f);
 		final long end = System.currentTimeMillis();
 		System.out.println("time for setup : " + (end - start));
 		final SingleLongFactorFinder factorizer1 = new LehmanYafuFact(2.8f);
-//		final SingleFactorFinder factorizer1 = new LehmanSingleLongFactorFinder(bits, .34f);
+//		final SingleFactorFinder factorizer1 = new LehmanFactorization(bits, .34f);
 		final SingleFactorFinder factorizer3 = new CombinedFactorAlgorithm(1);
 
 		findFactors(factorizer1, semiprimes, loop);
@@ -91,7 +92,7 @@ public class PerformanceTest {
 	{
 		final int bits = 30;
 		//		final int bits = 35;
-		final int range = 30000;
+		final int range = 130000;
 
 
 		//		final Factorizer factorizer1 = new TrialPrimesDynamicFact(1 << bits/2);
@@ -101,10 +102,11 @@ public class PerformanceTest {
 		//		Factorizer factorizer2 = new FermatResiduesRec();
 		//		final Factorizer factorizer2 = new TrialInvFact(1 << bits/2);
 		//		Factorizer factorizer2 = new FermatFact();
-//		final SingleFactorFinder factorizer1 = new LehmanSingleLongFactorFinder(bits, 1f);
-		final FactorizationOfLongs factorizer3 = new LehmanSingleLongFactorFinder(bits, 0f);
+//		final SingleFactorFinder factorizer1 = new LehmanFactorization(bits, 1f);
+		final FactorizationOfLongs factorizer3 = new LehmanFactorization(bits, 0f);
+		final FactorizationOfLongs factorizer2 = new LehmanPowFactorization(bits, 0f);
 		//		final Factorizer factorizer2 = new TrialWithPrimesFact();
-		final FactorAlgorithm factorizer2 = new CombinedFactorAlgorithm(1);
+//		final FactorAlgorithm factorizer2 = new CombinedFactorAlgorithm(1);
 //				final Factorizer factorizer1 = new LehmanYafuFact(2.8f);
 
 		//		((TrialFactMod)factorizer1).setLimit(1 << 16);
@@ -145,7 +147,7 @@ public class PerformanceTest {
 //			factorizer.factorizationByFactors(i).size();
         }
         final long time = System.nanoTime() - start;
-        final String name = String.format("%-20s", factorizer.getClass().getSimpleName());
+        final String name = String.format("%-25s", factorizer.getClass().getSimpleName());
         System.out.println(name + " :    \t" + (time));
         return factors;
     }

@@ -187,7 +187,7 @@ public class LehmanYafuFact extends FermatFact {
 		}
 		final long factor = LehmanFactor(n, tune, 0.0, true, 1, primeFactors);
 		//        long factor = LehmanFactor(n, 2.5, 0.0, true, 1.0);
-		if (factor != n) {
+		if (factor != n && primeFactors != null) {
 			primeFactors.add(n / factor);
 		}
 		return factor;

@@ -108,11 +108,11 @@ public class ErrorShiftFact extends FermatFact {
 //				rightA = a;
 			double speedup = (0.0 + xSol - sqrtN) / operations;
 			ErrorShiftFact silentFact = new ErrorShiftFact(false);
-			if (print)
-				System.out.println(" right 'a' " + rightA+ " \tspeedup " + speedup + " \tsearchInterval " + (x-sqrtN) + " \txArray = " + x +
-						"\terror = " + silentFact.findAllFactors(error) + " \t xArray = " + silentFact.findAllFactors(x) +
-						" \t 2x+1 = " + silentFact.findAllFactors(2*x+1) +
-			" \t 2x+1+e = " + silentFact.findAllFactors(2*x+1+error) );
+//			if (print)
+//				System.out.println(" right 'a' " + rightA+ " \tspeedup " + speedup + " \tsearchInterval " + (x-sqrtN) + " \txArray = " + x +
+//						"\terror = " + silentFact.findAllFactors(error) + " \t xArray = " + silentFact.findAllFactors(x) +
+//						" \t 2x+1 = " + silentFact.findAllFactors(2*x+1) +
+//			" \t 2x+1+e = " + silentFact.findAllFactors(2*x+1+error) );
 		}
 	}
 

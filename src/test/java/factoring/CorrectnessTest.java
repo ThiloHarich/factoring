@@ -7,7 +7,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
-import factoring.old.Factorizer;
 import factoring.shift.ErrorShiftFact;
 import org.junit.Test;
 
@@ -46,8 +45,8 @@ public class CorrectnessTest {
 		//		Factorizer factorizer1 = new LehmanBigFact(bitsMax, 1);
 		//		final Factorizer factorizer2 = new LehmanMod16Fact(bitsMax);
 		//		final Factorizer factorizer2 = new LehmanApproxFact();
-		final Factorizer factorizer2 = new LehmanNoSqrtFact(bitsMax, 1.01f);
-		final Factorizer factorizer1 = new LehmanYafuFact(1);
+		final FactorizationOfLongs factorizer2 = new LehmanNoSqrtFact(bitsMax, 1.01f);
+		final FactorizationOfLongs factorizer1 = new LehmanYafuFact(1);
 		//		final Factorizer factorizer2 = new TrialInvFact(1 << bits + 4);
 
 		//		for (int i = 65538; i < 1 << (bits + 1); i++)
@@ -58,11 +57,11 @@ public class CorrectnessTest {
 		while (begin < Long.MAX_VALUE / 1000)
 		{
 			for (long i = begin; i < begin + begin/8; i++) {
-				final Collection<Long> factors = factorizer1.findAllPrimeFactors(i);
-				System.out.println(i + ": " + factorizer1.printFactors(i));
+				final Collection<Long> factors = factorizer1.factorization(i);
+				System.out.println(i + ": " + factorizer1.printFactorization(i));
 				//			Collection<Integer> factors = factorizer1.findAllPrimeFactors(i);
-				final Collection<Long> factors2 = factorizer2.findAllPrimeFactors(i);
-				System.out.println(i + ": " + factorizer2.printFactors(i));
+				final Collection<Long> factors2 = factorizer2.factorization(i);
+				System.out.println(i + ": " + factorizer2.printFactorization(i));
 
 				assertEquals("Test failed for " + i, factors.size(), factors2.size());
 				final Multiset<Long> factorsSet = TreeMultiset.create();

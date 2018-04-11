@@ -1,5 +1,6 @@
 package factoring.hart;
 
+import factoring.FactorizationOfLongs;
 import factoring.fermat.FermatFact;
 import factoring.math.PrimeMath;
 import factoring.trial.variant.TrialFactMod;
@@ -9,7 +10,7 @@ import java.util.Collection;
 /**
  * Created by Thilo Harich on 28.06.2017.
  */
-public class HartFact extends FermatFact {
+public class HartFact implements FactorizationOfLongs {
 
     TrialFactMod smallFactoriser = new TrialFactMod();
     int factor = 1;
@@ -18,10 +19,10 @@ public class HartFact extends FermatFact {
     public long findFactors(long n, Collection<Long> factors) {
         int limit =  (int) Math.ceil(Math.pow(n, .33));
         smallFactoriser.setLimit(limit);
-        n = smallFactoriser.findPrimeFactors(n, factors);
+        n = smallFactoriser.findFactors(n, factors);
 
         if (n<= limit) {
-            n = smallFactoriser.findPrimeFactors(n, factors);
+            n = smallFactoriser.findFactors(n, factors);
         }
         else
         {

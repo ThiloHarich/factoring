@@ -21,7 +21,7 @@ import factoring.FactorizationOfLongs;
  * 
  * Created by Thilo Harich on 18.03.2018.
  */
-public class LehmanSingleLongFactorFinder implements FactorizationOfLongs {
+public class LehmanFactorization implements FactorizationOfLongs {
 	private final SingleLongFactorFinder impl;
 
 	boolean factorizationByPrimes = false;
@@ -50,7 +50,7 @@ public class LehmanSingleLongFactorFinder implements FactorizationOfLongs {
 	 * @param factorExponent the exponent of the second biggest factor of the factorizationByFactors. If you factorize n
 	 *                          this is factor should have size n ^ factorExponent.
 	 */
-	public LehmanSingleLongFactorFinder(int bitsOfNumber, float factorExponent) {
+	public LehmanFactorization(int bitsOfNumber, float factorExponent) {
 //		this.bitsOfNumber = bitsOfNumber;
 //		this.maxFactorMultiplier = maxFactorMultiplier;
 		if (factorExponent < .33) {
