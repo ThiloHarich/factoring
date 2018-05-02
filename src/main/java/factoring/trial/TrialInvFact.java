@@ -72,7 +72,7 @@ public class TrialInvFact implements FactorizationOfLongs {
 	void initPrimesEratosthenes()
 	{
 		final double logMaxFactor = Math.log(maxFactor);
-		final int maxPrimeIndex = (int) ((maxFactor) / (logMaxFactor - 1.1)) + 1;
+		final int maxPrimeIndex = (int) ((maxFactor) / (logMaxFactor - 1.1)) + 4;
 		primesInv = new double [maxPrimeIndex]; //the 6542 primesInv up to 65536=2^16, then sentinel 65535 at end
 		primes = new int [maxPrimeIndex]; //the 6542 primesInv up to 65536=2^16, then sentinel 65535 at end
 		int primeIndex = 0;

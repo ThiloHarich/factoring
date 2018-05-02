@@ -1,12 +1,14 @@
-package factoring.fermat.lehman.playground;
+package factoring.fermat.lehman;
 
-import factoring.SingleLongFactorFinder;
+import factoring.FactorizationOfLongs;
 import factoring.math.PrimeMath;
 import factoring.trial.TrialInvFact;
 
 import java.util.Collection;
 
 /**
+ * When k*n % 4 == 3 we can increase x by 8. This comes out if you investigate
+ * x^2 - 4kn = y^2 mod 32.
  * This is a version of the lehman factorizationByFactors, which is a variant of the fermat
  * factorizationByFactors.
  * It runs in O(n^1/3) and needs O(n^1/3) space.
@@ -41,7 +43,7 @@ import java.util.Collection;
  * and let the JVM do the optimization here. When adapting to other languages this should be done.
  * Created by Thilo Harich on 28.06.2017.
  */
-public class LehmanPowFactorFinder implements SingleLongFactorFinder {
+public class LehmanFactorFinderStep8 implements FactorizationOfLongs {
 
     static double ONE_THIRD = 1.0 / 3;
     // to be fast to decide if a number is a square we consider the
@@ -112,7 +114,7 @@ public class LehmanPowFactorFinder implements SingleLongFactorFinder {
      *                              - if you know for most of the numbers the maximal factors will exceed 3*n^1/3<br>
      *                              In the last case {@link #findFactors(long, Collection)} might return a composite number
      */
-    public LehmanPowFactorFinder(int bits, float maxFactorMultiplierIn) {
+    public LehmanFactorFinderStep8(int bits, float maxFactorMultiplierIn) {
         if (bits > 41)
             throw new IllegalArgumentException("numbers above 41 bits can not be factorized");
         maxFactorMultiplier = maxFactorMultiplierIn < 1 ? 1 : maxFactorMultiplierIn;
@@ -184,14 +186,47 @@ public class LehmanPowFactorFinder implements SingleLongFactorFinder {
             final int xEnd = (int) (sqrt4kn + xRange);
             // instead of using a step 1 here we use the mod argument from lehman
             // to reduce the possible numbers to verify.
+            // x^2 - 4kn = y^2 mod 3 <->
+            // x^2 - kn = y^2 mod 3 <->
+            // kn = 0 mod 3
+//            x=0 -> y=0; x=1 -> y=1,2; x=2 -> y=1,2
+            // kn = 1 mod 3
+//            x=0 -> y=imp ; x=1 -> y=0; x=2 -> y=1,2
+            // kn = 2 mod 3
+//            x=0 -> y=1,2 ; x=1 -> y=imp; x=2 -> y=0
+//            kn mod 3 != 0 && (kn - 1 == xBegin) mod 3 -> next x
+//            x^2 mod 9 = 0,1,4,5,7
+
             int xStep = 2;
+//            if (k % 4 == 2 && n % 4 == 1) {
+//                continue;
+//            }
             if (k % 2 == 0) {
                 xBegin |= 1;
             } else {
-                xStep = 4;
-                xBegin = xBegin + PrimeMath.mod(k + nMod4 - xBegin, 4);
-                //				if (xBegin % 2 == 1)
-                //					xBegin++;
+                if (k*n % 4 == 3) {
+                    // TODO adjust xBegin
+//                    1 -> no
+//                    3 -> 4
+//                    5 -> no
+//                    7 -> 0
+//                    11 -> 4
+//                    13 no
+//                    15 -> 0
+//                    17 no
+//                    19 -> 4
+//                    23 -> 0
+//                    35 -> no
+//                    29 -> geht nicht
+//                    31 -> 0
+                    xStep = 8;
+//                    2 -> 4, 4 -> 8
+                    xBegin = xBegin + PrimeMath.mod(7 - k*n   - xBegin, 8);
+                }
+                else {
+                    xStep = 4;
+                    xBegin = xBegin + PrimeMath.mod(k + nMod4 - xBegin, 4);
+                }
             }
             // since the upper limit is the lower limit plus a number lower then 1
             // in most of the cases checking the upper limit is very helpful
@@ -208,11 +243,11 @@ public class LehmanPowFactorFinder implements SingleLongFactorFinder {
                     if (y * y == right) {
                         final long factor = PrimeMath.gcd(n, x - y);
                         if (factor != 1) {
-                            if (primeFactors == null)
+                            if (primeFactors == null || maxFactorMultiplier > 1)
                                 return factor;
                             // when maxFactorMultiplier == 1 we have done the trial division first -> the factor
                             // has to be a prime factor, n/factor is of size < n^2/3 and can not be a composite factor
-                            if (maxFactorMultiplier == 1) {
+                            else {
                                 primeFactors.add(factor);
                                 if (n != factor)
                                     primeFactors.add(n / factor);
@@ -242,6 +277,11 @@ public class LehmanPowFactorFinder implements SingleLongFactorFinder {
             }
         }
         return false;
+    }
+
+    @Override
+    public boolean returnsOnlyPrimeFactors(){
+        return maxFactorMultiplier <= 1;
     }
 
     @Override

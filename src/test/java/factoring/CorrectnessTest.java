@@ -7,14 +7,12 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
+import factoring.fermat.lehman.*;
 import factoring.shift.ErrorShiftFact;
 import org.junit.Test;
 
 import com.google.common.collect.Multiset;
 import com.google.common.collect.TreeMultiset;
-
-import factoring.fermat.lehman.LehmanNoSqrtFact;
-import factoring.fermat.lehman.LehmanYafuFact;
 
 public class CorrectnessTest {
 
@@ -37,7 +35,7 @@ public class CorrectnessTest {
 
 	@Test
 	public void testCorrect() {
-		final int bits = 8;
+		final int bits = 32;
 		final int bitsMax = 32;
 
 		//		final Factorizer factorizer1 = new TrialPrimesDynamicFact(1 << bits + 4);
@@ -45,13 +43,15 @@ public class CorrectnessTest {
 		//		Factorizer factorizer1 = new LehmanBigFact(bitsMax, 1);
 		//		final Factorizer factorizer2 = new LehmanMod16Fact(bitsMax);
 		//		final Factorizer factorizer2 = new LehmanApproxFact();
-		final FactorizationOfLongs factorizer2 = new LehmanNoSqrtFact(bitsMax, 1.01f);
-		final FactorizationOfLongs factorizer1 = new LehmanYafuFact(1);
+//		final FactorizationOfLongs factorizer2 = new LehmanNoSqrtFact(bitsMax, 1.01f);
+//		final FactorizationOfLongs factorizer2 = new LehmanYafuFact(1);
+		final FactorizationOfLongs factorizer1 = new LehmanFactorFinder(bitsMax, 1.01f);
+		final FactorizationOfLongs factorizer2 = new LehmanFactorFinderStep8Mod3(bitsMax, 3.01f);
 		//		final Factorizer factorizer2 = new TrialInvFact(1 << bits + 4);
 
 		//		for (int i = 65538; i < 1 << (bits + 1); i++)
-		long begin = (1L << bits) +1;  // = 2^4 * 3^2 * 5
-		begin = 315l	; // * 23
+//		long begin = (1L << bits) +1;  // = 2^4 * 3^2 * 5
+		long begin = 32514l	; // * 23
 		// 29*23 * 53
 		// 29*53 * 23 ->
 		while (begin < Long.MAX_VALUE / 1000)

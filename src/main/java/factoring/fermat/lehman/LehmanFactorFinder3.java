@@ -1,10 +1,10 @@
 package factoring.fermat.lehman;
 
-import java.util.Collection;
-
-import factoring.SingleLongFactorFinder;
+import factoring.FactorizationOfLongs;
 import factoring.math.PrimeMath;
 import factoring.trial.TrialInvFact;
+
+import java.util.Collection;
 
 /**
  * This is a version of the lehman factorizationByFactors, which is a variant of the fermat
@@ -41,7 +41,7 @@ import factoring.trial.TrialInvFact;
  * and let the JVM do the optimization here. When adapting to other languages this should be done.
  * Created by Thilo Harich on 28.06.2017.
  */
-public class LehmanLongFactorFinder implements SingleLongFactorFinder {
+public class LehmanFactorFinder3 implements FactorizationOfLongs {
 
     static double ONE_THIRD = 1.0 / 3;
     // to be fast to decide if a number is a square we consider the
@@ -112,7 +112,7 @@ public class LehmanLongFactorFinder implements SingleLongFactorFinder {
      *                              - if you know for most of the numbers the maximal factors will exceed 3*n^1/3<br>
      *                              In the last case {@link #findFactors(long, Collection)} might return a composite number
      */
-    public LehmanLongFactorFinder(int bits, float maxFactorMultiplierIn) {
+    public LehmanFactorFinder3(int bits, float maxFactorMultiplierIn) {
         if (bits > 41)
             throw new IllegalArgumentException("numbers above 41 bits can not be factorized");
         maxFactorMultiplier = maxFactorMultiplierIn < 1 ? 1 : maxFactorMultiplierIn;
@@ -174,7 +174,7 @@ public class LehmanLongFactorFinder implements SingleLongFactorFinder {
         // surprisingly it gives no speedup when using k's with many prime factors as lehman suggests
         // for k=2 we know that x has to be even and results in a factor more often
         final double sqrt4N = 2 * sqrtN;
-        for (int k = 1; k <= kMax; k++) {
+        for (int k = 2; k <= kMax; k+=2) {
             final double sqrt4kn = sqrt[k] * sqrt4N;
             // adding a small constant to avoid rounding issues and rounding up is much slower then
             // using the downcast and adding a constant close to 1. Took the constant from the yafu code
@@ -185,14 +185,51 @@ public class LehmanLongFactorFinder implements SingleLongFactorFinder {
             // instead of using a step 1 here we use the mod argument from lehman
             // to reduce the possible numbers to verify.
             int xStep = 2;
-            if (k % 2 == 0) {
-                xBegin |= 1;
-            } else {
-                xStep = 4;
+            xBegin |= 1;
+            // since the upper limit is the lower limit plus a number lower then 1
+            // in most of the cases checking the upper limit is very helpful
+            for (long x = xBegin; x <= xEnd; x += xStep) {
+                // here we start using long values
+                // in java the trick to replace the multiplication with an addition does not help
+                final long x2 = x * x;
+                final long right = x2 - k * n4;
+                // instead of taking the square root (which is a very expensive operation)
+                // and squaring it, we do some mod arguments to filter out non squares
+                //				if (PrimeMath.isSquare(right)) {
+                if (isProbableSquare(right)) {
+                    final long y = (long) Math.sqrt(right);
+                    if (y * y == right) {
+                        final long factor = PrimeMath.gcd(n, x - y);
+                        if (factor != 1) {
+                            if (primeFactors == null)
+                                return factor;
+                            // when maxFactorMultiplier == 1 we have done the trial division first -> the factor
+                            // has to be a prime factor, n/factor is of size < n^2/3 and can not be a composite factor
+                            if (maxFactorMultiplier == 1) {
+                                primeFactors.add(factor);
+                                if (n != factor)
+                                    primeFactors.add(n / factor);
+                                return 1;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        for (int k = 1; k <= kMax; k+=2) {
+            final double sqrt4kn = sqrt[k] * sqrt4N;
+            // adding a small constant to avoid rounding issues and rounding up is much slower then
+            // using the downcast and adding a constant close to 1. Took the constant from the yafu code
+            int xBegin = (int) (sqrt4kn + ROUND_UP_DOUBLE);
+            // use only multiplications instead of division here
+            final float xRange = nPow1Sixth * sqrtInv[k];
+            final int xEnd = (int) (sqrt4kn + xRange);
+            // instead of using a step 1 here we use the mod argument from lehman
+            // to reduce the possible numbers to verify.
+            int xStep = 4;
                 xBegin = xBegin + PrimeMath.mod(k + nMod4 - xBegin, 4);
                 //				if (xBegin % 2 == 1)
                 //					xBegin++;
-            }
             // since the upper limit is the lower limit plus a number lower then 1
             // in most of the cases checking the upper limit is very helpful
             for (long x = xBegin; x <= xEnd; x += xStep) {
@@ -246,7 +283,7 @@ public class LehmanLongFactorFinder implements SingleLongFactorFinder {
 
     @Override
     public String toString() {
-        return "LehmanLongFactorFinder{" +
+        return "LehmanFactorFinder{" +
                 "maxFactorMultiplier=" + maxFactorMultiplier +
                 '}';
     }

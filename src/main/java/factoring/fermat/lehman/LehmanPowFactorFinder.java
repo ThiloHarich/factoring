@@ -253,7 +253,7 @@ public class LehmanPowFactorFinder implements SingleLongFactorFinder {
 
     @Override
     public String toString() {
-        return "LehmanLongFactorFinder{" +
+        return "LehmanFactorFinder{" +
                 "maxFactorMultiplier=" + maxFactorMultiplier +
                 '}';
     }

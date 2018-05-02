@@ -3,33 +3,30 @@ package factoring;
 import java.math.BigInteger;
 import java.util.Random;
 
-import factoring.fermat.lehman.LehmanFactorization;
-import factoring.fermat.lehman.LehmanPowFactorization;
-import factoring.fermat.lehman.LehmanYafuFact;
+import factoring.fermat.lehman.*;
 import org.junit.Test;
 
 import de.tilman_neumann.math.factor.CombinedFactorAlgorithm;
 import de.tilman_neumann.math.factor.FactorAlgorithm;
 import de.tilman_neumann.math.factor.SingleFactorFinder;
-import factoring.fermat.lehman.LehmanNoSqrtFact;
 
 public class PerformanceTest {
 
 	@Test
 	public void testPerfHard(){
 		final int bits = 34;
-		final int numPrimes = 1000;
-		int loop = 100;
-		final long[] semiprimes = makeSemiPrimesList(bits, bits/3+4, numPrimes);
+		final int numPrimes = 2000;
+		int loop = 200;
+		final long[] semiprimes = makeSemiPrimesList(bits, bits/2, numPrimes);
 
 		System.out.println("finished making hard numbers");
 		final long start = System.currentTimeMillis();
-		final SingleLongFactorFinder factorizer2 = new LehmanFactorization(bits, .44f);
+		final SingleLongFactorFinder factorizer3 = new LehmanFactorization(bits, .5f);
 		final long end = System.currentTimeMillis();
 		System.out.println("time for setup : " + (end - start));
-		final SingleLongFactorFinder factorizer1 = new LehmanYafuFact(2.8f);
+		final SingleLongFactorFinder factorizer2 = new LehmanFactorFinderStep8Mod3(bits,3.2f);
 //		final SingleFactorFinder factorizer1 = new LehmanFactorization(bits, .34f);
-		final SingleFactorFinder factorizer3 = new CombinedFactorAlgorithm(1);
+		final SingleFactorFinder factorizer1 = new CombinedFactorAlgorithm(1);
 
 		findFactors(factorizer1, semiprimes, loop);
 		findFactors(factorizer2, semiprimes, loop);

@@ -54,7 +54,7 @@ public class LehmanFactorization implements FactorizationOfLongs {
 //		this.bitsOfNumber = bitsOfNumber;
 //		this.maxFactorMultiplier = maxFactorMultiplier;
 		if (factorExponent < .33) {
-			impl = new LehmanLongFactorFinder(bitsOfNumber, 1f);
+			impl = new LehmanFactorFinder(bitsOfNumber, 1f);
 			factorizationByPrimes = true;
 		}
 		else {
@@ -65,7 +65,7 @@ public class LehmanFactorization implements FactorizationOfLongs {
 			else
 				// we use the same algorithm as for small numbers but configure it to first look for big numbers.
 				// in this case we will get no primes out of the algorithm, but since the numbers are big we do not care
-				impl = new LehmanLongFactorFinder(bitsOfNumber, 3f);
+				impl = new LehmanFactorFinderStep8(bitsOfNumber, 3f);
 		}
 	}
 
@@ -76,7 +76,7 @@ public class LehmanFactorization implements FactorizationOfLongs {
 
 	//	@Override
 //	public BigInteger findSingleFactor(BigInteger n) {
-//		//        LehmanLongFactorFinder impl = new LehmanLongFactorFinder(41, 1.001f);
+//		//        LehmanFactorFinder impl = new LehmanFactorFinder(41, 1.001f);
 //		final long factor = getImpl(n.longValue()).findFactors(n.longValue(), null);
 //		return BigInteger.valueOf(factor);
 //	}

@@ -76,7 +76,7 @@ public class LehmanPowFactorization implements FactorizationOfLongs {
 
 	//	@Override
 //	public BigInteger findSingleFactor(BigInteger n) {
-//		//        LehmanLongFactorFinder impl = new LehmanLongFactorFinder(41, 1.001f);
+//		//        LehmanFactorFinder impl = new LehmanFactorFinder(41, 1.001f);
 //		final long factor = getImpl(n.longValue()).findFactors(n.longValue(), null);
 //		return BigInteger.valueOf(factor);
 //	}
