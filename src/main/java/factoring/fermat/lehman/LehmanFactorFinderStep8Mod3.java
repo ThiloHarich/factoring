@@ -20,7 +20,22 @@ import java.util.Collection;
  * 		if (i<0)
  * 			i+=15;
  * 
+ * 15(5*3) , 9 (3*3), 3, 12, 6  -6 mod
+ * 10, 5,                       -5
+ * 14, 8, 2, 11                 -6 mod
+ * 4, 13, 7, 1                  -6 mod
  * 
+ * 15(5*3) , 9 (3*3), 3, 12, 6  -6 mod
+ * 10, 4, 13, 7, 1,             -6 mod
+ * 5, 14,  8, 2, 11,            -6 mod
+ * 
+ * for (int i=15; i> 0; i-=5)
+ * 	for (int j=0; j<6; j++,i-=6)
+ * 		if (i<0)
+ * 			i+=15;
+
+ * 
+ * rest
  * In this algorithm we use an additional multiplier of 3 for k.
  * This means we first consider k' = 3*k and then the other values.
  * For k = 1 mod 3 we know that x must be dividable by 3.
