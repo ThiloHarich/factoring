@@ -1,11 +1,10 @@
 package factoring.fermat.lehman;
 
-import java.util.Collection;
-
 import factoring.SingleLongFactorFinder;
 import factoring.math.PrimeMath;
 import factoring.trial.TrialRangeFact;
-import factoring.trial.TrialRangeInvFact;
+
+import java.util.Collection;
 
 /**
  * This is a version of the lehman factorizationByFactors, which is a variant of the fermat
@@ -42,7 +41,7 @@ import factoring.trial.TrialRangeInvFact;
  * and let the JVM do the optimization here. When adapting to other languages this should be done.
  * Created by Thilo Harich on 28.06.2017.
  */
-public class LehmanReverseFact implements SingleLongFactorFinder {
+public class LehmanTrialSplitFact implements SingleLongFactorFinder {
 //	public class LehmanReverseFact extends FindPrimeFact {
 
 	static double ONE_THIRD = 1.0/3;
@@ -73,7 +72,7 @@ public class LehmanReverseFact implements SingleLongFactorFinder {
 	double [] sqrt;
 	float [] sqrtInv;
 	// a fast way to do the trial division phase
-	final TrialRangeInvFact smallFactoriser;
+	final TrialRangeFact smallFactoriser;
 	int maxTrialFactorMultiplier;
 
 	static {
@@ -117,13 +116,13 @@ public class LehmanReverseFact implements SingleLongFactorFinder {
 	 * In the last case {@link #findFactors(long, Collection)} might return a composite number
 	 * TODO fix this behaviour
 	 */
-	public LehmanReverseFact(int bits, float maxFactorMultiplierIn) {
+	public LehmanTrialSplitFact(int bits, float maxFactorMultiplierIn) {
 		if (bits > 41)
 			throw new IllegalArgumentException("numbers above 41 bits can not be factorized");
 		maxFactorMultiplier = maxFactorMultiplierIn < 1 ? 1 : maxFactorMultiplierIn;
         maxTrialFactorMultiplier = (int) Math.ceil(maxFactorMultiplier * Math.pow(1L << bits, ONE_THIRD));
 		maxFactorMultiplierCube = maxFactorMultiplier * maxFactorMultiplier * maxFactorMultiplier;
-		smallFactoriser = new TrialRangeInvFact(maxTrialFactorMultiplier);
+		smallFactoriser = new TrialRangeFact(maxTrialFactorMultiplier);
 		initSquares();
 	}
 
@@ -155,8 +154,7 @@ public class LehmanReverseFact implements SingleLongFactorFinder {
 		smallFactoriser.setMaxFactor(maxTrialFactorMultiplier);
 		// factor out the factors around n^1/3 with trial division first is this faster?
 		double begin = 1. / maxFactorMultiplier;
-		// TODO let it run over all primes
-		final long nAfterTrial = smallFactoriser.findPrimeFactors(n, primeFactors, 1.0, begin);
+		final long nAfterTrial = smallFactoriser.findPrimeFactors(n, primeFactors, begin, 1.);
 		if (primeFactors == null && nAfterTrial != n)
 			return nAfterTrial;
 
@@ -256,7 +254,7 @@ public class LehmanReverseFact implements SingleLongFactorFinder {
         }
 		// if we have not found a factor we still have to do the trial division phase
 		if (maxFactorMultiplier > 1)
-			n = smallFactoriser.findPrimeFactors(n, primeFactors, begin, 0);
+			n = smallFactoriser.findPrimeFactors(n, primeFactors, 0, begin);
 
 		return n;
 	}

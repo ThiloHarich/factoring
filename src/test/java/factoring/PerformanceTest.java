@@ -3,72 +3,80 @@ package factoring;
 import java.math.BigInteger;
 import java.util.Random;
 
+import de.tilman_neumann.math.factor.FactorAlgorithmBase;
 import factoring.fermat.lehman.*;
+import factoring.fermat.lehman.playground.LehmanFactorFinderMod36;
 import org.junit.Test;
 
 import de.tilman_neumann.math.factor.CombinedFactorAlgorithm;
 import de.tilman_neumann.math.factor.FactorAlgorithm;
-import de.tilman_neumann.math.factor.SingleFactorFinder;
 
 public class PerformanceTest {
 
 	@Test
 	public void testPerfHard(){
-		final int bits = 34;
-		final int numPrimes = 2000;
-		int loop = 200;
-		final long[] semiprimes = makeSemiPrimesList(bits, bits/2, numPrimes);
+		final int bits = 40;
+		final int numPrimes = 1340;
+		int loop = 20;
+        int smallFactorBits = bits / 2;
+        final long[] semiprimes = makeSemiPrimesList(bits, smallFactorBits, numPrimes);
 
 		System.out.println("finished making hard numbers");
 		final long start = System.currentTimeMillis();
-		final SingleLongFactorFinder factorizer3 = new LehmanFactorization(bits, .5f);
+		final FactorizationOfLongs factorizer1 = new LehmanFactorFinderMod36(bits, 5);
 		final long end = System.currentTimeMillis();
 		System.out.println("time for setup : " + (end - start));
-		final SingleLongFactorFinder factorizer2 = new LehmanFactorFinderStep8Mod3(bits,3.2f);
+        final FactorizationOfLongs factorizer2 = new LehmanFactorFinderMod12(bits,5f, false);
+//        final FactorizationOfLongs factorizer2 = new LehmanYafuFact(5.8f);
 //		final SingleFactorFinder factorizer1 = new LehmanFactorization(bits, .34f);
-		final SingleFactorFinder factorizer1 = new CombinedFactorAlgorithm(1);
+		final FactorAlgorithmBase factorizer3 = new CombinedFactorAlgorithm(1);
 
-		findFactors(factorizer1, semiprimes, loop);
-		findFactors(factorizer2, semiprimes, loop);
-		findFactors(factorizer3, semiprimes, loop);
+		long time1 = findFactors(factorizer1, semiprimes, loop, 1l);
+		findFactors(factorizer2, semiprimes, loop, time1);
+		findFactors(factorizer3, semiprimes, loop, time1);
 
-		findFactors(factorizer1, semiprimes, loop);
-		findFactors(factorizer2, semiprimes, loop);
-		findFactors(factorizer3, semiprimes, loop);
+        long time2 = findFactors(factorizer1, semiprimes, loop, time1);
+        findFactors(factorizer2, semiprimes, loop, time2);
+        findFactors(factorizer3, semiprimes, loop, time2);
 
-		findFactors(factorizer1, semiprimes, loop);
-		findFactors(factorizer2, semiprimes, loop);
-		findFactors(factorizer3, semiprimes, loop);
+        long time3 = findFactors(factorizer1, semiprimes, loop, time2);
+        findFactors(factorizer2, semiprimes, loop, time3);
+        findFactors(factorizer3, semiprimes, loop, time3);
 
-		findFactors(factorizer1, semiprimes, loop);
-		findFactors(factorizer2, semiprimes, loop);
-		findFactors(factorizer3, semiprimes, loop);
+        long time4 = findFactors(factorizer1, semiprimes, loop, time3);
+        findFactors(factorizer2, semiprimes, loop, time4);
+        findFactors(factorizer3, semiprimes, loop, time4);
 
 
 	}
 
-	protected void findFactors(final SingleFactorFinder factorizer1, final long[] semiprimes, int loop) {
+	protected long findFactors(final FactorizationOfLongs factorizer1, final long[] semiprimes, int loop, long time1) {
 		final long start = System.nanoTime();
 		for (int i = 0; i < loop; i++) {
 			for (final long semiprime : semiprimes) {
-				factorizer1.findSingleFactor(BigInteger.valueOf(semiprime));
+                factorizer1.findSingleFactor(semiprime);
+//                factorizer1.factorization(semiprime);
 			}
 		}
 		final long time = System.nanoTime() - start;
-		final String name = String.format("%-45s", factorizer1.getName());
-		System.out.println(name + " :    \t" + (time));
+		final String name = String.format("%-50s", factorizer1);
+		System.out.println(name + " :    \t" + (0.0 + time)/time1 + "\t" + time);
+
+		return time;
 	}
 
-	protected void findFactors(final SingleLongFactorFinder factorizer1, final long[] semiprimes, int loop) {
+	protected long findFactors(final FactorAlgorithmBase factorizer1, final long[] semiprimes, int loop, long time1) {
 		final long start = System.nanoTime();
 		for (int i = 0; i < loop; i++) {
 			for (final long semiprime : semiprimes) {
-				factorizer1.findSingleFactor(semiprime);
+                factorizer1.findSingleFactor(BigInteger.valueOf(semiprime));
+//                factorizer1.factor(BigInteger.valueOf(semiprime));
 			}
 		}
 		final long time = System.nanoTime() - start;
-		final String name = String.format("%-25s", factorizer1.getClass().getSimpleName());
-		System.out.println(name + " :    \t" + (time));
+		final String name = String.format("%-45s", factorizer1.getClass().getSimpleName());
+		System.out.println(name + " :    \t" +  (0.0 + time)/time1);
+		return time;
 	}
 	private long[] makeSemiPrimesList(int bits, int smallFactorBits, int numPrimes) {
 		final long[] semiPrimes = new long[numPrimes];
@@ -89,50 +97,53 @@ public class PerformanceTest {
 	{
 		final int bits = 30;
 		//		final int bits = 35;
-		final int range = 130000;
+		final int range = 93000;
 
 
 		//		final Factorizer factorizer1 = new TrialPrimesDynamicFact(1 << bits/2);
 //		final Factorizer factorizer1 = new LehmanSmallRangeFact(bits, 1);
-				final FactorizationOfLongs factorizer1 = new LehmanNoSqrtFact(bits,1f);
+//		final FactorizationOfLongs factorizer1 = new LehmanNoSqrtFact(bits,1f);
+//		final FactorizationOfLongs factorizer3 = new LehmanFactorFinderMod12(bits, 1f, true);
 		//		Factorizer factorizer1 = new HartFact();
 		//		Factorizer factorizer2 = new FermatResiduesRec();
-		//		final Factorizer factorizer2 = new TrialInvFact(1 << bits/2);
+//				final FactorizationOfLongs factorizer2 = new TrialInvFact(1 << bits/2);
 		//		Factorizer factorizer2 = new FermatFact();
 //		final SingleFactorFinder factorizer1 = new LehmanFactorization(bits, 1f);
-		final FactorizationOfLongs factorizer3 = new LehmanFactorization(bits, 0f);
-		final FactorizationOfLongs factorizer2 = new LehmanPowFactorization(bits, 0f);
+        final FactorizationOfLongs factorizer1 = new LehmanFactorization(bits, 0f);
+//		final FactorizationOfLongs factorizer2 = new LehmanPowFactorization(bits, 0f);
 		//		final Factorizer factorizer2 = new TrialWithPrimesFact();
-//		final FactorAlgorithm factorizer2 = new CombinedFactorAlgorithm(1);
-//				final Factorizer factorizer1 = new LehmanYafuFact(2.8f);
+		final FactorAlgorithm factorizer2 = new CombinedFactorAlgorithm(1);
+		final FactorizationOfLongs factorizer3 = new LehmanYafuFact(1f);
 
 		//		((TrialFactMod)factorizer1).setLimit(1 << 16);
 
-		final int factors = getFactors(factorizer1, bits, range);
-		final int factors2 =  getFactors(factorizer2, bits, range);
-				final int factors13 =  getFactors(factorizer3, bits, range);
+		final long time1 = getFactors(factorizer1, bits, range, 1l);
+		getFactors(factorizer2, bits, range, time1);
+		getFactors(factorizer3, bits, range, time1);
 
 		//		assertEquals(factors, factors2);
 
-		final int factors3 = getFactors(factorizer1, bits,range);
-		final int factors4 =  getFactors(factorizer2, bits, range);
-				final int factors14 =  getFactors(factorizer3, bits, range);
+		final long time2 = getFactors(factorizer1, bits,range, time1);
+		getFactors(factorizer2, bits, range, time2);
+		getFactors(factorizer3, bits, range, time2);
 
 		//		assertEquals(factors3, factors4);
 
-		final int factors5 = getFactors(factorizer1, bits, range);
-		final int factors6 =  getFactors(factorizer2, bits, range);
-				final int factors15 =  getFactors(factorizer3, bits, range);
 
-		final int factors7 = getFactors(factorizer1, bits, range);
-		final int factors8 =  getFactors(factorizer2, bits, range);
-				final int factors9 =  getFactors(factorizer3, bits, range);
+        final long time3 = getFactors(factorizer1, bits,range, time1);
+        getFactors(factorizer2, bits, range, time3);
+        getFactors(factorizer3, bits, range, time3);
+
+
+        final long time4 = getFactors(factorizer1, bits,range, time1);
+        getFactors(factorizer2, bits, range, time4);
+        getFactors(factorizer3, bits, range, time4);
 
 		//		assertEquals(factors5, factors6);
 	}
 
 
-    public int getFactors(FactorizationOfLongs factorizer, int bits, int range) {
+    public long getFactors(FactorizationOfLongs factorizer, int bits, int range, long time1) {
 
         // warmup
         final int factors = 0;
@@ -145,10 +156,10 @@ public class PerformanceTest {
         }
         final long time = System.nanoTime() - start;
         final String name = String.format("%-25s", factorizer.getClass().getSimpleName());
-        System.out.println(name + " :    \t" + (time));
-        return factors;
+        System.out.println(name + " :    \t" + (0.0 + time)/time1);
+        return time;
     }
-    public int getFactors(FactorAlgorithm factorizer, int bits, int range) {
+    public long getFactors(FactorAlgorithm factorizer, int bits, int range, long time1) {
 
         // warmup
         final int factors = 0;
@@ -160,8 +171,8 @@ public class PerformanceTest {
         }
         final long time = System.nanoTime() - start;
         final String name = String.format("%-20s", factorizer.getClass().getSimpleName());
-        System.out.println(name + " :    \t" + (time));
-        return factors;
+        System.out.println(name + " :    \t" + (0.0 + time)/time1);
+        return time;
     }
 
 }

@@ -1,5 +1,6 @@
 package factoring.fermat.lehman;
 
+import factoring.fermat.lehman.playground.LehmanFactorFinderMod;
 import factoring.math.PrimeMath;
 import org.junit.Test;
 

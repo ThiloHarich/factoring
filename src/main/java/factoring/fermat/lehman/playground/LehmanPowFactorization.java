@@ -1,7 +1,9 @@
-package factoring.fermat.lehman;
+package factoring.fermat.lehman.playground;
 
 import factoring.FactorizationOfLongs;
 import factoring.SingleLongFactorFinder;
+import factoring.fermat.lehman.LehmanReverseFact;
+import factoring.fermat.lehman.playground.LehmanPowFactorFinder;
 
 import java.util.Collection;
 

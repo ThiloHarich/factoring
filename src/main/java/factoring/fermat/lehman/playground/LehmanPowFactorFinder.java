@@ -7,43 +7,14 @@ import factoring.trial.TrialInvFact;
 import java.util.Collection;
 
 /**
- * This is a version of the lehman factorizationByFactors, which is a variant of the fermat
- * factorizationByFactors.
- * It runs in O(n^1/3) and needs O(n^1/3) space.
- * It is about three times faster then the java version of the yafu lehman factorizationByFactors.
- * By storing the square roots of the multiplier k the range can be done faster.
- * It also uses a version of trial division, where the multiple inverse of the primes are stored.
- * So instead of a division a multiplication is needed to find out if a number is dividable
- * by a prime.
- * In the lehman algorithm in most of the cases i.e. k > n^1/3 / 16 the upper bound for x is less the
- * The lower bound plus 1. In this case at most one value of x has to be considered, but
- * the calculation of the lower and upper rage has to be done all the time.
- * Here we ignore the fact that we always increase x by 2 or 4.
- * Since calculating the ranges of the inner loop requires at least one square root
- * and a division we try to reduce the cost for calculating this by precalculating the
- * square roots for the small multipliers k and the inversion of it.
- * <p>
- * Like in the YAFU implementation we get no speed when using smooth multipliers (for k) first.
- * This is surprising since most of the implementations use small multipliers, since they should
- * increase the chance that a created number is a square.
- * <p>
- * The Hart variant always just one x per multiplier k, this eliminates the determination of the
- * upper bound, but using it gives no extra speed. Again why?
- * <p>
- * We need 2^42/3 = 2^14 = 16364 locations to store the squares and the inversive. This does not fit in the L1 cache,
- * but it is accessed in a sequential way -> still efficient
- * <p>
- * Open questions, possible improvements :
- * - can we get rid of storing the square roots? how can we calculate them efficiently?
- * - In most of the cases (more then 93%) for k only one or none the value x^2 -n needs to be calculated.
- * <p>
- * Since this is a java implementation we use just the basic operations "/" and "%"
- * and let the JVM do the optimization here. When adapting to other languages this should be done.
- * Created by Thilo Harich on 28.06.2017.
+ * Here we calculate n^1/6 and calculate n^1/2 and n^1/3 out of this value just by
+ * multiplication. But since this is only used outside of the main loop it has
+ * no real impact on the runtime.
  */
 public class LehmanPowFactorFinder implements SingleLongFactorFinder {
 
     static double ONE_THIRD = 1.0 / 3;
+    static double ONE_SIXTH = 1.0 / 6;
     // to be fast to decide if a number is a square we consider the
     // number modulo some values. First filer/modulus is a power of 2
     // since we can easily calculate the remainder by using bit and operation
@@ -116,7 +87,8 @@ public class LehmanPowFactorFinder implements SingleLongFactorFinder {
         if (bits > 41)
             throw new IllegalArgumentException("numbers above 41 bits can not be factorized");
         maxFactorMultiplier = maxFactorMultiplierIn < 1 ? 1 : maxFactorMultiplierIn;
-        maxTrialFactor = (int) Math.ceil(maxFactorMultiplier * Math.pow(1L << bits, ONE_THIRD));
+        double nPow1Div3 = Math.pow(1L << bits, ONE_THIRD);
+        maxTrialFactor = (int) Math.ceil(maxFactorMultiplier * nPow1Div3);
         maxFactorMultiplierCube = maxFactorMultiplier * maxFactorMultiplier * maxFactorMultiplier;
         smallFactoriser = new TrialInvFact(maxTrialFactor);
         initSquares();
@@ -144,7 +116,8 @@ public class LehmanPowFactorFinder implements SingleLongFactorFinder {
             throw new IllegalArgumentException("numbers above 41 bits can not be factorized");
         // with this implementation the lehman part is not slower then the trial division
         // we only apply the multiplier if we want to cut down the numbers to be tested
-        maxTrialFactor = (int) Math.ceil(maxFactorMultiplier * Math.pow(n, ONE_THIRD));
+        double nPow1Div3 = Math.pow(n, ONE_THIRD);
+        maxTrialFactor = (int) Math.ceil(maxFactorMultiplier * nPow1Div3);
         //		maxTrialFactor =  (int) Math.ceil(Math.pow(nOrig, ONE_THIRD));
         smallFactoriser.setMaxFactor(maxTrialFactor);
         // factor out all small factors if
@@ -162,15 +135,19 @@ public class LehmanPowFactorFinder implements SingleLongFactorFinder {
         // re-adjust the maximal factor we have to search for. If small factors were found by trial division,
         // which is quite often the case for arbitrary numbers, this cuts down the runtime dramatically.
         // TODO maybe we can do even better here?
-        maxTrialFactor = (int) Math.ceil(maxFactorMultiplier * Math.pow(n, ONE_THIRD));
+        double nPow1Div6 = Math.pow(n, ONE_SIXTH);
+        nPow1Div3 = nPow1Div6 * nPow1Div6;
+        maxTrialFactor = (int) Math.ceil(maxFactorMultiplier * nPow1Div3);
         // effectively kMax is reduced by maxFactorMultiplier^2 ->
         final int kMax = (int) (Math.ceil(maxTrialFactor / maxFactorMultiplierCube));
         final long n4 = 4 * n;
-        final double sqrtN = Math.sqrt(n);
+//        final double sqrtN = Math.sqrt(n);
+        final double sqrtN = nPow1Div3 * nPow1Div6;
         final int nMod4 = (int) (n % 4);
         // we calculate n^1/6 = n^1/3*n^1/3 / n^1/2 -> we no not need to use Math
-        final long nPow2Third = ((long) maxTrialFactor) * ((long) maxTrialFactor);
-        final float nPow1Sixth = (float) ((nPow2Third / 4) / sqrtN);
+//        final long nPow2Third = ((long) maxTrialFactor) * ((long) maxTrialFactor);
+//        float nPow1Sixth = (float) ((nPow2Third / 4) / sqrtN);
+        float nPow1Sixth = (float) (nPow1Div6 / 4);
         // surprisingly it gives no speedup when using k's with many prime factors as lehman suggests
         // for k=2 we know that x has to be even and results in a factor more often
         final double sqrt4N = 2 * sqrtN;
