@@ -1,34 +1,32 @@
 package factoring.fermat.lehman.playground;
 
-import factoring.FactorizationOfLongs;
-import factoring.SingleLongFactorFinder;
-import factoring.fermat.lehman.LehmanReverseFact;
-import factoring.fermat.lehman.playground.LehmanPowFactorFinder;
-
 import java.util.Collection;
+
+import factoring.FactorizationOfLongs;
+import factoring.fermat.lehman.LehmanReverseFact;
 
 /**
  * This algorithm combines different fast Implementation of the lehman factoring algorithm.
  * It uses a fast implementaion of a trial division algorithm as well.
- * Usually it is 3 times faster then the YAFU implementation by... 
+ * Usually it is 3 times faster then the YAFU implementation by...
  * It works for numbers up to 41 bits.
- * For numbers up to around 34 bits it faster then the java implementation of the SQUAFU algorithm provided 
+ * For numbers up to around 34 bits it faster then the java implementation of the SQUAFU algorithm provided
  * by til neuman. But you have to know about the size of the factors in the factorization. Where as in the SQUAFU
  * implementation usually the running time is independent of the size of the numbers.
  * For small factors (below n^1/3 if the number to factorize is n) the algorithm basically uses trial division.
- * Here it is much faster then the SQUAFU algorithm. If n consists of only two factors in the area of n^1/2 it 
+ * Here it is much faster then the SQUAFU algorithm. If n consists of only two factors in the area of n^1/2 it
  * uses the lehman algorithm first preferably high numbers > 3*n^1/3, then switching to trial division.
  * For numbers in between a mixed approach is going to be applied.
  * For random numbers it should always be faster then the SQUAFU up
- * 
+ *
  * Created by Thilo Harich on 18.03.2018.
  */
 public class LehmanPowFactorization implements FactorizationOfLongs {
-	private final SingleLongFactorFinder impl;
+	private final FactorizationOfLongs impl;
 
 	boolean factorizationByPrimes = false;
-//	int bits;
-//	float maxFactorMultiplier;
+	//	int bits;
+	//	float maxFactorMultiplier;
 
 	// 3 cases
 	// all factors + factors below n^1/3 -> use trial divison with small primes first
@@ -53,8 +51,8 @@ public class LehmanPowFactorization implements FactorizationOfLongs {
 	 *                          this is factor should have size n ^ factorExponent.
 	 */
 	public LehmanPowFactorization(int bitsOfNumber, float factorExponent) {
-//		this.bitsOfNumber = bitsOfNumber;
-//		this.maxFactorMultiplier = maxFactorMultiplier;
+		//		this.bitsOfNumber = bitsOfNumber;
+		//		this.maxFactorMultiplier = maxFactorMultiplier;
 		if (factorExponent < .33) {
 			impl = new LehmanPowFactorFinder(bitsOfNumber, 1f);
 			factorizationByPrimes = true;
@@ -77,40 +75,41 @@ public class LehmanPowFactorization implements FactorizationOfLongs {
 	}
 
 	//	@Override
-//	public BigInteger findSingleFactor(BigInteger n) {
-//		//        LehmanFactorFinder impl = new LehmanFactorFinder(41, 1.001f);
-//		final long factor = getImpl(n.longValue()).findFactors(n.longValue(), null);
-//		return BigInteger.valueOf(factor);
-//	}
+	//	public BigInteger findSingleFactor(BigInteger n) {
+	//		//        LehmanFactorFinder impl = new LehmanFactorFinder(41, 1.001f);
+	//		final long factor = getImpl(n.longValue()).findFactors(n.longValue(), null);
+	//		return BigInteger.valueOf(factor);
+	//	}
 
-//	/**
-//	 * This is just for be compatible with SingleFactorFinder.
-//	 * has the drawback to convert BigInteger to long and the conversion from
-//	 * TreeMultiset to SortedMultiset_BottomUp
-//	 * TODO what is the performance drawback
-//	 * @param n
-//	 * @return
-//	 */
-//	@Override
-//	public SortedMultiset<BigInteger> factor(BigInteger n) {
-//		TreeMultiset<Long> allFactors;
-//		allFactors = factorization(n.longValue());
-//		SortedMultiset result = new SortedMultiset_BottomUp(allFactors);
-//		return result;
-//	}
+	//	/**
+	//	 * This is just for be compatible with SingleFactorFinder.
+	//	 * has the drawback to convert BigInteger to long and the conversion from
+	//	 * TreeMultiset to SortedMultiset_BottomUp
+	//	 * TODO what is the performance drawback
+	//	 * @param n
+	//	 * @return
+	//	 */
+	//	@Override
+	//	public SortedMultiset<BigInteger> factor(BigInteger n) {
+	//		TreeMultiset<Long> allFactors;
+	//		allFactors = factorization(n.longValue());
+	//		SortedMultiset result = new SortedMultiset_BottomUp(allFactors);
+	//		return result;
+	//	}
 
 
+	@Override
 	public String toString() {
 		return impl.toString();
 	}
 
 	@Override
-	public boolean returnsOnlyPrimeFactors() {
+	public boolean findsPrimes() {
 		return factorizationByPrimes;
 	}
 
 	@Override
-	public SingleLongFactorFinder getImpl(long n) {
+	public FactorizationOfLongs getImpl(long n) {
 		// TODO return the best possible impl here,
 		return impl;
 	}

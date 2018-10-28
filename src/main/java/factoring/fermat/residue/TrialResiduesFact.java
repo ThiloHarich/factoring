@@ -1,6 +1,7 @@
 package factoring.fermat.residue;
 
 import factoring.FactorizationOfLongs;
+import factoring.FactorsFinder;
 import factoring.fermat.FermatFact;
 import factoring.trial.variant.TrialFactMod;
 
@@ -9,7 +10,7 @@ import java.util.Collection;
 /**
  * Created by Thilo Harich on 28.06.2017.
  */
-public class TrialResiduesFact implements FactorizationOfLongs {
+public class TrialResiduesFact implements FactorizationOfLongs, FactorsFinder {
 
     TrialFactMod smallFactoriser = new TrialFactMod();
     int factor = 1;

@@ -1,144 +1,171 @@
 package factoring;
 
-import com.google.common.collect.Multiset;
-import com.google.common.collect.TreeMultiset;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import com.google.common.collect.ImmutableMultiset;
+import com.google.common.collect.Multiset;
+import com.google.common.collect.TreeMultiset;
+
 /**
  * This is an Interface which gives an {@link #factorization(long)} of a long number.
- * It calls {@link SingleLongFactorFinder#findFactors(long, Collection)} at the Implementation returned by {@link #getImpl(long)}.
+ * It has a default implementation for {@link #factorization(long)}, which calculates the
+ * factorization depending if the class extends {@link FactorsFinder}, {@link SingleLongFactorFinder} or {@link SinglePrimeFactorFinder}.
+ *
  * Created by Thilo Harich on 26.03.2018.
  */
-public interface FactorizationOfLongs extends SingleLongFactorFinder {
+public interface FactorizationOfLongs extends FactorFinder {
 
 
-    /**
-     * If the {@link SingleLongFactorFinder#findFactors(long, Collection)} of the underlying {@link #getImpl(long)}
-     * always retuns prime Factors this method returns true.
-     * It then fills the prime factors of the given collection only with prime factors or always retuns a prime
-     * factor if no prime factors are passed over.
-     * @return
-     */
-    default boolean returnsOnlyPrimeFactors(){
-        return true;
-    }
+	//    /**
+	//     * If the {@link SingleLongFactorFinder#findFactors(long, Collection)} of the underlying {@link #getImpl(long)}
+	//     * always retuns prime Factors this method returns true.
+	//     * It then fills the prime factors of the given collection only with prime factors or always retuns a prime
+	//     * factor if no prime factors are passed over.
+	//     * @return
+	//     */
+	//    default boolean returnsOnlyPrimeFactors(){
+	//        return true;
+	//    }
 
-    /**
-     * returns a full prime factorization of the number.
-     * The factorization is given as a TreeMultiset of the prime factors.
-     * If the underlying algorithm returns only prime factors, we do not have to factorize the factors we have found.
-     *
-     * @param n
-     * @return
-     */
-    default TreeMultiset<Long> factorization(long n) {
-        TreeMultiset<Long> allFactors;
-        if (returnsOnlyPrimeFactors())
-            allFactors = factorizationByPrimes(n);
-        else
-            allFactors = factorizationByFactors(n);
-        return allFactors;
-    }
+	/**
+	 * returns a full prime factorization of the number.
+	 * The factorization is given as a TreeMultiset of the prime factors.
+	 * If the underlying algorithm returns only prime factors, we do not have to factorize the factors we have found.
+	 *
+	 * @param n
+	 * @return
+	 */
+	default TreeMultiset<Long> factorization(long n) {
+		// handle the powers of 2 separately, does it help????
+		final TreeMultiset<Long> factors = TreeMultiset.create();
+		n = addEvenPrimes(n, factors);
+		if (n == 1) {
+			return factors;
+		}
+		if (getImpl(n).findsPrimes() && !getImpl(n).findsOneFactor())
+			return factorizationByPrimes(n, factors);
+		if (getImpl(n).findsPrimes() && getImpl(n).findsOneFactor())
+			return factorizationBySinglePrime(n, factors);
+		// now handle composite numbers
+		if (!getImpl(n).findsOneFactor())
+			factors.addAll(factorizationByComposites(n));
+		else
+			factors.addAll(factorizationBySingleComposite(n));
+		return factors;
+	}
 
 
-    /**
-     * prints out the factorizationByFactors in a nice ways starting with the lowest factors.
-     * @param n
-     * @return
-     */
-    default String printFactorization(long n) {
-        final TreeMultiset<Long> factors = factorizationByFactors(n);
 
-        final List<String> s = new ArrayList<String>();
-        for (final Multiset.Entry<Long> entry : factors.entrySet()) {
-            final int exponent = entry.getCount();
-            String part = "" + entry.getElement();
-            part += exponent == 1 ? "" : "^" + exponent;
-            s.add(part);
-        }
-        return String.join(" * ", s);
-    }
 
-    default long findSingleFactor(long n) {
-        return getImpl(n).findFactors(n, null);
-    }
+	/**
+	 * prints out the factorizationByFactors in a nice ways starting with the lowest factors.
+	 * @param n
+	 * @return
+	 */
+	default String printFactorization(long n) {
+		final TreeMultiset<Long> factors = factorization(n);
 
-    /**
-     * This method returns a complete factorizationByFactors of n.
-     * It uses the implementation returned by {@link #getImpl(long)} and calls
-     * {@link SingleLongFactorFinder#findFactors(long, Collection)}. This will return a factor.
-     * This factor does not have to be a prime factor, and has to be factorized again by
-     * findFactors().
-     * 
-     * @deprecated ("due to performance reasons this should no be used. It can be called to check correctness of an algorithm or if there is no algorithm available
-     * where {@link #returnsOnlyPrimeFactors} returns false.")
-     * @see #factorizationByPrimes if possible.
-     * @param n
-     * @return
-     */
-    default TreeMultiset<Long> factorizationByFactors(long n) {
-        // if we have a prime return an empty set
-        TreeMultiset<Long> factorsEven = TreeMultiset.create();
-        while ((n & 1) == 0)
-        {
-            factorsEven.add(2l);
-            n = n >> 1;
-        }
-        if (n == 1) {
-            return factorsEven;
-        }
-        TreeMultiset<Long> primeFactors = TreeMultiset.create();
-        // find one factor and decomposite this factor and n/factor
-        long factor1 = getImpl(n).findFactors(n, primeFactors);
-        // if we do not find a divisor just return it
-        if (factor1 == n){
-            factorsEven.add(n);
-            return factorsEven;
-        }
-        // also divide out the prime factorsEven
-        long factor2 = n/factor1;
-        for (long factor : primeFactors) {
-            factor2 /= factor;
-        }
-        TreeMultiset<Long> subFactors1 = factorizationByFactors(factor1);
-        TreeMultiset<Long> subFactors2 = factorizationByFactors(factor2);
-        factorsEven.addAll(subFactors1);
-        factorsEven.addAll(subFactors2);
-        factorsEven.addAll(primeFactors);
-        return factorsEven;
-    }
+		final List<String> s = new ArrayList<>();
+		for (final Multiset.Entry<Long> entry : factors.entrySet()) {
+			final int exponent = entry.getCount();
+			String part = "" + entry.getElement();
+			part += exponent == 1 ? "" : "^" + exponent;
+			s.add(part);
+		}
+		return String.join(" * ", s);
+	}
 
-    default TreeMultiset<Long> factorizationByPrimes(long n) {
-        TreeMultiset<Long> primeFactors = TreeMultiset.create();
-        while ((n & 1) == 0)
-        {
-            primeFactors.add(2l);
-            n = n >> 1;
-        }
-        if (n == 1) {
-            return primeFactors;
-        }
-        // try to find all prime factors
-        long remainder = getImpl(n).findFactors(n, primeFactors);
-        // if we do not find a trivial divisor add it; this should only be the case if n
-        // without the powers of 2 is a prime
-        if (remainder != 1){
-            primeFactors.add(n);
-        }
-        return primeFactors;
-    }
+	/**
+	 * This method returns a complete factorizationByFactors of n.
+	 * It uses the implementation returned by {@link #getImpl(long)} and calls
+	 * {@link SingleLongFactorFinder#findFactors(long, Collection)}. This will return a factor.
+	 * This factor does not have to be a prime factor, and has to be factorized again by
+	 * findFactors().
+	 *
+	 * @see #factorizationByPrimes if possible.
+	 * @param n
+	 * @param factors
+	 * @param primeFactors a Multiset of primes
+	 * @return
+	 */
+	default Collection<Long> factorizationByComposites(long n) {
+		// if we have a prime return an empty set
+		final TreeMultiset<Long> composites = TreeMultiset.create();
+		// find one factor and decomposite this factor and n/factor
+		final long remainder = getImpl(n).findFactors(n, composites);
+		// if we do not find a divisor it must be a prime factor just return it
+		if (remainder == n){
+			return ImmutableMultiset.of(remainder);
+		}
+		composites.add(remainder);
 
-    /**
-     * return an implementation which perform good for the number n.
-     *
-     * @param n
-     * @return
-     */
-    default SingleLongFactorFinder getImpl(long n){
-        return this;
-    }
+		final TreeMultiset<Long> primes = TreeMultiset.create();
+		for (final Long composite : composites) {
+			primes.addAll(factorizationByComposites(composite));
+		}
+		return primes;
+	}
+
+	default Collection<Long> factorizationBySingleComposite(long n){
+		final TreeMultiset<Long> factorsEven = TreeMultiset.create();
+		// find one factor and decomposite this factor and n/factor
+		final long factor1 = getImpl(n).findFactors(n, factorsEven);
+		// if we do not find a divisor it must be a prime factor just return it
+		if (factor1 == n){
+			return ImmutableMultiset.of(factor1);
+		}
+		//		factorsEven.add(factor1);
+		// also divide out the prime factorsEven
+		final long factor2 = n/factor1;
+		final Collection<Long> subFactors1 = factorizationBySingleComposite(factor1);
+		final Collection<Long> subFactors2 = factorizationBySingleComposite(factor2);
+		factorsEven.addAll(subFactors1);
+		factorsEven.addAll(subFactors2);
+		return factorsEven;
+
+	}
+
+	default TreeMultiset<Long> factorizationByPrimes(long n, TreeMultiset<Long> primes) {
+		// try to find all prime factors
+		final long remainder = getImpl(n).findFactors(n, primes);
+		// if we do not find a trivial divisor add it; this should only be the case if n
+		// without the powers of 2 is a prime
+		if (remainder != 1){
+			primes.add(n);
+		}
+		return primes;
+	}
+
+	default TreeMultiset<Long> factorizationBySinglePrime(long n, TreeMultiset<Long> primeFactors) {
+		while(true) {
+			final long primeFactor = getImpl(n).findFactors(n, null);
+			primeFactors.add(primeFactor);
+			if (primeFactor == n) {
+				return primeFactors;
+			}
+			n = n/primeFactor;
+		}
+	}
+
+	default long addEvenPrimes(long n, TreeMultiset<Long> primeFactors) {
+		while ((n & 1) == 0)
+		{
+			primeFactors.add(2l);
+			n = n >> 1;
+		}
+		return n;
+	}
+
+	/**
+	 * return an implementation which perform good for the number n.
+	 *
+	 * @param n
+	 * @return
+	 */
+	default FactorFinder getImpl(long n){
+		return this;
+	}
 
 }

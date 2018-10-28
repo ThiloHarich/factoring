@@ -1,5 +1,60 @@
 package factoring.shift;
 
+/**
+ * q*p = n = x^2 - y^2
+
+We want to solve an equation of the form:
+
+n = p*q = (x+y) * (x-y)= x^2 - y^2 (1)
+
+It can also be written as
+
+x^2 - n = y^2 (2)
+
+This gives a factorization of n.
+If we already have a relation of the form
+
+x^2 - n = y^2 + e (3)
+
+we try to get a new equation out of this without the error e, such that we get an equation like we have it in (2).
+
+Out of equation (3) we construct the following equation:
+
+(x+ae)^2 - n = y'^2 + e' (4) 
+
+here we hope to get e' = 0 in order to we have a solution for (2). a is an integer or at least a*e is an integer. 
+
+
+Why should this work?
+
+If we take equation (4) with e’=0 and subtract equation (3) from it we get:
+
+(x+ae)^2 - n = y'^2 (5)
+- (x^2 - n = y^2 + e )
+----------------------------------
+
+(x+ae)^2 - n - x^2 + n= y'^2 - y^2 - e
+x^2+2xae + (ae)^2 - n - x^2 + n = y'^2 - y^2 - e
+2xae + (ae)^2 + e = y'^2 - y^2 
+e*(2ax + a^2e +1) = y'^2 - y^2
+e*(2ax + a^2e +1) = k(2y+k) (6)
+* 
+* x^2 - 4kn = y^2 + e 
+* (x+ae)^2 - 4kn = y'^2 + e' (4) 
+* 
+* (x+ae)^2 - 4kn = y'^2 (5)
+* - (x^2 - 4kn = y^2 + e )
+----------------------------------
+
+(x+ae)^2 - 4kn - x^2 + 4kn= y'^2 - y^2 - e
+x^2+2xae + (ae)^2 - 4kn - x^2 + 4kn = y'^2 - y^2 - e
+2xae + (ae)^2 + e = y'^2 - y^2 
+e*(2ax + a^2e +1) = y'^2 - y^2
+e*(2ax + a^2e +1) = k(2y+k)
+
+
+
+ */
 import factoring.fermat.FermatFact;
 import factoring.math.PrimeMath;
 
@@ -40,6 +95,7 @@ public class ErrorShiftFact extends FermatFact {
 
 		for (int x = sqrtN; x<n ; x+= shift) {
 			final long right = x * x - n;
+			// right += 2x +1
 			double sqrtRight = Math.sqrt(right);
 			int sqrtRightInt = (int) Math.ceil(sqrtRight);
 //			int sqrtRightInt = (int) Math.floor(sqrtRight);

@@ -254,131 +254,324 @@ public class PrimeMath {
 
 		return sqrt*sqrt == n;
 	}
+
 	/**
-	 * calulates a^-1 mod modulus via a variant of the eucliedean algorithm.
-	 * we have to determine the quotien q = dividend / divisor;
-	 * One variant is to subtract divisor from the divident as long as this value
-	 * is grater then zero. So we have q subtractions if q = dividend / divisor.
-	 * We use a more balanced tree for the q. It looks like this:
-	 *      .
-	 *    /   \
-	 *   1      .
-	 *       /     \
-	 *     .         .
-	 *    / \       / \
-	 *   2   .     .  >8
-	 *      / \   / \
-	 *     3   4 5   .
-	 *              / \
-	 *             6   .
-	 *                / \
-	 *               7  8
+	 * Binary gcd implementation.
+	 * @param m
+	 * @param n
+	 * @return gcd(m, n)
+	 */
+	public long gcdBinary/*_binary*/(long m, long n) {
+		m = Math.abs(m);
+		n = Math.abs(n);
+		final long mCmp1 = m-1;
+		final long nCmp1 = n-1;
+		if (mCmp1>0 && nCmp1>0) {
+			final int m_lsb = Long.numberOfTrailingZeros(m);
+			final int n_lsb = Long.numberOfTrailingZeros(n);
+			final int shifts = Math.min(m_lsb, n_lsb);
+			m = m>>m_lsb;
+										n = n>>n_lsb;
+								// now m and n are odd
+								//LOG.debug("m=" + m + ", n=" + n + ", g=" + g);
+								while (m > 0) {
+									final long t = (m-n)>>1;
+						if (t<0) {
+							n = -t;
+							n = n>>Long.numberOfTrailingZeros(n);
+						} else {
+							m = t>>Long.numberOfTrailingZeros(t);
+						}
+						//LOG.debug("m=" + m + ", n=" + n);
+								}
+								final long gcd = n<<shifts;
+								//LOG.debug("gcd=" + gcd);
+								return gcd;
+		}
+		if (mCmp1<0) return n;
+		if (nCmp1<0) return m;
+		// else one argument is 1
+		return 1;
+	}
+
+	/**
+	 * Stolen from java.math.MutableBigInteger#binaryGcd(int, int)
 	 * @param a
-	 * @param modulus
+	 * @param b
 	 * @return
 	 */
-	public static long gcdKruppaTree10 (long a, long modulus)
-	{
-		long rem3, rem2, rem, q;
+	static int binaryGcd(int a, int b) {
+		if (b == 0)
+			return a;
+		if (a == 0)
+			return b;
 
-		if (a == 1)
-			return 1;
+		// Right shift a & b till their last bits equal to 1.
+		final int aZeros = Integer.numberOfTrailingZeros(a);
+		final int bZeros = Integer.numberOfTrailingZeros(b);
+		a >>>= aZeros;
+		b >>>= bZeros;
 
-		q        = modulus / a;
-		rem      = modulus - a * q;
-		rem3 = a;
-		rem2  = rem;
+						final int t = (aZeros < bZeros ? aZeros : bZeros);
 
-		while (rem2 > 1)
-		{
-			rem = rem3 - rem2;
-
-			if (rem >= rem2)
-			{
-				rem -= rem2;         // q=1
-
-				if (rem < rem2)
-				{
-//					q   += ps1;
-				}
-				else
-				{
-					long divisor4 = rem2 << 2;
-					if (rem < divisor4)
-					{
-						rem -= rem2;        // q=2
-
-//						long p2 = ps1<<1;
-						if (rem < rem2)
-						{
-//							q   += p2;
-						} else
-						{
-							rem -= rem2;        // q=3
-
-							if (rem < rem2)
-							{
-//								q   += p2 + ps1;
-							}else
-							{
-//								q   += ps1<<2;     // q=4
-								rem -= rem2;
+						while (a != b) {
+							if ((a+0x80000000) > (b+0x80000000)) {  // a > b as unsigned
+								a -= b;
+								a >>>= Integer.numberOfTrailingZeros(a);
+							} else {
+								b -= a;
+								b >>>= Integer.numberOfTrailingZeros(b);
 							}
 						}
-					}else
-					{
-						long divisor8 = rem2<<3;
+						return a<<t;
+	}
 
-						if (rem < divisor8)
-						{
-							rem -= divisor4;        // q=5
+	/**
+	 * Stolen from java.math.MutableBigInteger#binaryGcd(int, int)
+	 * and adapted to long
+	 * @param a
+	 * @param b
+	 * @return
+	 */
+	static long binaryGcd(long a, long b) {
+		if (b == 0)
+			return a;
+		if (a == 0)
+			return b;
 
-							if (rem < rem2)
-							{
-//								q   += ps1 * 5;
+
+		// Right shift a & b till their last bits equal to 1.
+		final int aZeros = Long.numberOfTrailingZeros(a);
+		final int bZeros = Long.numberOfTrailingZeros(b);
+		a >>>= aZeros;
+						b >>>= bZeros;
+
+						final int t = (aZeros < bZeros ? aZeros : bZeros);
+
+						while (a != b) {
+							if ((a+0x8000000000000000l) > (b+0x8000000000000000l)) {  // a > b as unsigned
+								a -= b;
+								a >>>= Long.numberOfTrailingZeros(a);
+							} else {
+								b -= a;
+								b >>>= Long.numberOfTrailingZeros(b);
 							}
-							else
-							{
-								rem -= rem2;        // q=6
+						}
+						return a<<t;
+	}
 
-								if (rem < rem2)
-								{
-//									q   += ps1 * 6;
-								} else
-								{
-									rem -= rem2;        // q=7
 
-									if (rem < rem2)
-									{
-//										q   += ps1 * 7;
-									}else
-									{
-//										q   += ps1<<3;     // q=8
-										rem -= rem2;
+
+	public static long gcdBySubstractionOnly (long a, long b) {
+		if (a == 0)
+			return b;
+		while (b > 0)
+			if (a>b)
+				a = a - b;
+			else
+				b = b - a;
+		return a;
+	}
+
+	public static long gcdByMod (long a, long b) {
+		while (b > 0) {
+			final long tmp = a % b;
+			a = b;
+			b = tmp;
+		}
+		return a;
+	}
+
+	/**
+	 * A variant of the Euclidean algorithm.
+	 * We try to not use the expensive modulus operation "%".
+	 * Instead we try to use
+	 * - subtract the lower number from the bigger one and if the bigger number is still bigger then the lower
+	 * - we reduce the bigger number by shifted values of the lower number
+	 * We do not need to reduce the bigger number by the modulus of the lower number.
+	 * It is around 2 times faster then the Algorithms which are just based on
+	 * subtractions or mod. It is ~ 10 % slower then the binary euclidean algorithm.
+	 *
+	 * @param a
+	 * @param b
+	 * @return
+	 */
+	public static long gcdBySubstraction (long a, long b)
+	//	public static long gcdBySubstractionAndShifts (long a, long b)
+	{
+		if (a == 1 || b == 1)
+			return 1;
+
+		long big = Math.max(a, b);
+		long small = Math.min(a, b);
+
+		while (small > 1)
+		{
+			big -= small;         // q=1
+			if (big > small) {
+				big -= small;         // q=2
+				if (big > small) {
+					big -= small;         // q=3
+					if (big > small) {
+						big -= small;         // q=4
+						if (big > small) {
+							big -= small;         // q=5
+							if (big > small) {
+								big -= small;         // q=6
+								if (big > small) {
+									big -= small;         // q=7
+									if (big > small) {
+										big -= small;         // q=8
+										if (big > small) {
+											big -= small;         // q=9
+											if (big > small) {
+												big -= small;         // q=10
+												if (big > small) {
+													big -= small;         // q=11
+													if (big > small) {
+														big -= small;         // q=12
+														if (big > small) {
+															big -= small;         // q=13
+															if (big > small) {
+																big -= small;         // q=11
+																if (big > small) {
+																	big -= small;         // q=12
+																	if (big > small) {
+																		big -= small;         // q=13
+																		if (big > small) {
+																			//														big -= small;         // q=8
+																			//												big = modByShift(big, small);
+																			//																			big = big % small;
+																			while (big > small) {
+																				final int quotientApprox = Long.numberOfLeadingZeros(small) - Long.numberOfLeadingZeros(big);
+																				final int shifts = quotientApprox < 1 ? 0 : quotientApprox -1;
+																				big -= small << shifts;
+																			}
+																		}
+																	}
+																}
+															}
+														}
+													}
+												}
+											}
+										}
 									}
 								}
 							}
-						}else
-						{
-							q = rem3 / rem2;        // q >8
-							rem = rem3 - q * rem2;
-//							q *= ps1;
 						}
 					}
 				}
 			}
-			rem3 = rem2;
-			rem2 = rem;
-
-//			q += ps2;
-//			parity = ~parity;
-//			ps2 = ps1;
-//			ps1 = q;
+			final long tmp = small;
+			small = big;
+			big = tmp;
 		}
-		return rem3;
+		if (small == 1)
+			return 1;
+
+		return big;
 	}
 
-	public static long gcd10 (long a, long b)
+	/**
+	 * A variant of the Euclidean algorithm.
+	 * We try to not use the expensive modulus operation "%".
+	 * Instead we try to use
+	 * - subtract the lower number from the bigger one and if the bigger number is still bigger then the lower
+	 * - we reduce the bigger number by shifted values of the lower number
+	 * We do not need to reduce the bigger number by the modulus of the lower number.
+	 * It is around 2 times faster then the Algorithms which are just based on
+	 * subtractions or mod. It is ~ 10 % slower then the binary euclidean algorithm.
+	 *
+	 * @param a
+	 * @param b
+	 * @return
+	 */
+	public static long gcdBySubstraction4 (long a, long b)
+	{
+		if (a == 1 || b == 1)
+			return 1;
+
+		long big = Math.max(a, b);
+		long small = Math.min(a, b);
+
+		// c > d  ; e = c - d
+		while (small > 1)
+		{
+			long newSmall = big - small;         // q=1
+			if (newSmall > small) {
+				newSmall -= small;         // q=2
+				if (newSmall > small) {
+					newSmall -= small;         // q=2
+					if (newSmall > small) {
+						newSmall -= small;         // q=2
+						if (newSmall > small) {
+							newSmall -= small;         // q=2
+							if (newSmall > small) {
+								newSmall -= small;         // q=2
+								if (newSmall > small) {
+									newSmall -= small;         // q=2
+									if (newSmall > small) {
+										newSmall -= small;         // q=2
+										if (newSmall > small) {
+											newSmall -= small;         // q=2
+											if (newSmall > small) {
+												newSmall -= small;         // q=2
+												if (newSmall > small) {
+													newSmall -= small;         // q=2
+													if (newSmall > small) {
+														newSmall -= small;         // q=2
+														if (newSmall > small) {
+															newSmall -= small;         // q=2
+															if (newSmall > small) {
+																//														big -= small;         // q=8
+																//												big = modByShift(big, small);
+																//																			big = big % small;
+																while (newSmall > small) {
+																	final int quotientApprox = Long.numberOfLeadingZeros(small) - Long.numberOfLeadingZeros(newSmall);
+																	final int shifts = quotientApprox < 1 ? 0 : quotientApprox -1;
+																	newSmall -= small << shifts;
+																}
+															}
+														}
+													}
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+			big = small;
+			small = newSmall;
+		}
+		if (small == 1)
+			return 1;
+
+		return big;
+	}
+
+
+	/**
+	 * calculates number % modulus by reducing number by a power of modulus.
+	 *
+	 * @param number
+	 * @param modulus
+	 * @return
+	 */
+	public static long modByShift(long number, long modulus) {
+		while (number > modulus) {
+			final int quotientApprox = Long.numberOfLeadingZeros(modulus) - Long.numberOfLeadingZeros(number);
+			final int shifts = quotientApprox < 1 ? 0 : quotientApprox -1;
+			number -= modulus << shifts;
+		}
+		return number;
+	}
+
+	public static long gcdBySubtraction (long a, long b)
 	{
 		long rem, rem3, rem2;
 
@@ -393,7 +586,7 @@ public class PrimeMath {
 
 		rem3 = a;
 		rem2 = b;
-		rem  = a % b;
+		rem  = a - b;
 
 
 		while (rem > 0)

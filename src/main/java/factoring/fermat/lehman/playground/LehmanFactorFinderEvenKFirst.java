@@ -1,6 +1,7 @@
 package factoring.fermat.lehman.playground;
 
 import factoring.FactorizationOfLongs;
+import factoring.FactorsFinder;
 import factoring.math.PrimeMath;
 import factoring.trial.TrialInvFact;
 
@@ -10,7 +11,7 @@ import java.util.Collection;
  * Here we first look at even k for which x has a higher chance to be a solution.
  * It looks like it give no Speedup.
  */
-public class LehmanFactorFinderEvenKFirst implements FactorizationOfLongs {
+public class LehmanFactorFinderEvenKFirst implements FactorizationOfLongs, FactorsFinder {
 
     static double ONE_THIRD = 1.0 / 3;
     // to be fast to decide if a number is a square we consider the

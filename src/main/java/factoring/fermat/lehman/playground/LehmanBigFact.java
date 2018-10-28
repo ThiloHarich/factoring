@@ -1,6 +1,7 @@
 package factoring.fermat.lehman.playground;
 
 import factoring.FactorizationOfLongs;
+import factoring.FactorsFinder;
 import factoring.math.PrimeMath;
 import factoring.trial.TrialInvFact;
 
@@ -36,7 +37,7 @@ import java.util.Collection;
  * and let the JVM do the optimization here. When adapting to other languages this should be done.
  * Created by Thilo Harich on 28.06.2017.
  */
-public class LehmanBigFact implements FactorizationOfLongs {
+public class LehmanBigFact implements FactorizationOfLongs, FactorsFinder {
 
 	static double ONE_THIRD = 1.0/3;
 

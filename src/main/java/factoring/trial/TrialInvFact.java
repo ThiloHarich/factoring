@@ -3,6 +3,7 @@ package factoring.trial;
 import java.util.Collection;
 
 import factoring.FactorizationOfLongs;
+import factoring.FactorsFinder;
 
 /**
  * This implementation is generating a list of all primes up to a limit.
@@ -20,7 +21,7 @@ import factoring.FactorizationOfLongs;
  *
  * Created by Thilo Harich on 02.03.2017.
  */
-public class TrialInvFact implements FactorizationOfLongs {
+public class TrialInvFact implements FactorizationOfLongs, FactorsFinder {
 
 	// The number of values to be printed
 	private static final int PRINT_NUM = 20000;

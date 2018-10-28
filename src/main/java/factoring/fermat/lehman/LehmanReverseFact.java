@@ -2,6 +2,8 @@ package factoring.fermat.lehman;
 
 import java.util.Collection;
 
+import factoring.FactorizationOfLongs;
+import factoring.FactorsFinder;
 import factoring.SingleLongFactorFinder;
 import factoring.math.PrimeMath;
 import factoring.trial.TrialRangeFact;
@@ -42,7 +44,7 @@ import factoring.trial.TrialRangeInvFact;
  * and let the JVM do the optimization here. When adapting to other languages this should be done.
  * Created by Thilo Harich on 28.06.2017.
  */
-public class LehmanReverseFact implements SingleLongFactorFinder {
+public class LehmanReverseFact implements FactorizationOfLongs, FactorsFinder {
 //	public class LehmanReverseFact extends FindPrimeFact {
 
 	static double ONE_THIRD = 1.0/3;

@@ -2,6 +2,7 @@ package factoring.fermat.lehman.playground;
 
 import com.google.common.annotations.VisibleForTesting;
 import factoring.FactorizationOfLongs;
+import factoring.FactorsFinder;
 import factoring.SingleLongFactorFinder;
 import factoring.math.PrimeMath;
 import factoring.trial.TrialInvFact;
@@ -20,7 +21,7 @@ import java.util.Collection;
  *
  * for odd k step can be much higher then 4, by using 2? alternating steps
  */
-public class LehmanFactorFinderMod implements FactorizationOfLongs {
+public class LehmanFactorFinderMod implements FactorizationOfLongs, FactorsFinder {
 
     static double ONE_THIRD = 1.0 / 3;
     // to be fast to decide if a number is a square we consider the

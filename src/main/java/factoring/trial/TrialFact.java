@@ -1,13 +1,14 @@
 package factoring.trial;
 
 import factoring.FactorizationOfLongs;
+import factoring.FactorsFinder;
 
 import java.util.Collection;
 
 /**
  * Created by Thilo Harich on 02.03.2017.
  */
-public class TrialFact implements FactorizationOfLongs {
+public class TrialFact implements FactorizationOfLongs, FactorsFinder {
 
 
     @Override
