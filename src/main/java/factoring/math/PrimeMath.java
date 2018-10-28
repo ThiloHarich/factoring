@@ -439,9 +439,9 @@ public class PrimeMath {
 																	if (big > small) {
 																		big -= small;         // q=13
 																		if (big > small) {
-																			//														big -= small;         // q=8
-																			//												big = modByShift(big, small);
-																			//																			big = big % small;
+																			// approximate the quotient big/small by just looking at the length of the
+																			// numbers. Then we subtract the small number shifted by the bits from the
+																			// bigger one.
 																			while (big > small) {
 																				final int quotientApprox = Long.numberOfLeadingZeros(small) - Long.numberOfLeadingZeros(big);
 																				final int shifts = quotientApprox < 1 ? 0 : quotientApprox -1;
@@ -498,6 +498,7 @@ public class PrimeMath {
 		// c > d  ; e = c - d
 		while (small > 1)
 		{
+			// introduce a new variable
 			long newSmall = big - small;         // q=1
 			if (newSmall > small) {
 				newSmall -= small;         // q=2
