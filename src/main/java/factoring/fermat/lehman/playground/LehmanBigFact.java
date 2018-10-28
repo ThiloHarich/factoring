@@ -1,12 +1,11 @@
 package factoring.fermat.lehman.playground;
 
-import factoring.FactorizationOfLongs;
-import factoring.FactorsFinder;
-import factoring.math.PrimeMath;
-import factoring.trial.TrialInvFact;
-
 import java.math.BigInteger;
 import java.util.Collection;
+
+import factoring.FactorizationOfLongs;
+import factoring.math.PrimeMath;
+import factoring.trial.TrialInvFact;
 
 /**
  * This is a version of the lehman factorizationByFactors, which is a variant of the fermat
@@ -37,12 +36,12 @@ import java.util.Collection;
  * and let the JVM do the optimization here. When adapting to other languages this should be done.
  * Created by Thilo Harich on 28.06.2017.
  */
-public class LehmanBigFact implements FactorizationOfLongs, FactorsFinder {
+public class LehmanBigFact implements FactorizationOfLongs {
 
 	static double ONE_THIRD = 1.0/3;
 
-//	float balanceTrial = 1.0f;
-//	float balanceTrialCube;
+	//	float balanceTrial = 1.0f;
+	//	float balanceTrialCube;
 
 	// This is a constant that is below 1 for rounding up double values to long
 	protected static final double ROUND_UP_DOUBLE = 0.9999999665;
@@ -63,22 +62,22 @@ public class LehmanBigFact implements FactorizationOfLongs, FactorsFinder {
 	 * @param bits
 	 */
 	public LehmanBigFact(int bits, float balanceTrial) {
-//		maxTrialFactor = (int) Math.ceil(balanceTrial * Math.pow(1L << bits, ONE_THIRD));
+		//		maxTrialFactor = (int) Math.ceil(balanceTrial * Math.pow(1L << bits, ONE_THIRD));
 		maxTrialFactor = (int) Math.ceil(Math.pow(1L << bits, ONE_THIRD));
 		// using the trial division algorithm more doe not help
-//		this.balanceTrial = balanceTrial;
-//		balanceTrialCube = balanceTrial * balanceTrial * balanceTrial;
-//        smallFactoriser = new TrialPrimesDynamicFact(maxTrialFactor);
-        smallFactoriser = new TrialInvFact(maxTrialFactor);
+		//		this.balanceTrial = balanceTrial;
+		//		balanceTrialCube = balanceTrial * balanceTrial * balanceTrial;
+		//        smallFactoriser = new TrialPrimesDynamicFact(maxTrialFactor);
+		smallFactoriser = new TrialInvFact(maxTrialFactor);
 
 		initSquares();
 	}
 
 	protected void initSquares() {
 		// precalculate the square of all possible multipliers. This takes at most n^1/3
-//		float balanceTrialCube = balanceTrial * balanceTrial * balanceTrial;
-//		int kMax = (int) (Math.ceil(maxTrialFactor / balanceTrialCube));
-		int kMax = (int) (Math.ceil(maxTrialFactor));
+		//		float balanceTrialCube = balanceTrial * balanceTrial * balanceTrial;
+		//		int kMax = (int) (Math.ceil(maxTrialFactor / balanceTrialCube));
+		final int kMax = (int) (Math.ceil(maxTrialFactor));
 
 		sqrt = new double[kMax + 1];
 		sqrtInv = new double[kMax + 1];
@@ -102,7 +101,7 @@ public class LehmanBigFact implements FactorizationOfLongs, FactorsFinder {
 		// with this implementation the lehman part is not slower then the trial division
 		// we do not have to use a multiplier for the maximal factor were we apply the
 		// trial division phase
-//		double maxTrialFactor =  Math.ceil(balanceTrial * Math.pow(nOrig, ONE_THIRD));
+		//		double maxTrialFactor =  Math.ceil(balanceTrial * Math.pow(nOrig, ONE_THIRD));
 		double maxTrialFactor =  Math.ceil(Math.pow(nOrig, ONE_THIRD));
 		smallFactoriser.setMaxFactor((int) maxTrialFactor);
 		// factor out all small factors
@@ -120,10 +119,10 @@ public class LehmanBigFact implements FactorizationOfLongs, FactorsFinder {
 		}
 		// re-adjust the maximal factor we have to search for. If factors were found, which is quite
 		// often the case for arbitrary numbers, this cuts down the runtime dramatically.
-//		maxTrialFactor =  balanceTrial * Math.pow(n, ONE_THIRD);
+		//		maxTrialFactor =  balanceTrial * Math.pow(n, ONE_THIRD);
 		maxTrialFactor =  Math.pow(n, ONE_THIRD);
 		final int kMax = (int) (Math.ceil(maxTrialFactor));
-//		int kMax = (int) (Math.ceil(maxTrialFactor / balanceTrialCube));
+		//		int kMax = (int) (Math.ceil(maxTrialFactor / balanceTrialCube));
 		final int multiplier = 4;
 		final BigInteger n4 = BigInteger.valueOf(n * multiplier);
 		final int multiplierSqrt = 2;
@@ -170,9 +169,9 @@ public class LehmanBigFact implements FactorizationOfLongs, FactorsFinder {
 			}
 			long right = 0;
 			if (xBegin <= xEnd) {
-				BigInteger xBig = BigInteger.valueOf(xBegin);
+				final BigInteger xBig = BigInteger.valueOf(xBegin);
 				final BigInteger x2 = xBig.multiply(xBig);
-				BigInteger kn4 = BigInteger.valueOf(k).multiply(n4);
+				final BigInteger kn4 = BigInteger.valueOf(k).multiply(n4);
 				right = x2.subtract(kn4).longValue();
 			}
 			for(long x = xBegin; x <= xEnd; x+= xStep) {

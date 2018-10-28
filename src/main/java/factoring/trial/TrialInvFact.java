@@ -3,7 +3,6 @@ package factoring.trial;
 import java.util.Collection;
 
 import factoring.FactorizationOfLongs;
-import factoring.FactorsFinder;
 
 /**
  * This implementation is generating a list of all primes up to a limit.
@@ -21,7 +20,7 @@ import factoring.FactorsFinder;
  *
  * Created by Thilo Harich on 02.03.2017.
  */
-public class TrialInvFact implements FactorizationOfLongs, FactorsFinder {
+public class TrialInvFact implements FactorizationOfLongs {
 
 	// The number of values to be printed
 	private static final int PRINT_NUM = 20000;
@@ -31,40 +30,40 @@ public class TrialInvFact implements FactorizationOfLongs, FactorsFinder {
 	double[] primesInv;
 	int[] primes;
 
-//	void initPrimes()
-//	{
-//		final double logMaxFactor = Math.log(maxFactor);
-//		final int maxPrimeIndex = (int) ((maxFactor) / (logMaxFactor - 1.1)) + 100;
-//		primesInv = new double [maxPrimeIndex];
-//		primes = new int [maxPrimeIndex];
-//		primesInv[0]= 1.0 / 2.0;
-//		primesInv[1]= 1.0 / 3.0;
-//		primesInv[2]= 1.0 / 5.0;
-//		primes[0]=2;
-//		primes[1]=3;
-//		primes[2]=5;
-//		int k = 3;
-//		for(int i=7; i<maxFactor; i+=2){
-//			boolean isPime = true;
-//			for(int j = 0; primes[j]* primes[j] <= i && isPime; j++){
-//				final double nDivPrime = i*primesInv[j];
-//				final long nDivPrimeLong = (long) (i*primesInv[j] + 0.0001);
-//				//				if (Math.round(nDivPrime) == nDivPrime && i % primes[j]==0) {
-//				if (Math.abs(nDivPrimeLong - nDivPrime) < 0.0001 && i % primes[j]==0) {
-//					//					if (Math.abs(Math.round(nDivPrime)-nDivPrime) < 0.001 && i % primes[j]==0) {
-//					isPime = false;
-//				}
-//			}
-//			if (isPime) {
-//				primesInv[k] = 1.0 / i;
-//				primes[k] = i;
-//				k++;
-//			}
-//		}
-//		//		assert(k==6542);
-//		//		primesInv[k] = 65535; //sentinel
-//		System.out.printf("Prime           table[0..%d]", k);
-//	}
+	//	void initPrimes()
+	//	{
+	//		final double logMaxFactor = Math.log(maxFactor);
+	//		final int maxPrimeIndex = (int) ((maxFactor) / (logMaxFactor - 1.1)) + 100;
+	//		primesInv = new double [maxPrimeIndex];
+	//		primes = new int [maxPrimeIndex];
+	//		primesInv[0]= 1.0 / 2.0;
+	//		primesInv[1]= 1.0 / 3.0;
+	//		primesInv[2]= 1.0 / 5.0;
+	//		primes[0]=2;
+	//		primes[1]=3;
+	//		primes[2]=5;
+	//		int k = 3;
+	//		for(int i=7; i<maxFactor; i+=2){
+	//			boolean isPime = true;
+	//			for(int j = 0; primes[j]* primes[j] <= i && isPime; j++){
+	//				final double nDivPrime = i*primesInv[j];
+	//				final long nDivPrimeLong = (long) (i*primesInv[j] + 0.0001);
+	//				//				if (Math.round(nDivPrime) == nDivPrime && i % primes[j]==0) {
+	//				if (Math.abs(nDivPrimeLong - nDivPrime) < 0.0001 && i % primes[j]==0) {
+	//					//					if (Math.abs(Math.round(nDivPrime)-nDivPrime) < 0.001 && i % primes[j]==0) {
+	//					isPime = false;
+	//				}
+	//			}
+	//			if (isPime) {
+	//				primesInv[k] = 1.0 / i;
+	//				primes[k] = i;
+	//				k++;
+	//			}
+	//		}
+	//		//		assert(k==6542);
+	//		//		primesInv[k] = 65535; //sentinel
+	//		System.out.printf("Prime           table[0..%d]", k);
+	//	}
 
 	/**
 	 * finds the prime factors up to maxFactor by the sieve of eratosthenes.
@@ -119,15 +118,15 @@ public class TrialInvFact implements FactorizationOfLongs, FactorsFinder {
 				System.out.println();
 			while (Math.abs(Math.round(nDivPrime) - nDivPrime) < 0.01 && n > 1 && n % primes[primeIndex] == 0) {
 				if (primeFactors == null)
-					return (long) primes[primeIndex];
+					return primes[primeIndex];
 				primeFactors.add((long) primes[primeIndex]);
 				n = Math.round(nDivPrime);
-//				// if the remainder n is lower then the maximal prime factor and it can not be split it must also
-//				// be prime factor
-//				if (n < maxFactor && n*n > maxFactor) {
-//					primeFactors.add(n);
-//					return 1;
-//				}
+				//				// if the remainder n is lower then the maximal prime factor and it can not be split it must also
+				//				// be prime factor
+				//				if (n < maxFactor && n*n > maxFactor) {
+				//					primeFactors.add(n);
+				//					return 1;
+				//				}
 
 				nDivPrime = n*primesInv[primeIndex];
 			}
@@ -136,6 +135,7 @@ public class TrialInvFact implements FactorizationOfLongs, FactorsFinder {
 	}
 
 
+	@Override
 	public void setMaxFactor(int maxTrialFactor) {
 		maxFactor = maxTrialFactor;
 	}

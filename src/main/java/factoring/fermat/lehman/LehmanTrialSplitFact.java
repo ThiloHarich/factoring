@@ -1,12 +1,10 @@
 package factoring.fermat.lehman;
 
+import java.util.Collection;
+
 import factoring.FactorizationOfLongs;
-import factoring.FactorsFinder;
-import factoring.SingleLongFactorFinder;
 import factoring.math.PrimeMath;
 import factoring.trial.TrialRangeFact;
-
-import java.util.Collection;
 
 /**
  * This is a version of the lehman factorizationByFactors, which is a variant of the fermat
@@ -43,8 +41,8 @@ import java.util.Collection;
  * and let the JVM do the optimization here. When adapting to other languages this should be done.
  * Created by Thilo Harich on 28.06.2017.
  */
-public class LehmanTrialSplitFact implements FactorizationOfLongs, FactorsFinder {
-//	public class LehmanReverseFact extends FindPrimeFact {
+public class LehmanTrialSplitFact implements FactorizationOfLongs {
+	//	public class LehmanReverseFact extends FindPrimeFact {
 
 	static double ONE_THIRD = 1.0/3;
 	// to be fast to decide if a number is a square we consider the
@@ -122,7 +120,7 @@ public class LehmanTrialSplitFact implements FactorizationOfLongs, FactorsFinder
 		if (bits > 41)
 			throw new IllegalArgumentException("numbers above 41 bits can not be factorized");
 		maxFactorMultiplier = maxFactorMultiplierIn < 1 ? 1 : maxFactorMultiplierIn;
-        maxTrialFactorMultiplier = (int) Math.ceil(maxFactorMultiplier * Math.pow(1L << bits, ONE_THIRD));
+		maxTrialFactorMultiplier = (int) Math.ceil(maxFactorMultiplier * Math.pow(1L << bits, ONE_THIRD));
 		maxFactorMultiplierCube = maxFactorMultiplier * maxFactorMultiplier * maxFactorMultiplier;
 		smallFactoriser = new TrialRangeFact(maxTrialFactorMultiplier);
 		initSquares();
@@ -151,11 +149,11 @@ public class LehmanTrialSplitFact implements FactorizationOfLongs, FactorsFinder
 			throw new IllegalArgumentException("numbers above 41 bits can not be factorized");
 		// with this implementation the lehman part is not slower then the trial division
 		// we only apply the multiplier if we want to cut down the numbers to be tested
-        maxTrialFactorMultiplier =  (int) Math.ceil(maxFactorMultiplier * Math.pow(n, ONE_THIRD));
+		maxTrialFactorMultiplier =  (int) Math.ceil(maxFactorMultiplier * Math.pow(n, ONE_THIRD));
 		//		maxTrialFactor =  (int) Math.ceil(Math.pow(nOrig, ONE_THIRD));
 		smallFactoriser.setMaxFactor(maxTrialFactorMultiplier);
 		// factor out the factors around n^1/3 with trial division first is this faster?
-		double begin = 1. / maxFactorMultiplier;
+		final double begin = 1. / maxFactorMultiplier;
 		final long nAfterTrial = smallFactoriser.findPrimeFactors(n, primeFactors, begin, 1.);
 		if (primeFactors == null && nAfterTrial != n)
 			return nAfterTrial;
@@ -175,7 +173,7 @@ public class LehmanTrialSplitFact implements FactorizationOfLongs, FactorsFinder
 		// re-adjust the maximal factor we have to search for. If factors were found, which is quite
 		// often the case for arbitrary numbers, this cuts down the runtime dramatically.
 		// TODO maybe we can do even better here?
-        maxTrialFactorMultiplier =  (int) Math.ceil(maxFactorMultiplier * Math.pow(n, ONE_THIRD));
+		maxTrialFactorMultiplier =  (int) Math.ceil(maxFactorMultiplier * Math.pow(n, ONE_THIRD));
 		//		final int kMax = maxTrialFactor;
 		final int kMax = (int) (Math.ceil(maxTrialFactorMultiplier / maxFactorMultiplierCube));
 		final long n4 = 4 * n;
@@ -187,73 +185,73 @@ public class LehmanTrialSplitFact implements FactorizationOfLongs, FactorsFinder
 		// surprisingly it gives no speedup when using k's with many prime factors as lehman suggests
 		// for k=2 we know that x has to be even and results in a factor more often
 		final double sqrt4N = 2 * sqrtN;
-        int nMod3 =  (int)  (n % 3);
-        // we want kn = 4kn = x mod 3, x=2-> 2*1 = 2 , x=1 ->  2*2 = 1, 1*1 = 1,
-        int [] ksMod3 = {3,3-nMod3,nMod3};
-        for (int i=0; i <3; i++)
-        {
-            int kBegin = ksMod3[i];
-            // for kn=2 mod 3 the step for x can be multiplied by 3
-            int xStepMultiplier = i == 1 ? 3 : 1;
-            for (int k = kBegin; k <= kMax; k+=3) {
-                final double sqrt4kn = sqrt[k] * sqrt4N;
-                // adding a small constant to avoid rounding issues and rounding up is much slower then
-                // using the downcast and adding a constant close to 1. Took the constant from the yafu code
-                int xBegin = (int) (sqrt4kn + ROUND_UP_DOUBLE);
-                // use only multiplications instead of division here
-                final float xRange = nPow1Sixth * sqrtInv[k];
-                final int xEnd = (int) (sqrt4kn + xRange);
-                // instead of using a step 1 here we use the mod argument from lehman
-                // to reduce the possible numbers to verify.
-                int xStep = 2;
-                if (k % 2 == 0 ) {
-                    xBegin |= 1;
-                } else {
-                    if (k * n % 4 == 3) {
-                        // this can be seen by analyzing mod 32
-                        xStep = 8;
-                        xBegin = xBegin + PrimeMath.mod(7 - k * n - xBegin, 8);
-                    } else
-                    {
-                        xStep = 4;
-                        xBegin = xBegin + PrimeMath.mod(k + nMod4 - xBegin, 4);
-                    }
-                }
-                // for kn = 1 mod 3 we know x = 0 mod 3 -> try to adjust xBegin
-                while (xStepMultiplier == 3 && xBegin <= xEnd && xBegin % 3 != 0) {
-                    xBegin += xStep;
-                }
-                // since the upper limit is the lower limit plus a number lower then 1
-                // in most of the cases checking the upper limit is very helpful
-                for (long x = xBegin; x <= xEnd; x += xStep * xStepMultiplier) {
-                    // here we start using long values
-                    // in java the trick to replace the multiplication with an addition does not help
-                    final long x2 = x * x;
-                    final long right = x2 - k * n4;
-                    // instead of taking the square root (which is a very expensive operation)
-                    // and squaring it, we do some mod arguments to filter out non squares
-                    //				if (PrimeMath.isSquare(right)) {
-                    if (isProbableSquare(right)) {
-                        final long y = (long) Math.sqrt(right);
-                        if (y * y == right) {
-                            final long factor = PrimeMath.gcd(n, x - y);
-                            if (factor != 1) {
-                                if (primeFactors == null || maxTrialFactorMultiplier > 1)
-                                    return factor;
-                                    // when maxFactorMultiplier == 1 we have done the trial division first -> the factor
-                                    // has to be a prime factor, n/factor is of size < n^2/3 and can not be a composite factor
-                                else {
-                                    primeFactors.add(factor);
-                                    if (n != factor)
-                                        primeFactors.add(n / factor);
-                                    return 1;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
+		final int nMod3 =  (int)  (n % 3);
+		// we want kn = 4kn = x mod 3, x=2-> 2*1 = 2 , x=1 ->  2*2 = 1, 1*1 = 1,
+		final int [] ksMod3 = {3,3-nMod3,nMod3};
+		for (int i=0; i <3; i++)
+		{
+			final int kBegin = ksMod3[i];
+			// for kn=2 mod 3 the step for x can be multiplied by 3
+			final int xStepMultiplier = i == 1 ? 3 : 1;
+			for (int k = kBegin; k <= kMax; k+=3) {
+				final double sqrt4kn = sqrt[k] * sqrt4N;
+				// adding a small constant to avoid rounding issues and rounding up is much slower then
+				// using the downcast and adding a constant close to 1. Took the constant from the yafu code
+				int xBegin = (int) (sqrt4kn + ROUND_UP_DOUBLE);
+				// use only multiplications instead of division here
+				final float xRange = nPow1Sixth * sqrtInv[k];
+				final int xEnd = (int) (sqrt4kn + xRange);
+				// instead of using a step 1 here we use the mod argument from lehman
+				// to reduce the possible numbers to verify.
+				int xStep = 2;
+				if (k % 2 == 0 ) {
+					xBegin |= 1;
+				} else {
+					if (k * n % 4 == 3) {
+						// this can be seen by analyzing mod 32
+						xStep = 8;
+						xBegin = xBegin + PrimeMath.mod(7 - k * n - xBegin, 8);
+					} else
+					{
+						xStep = 4;
+						xBegin = xBegin + PrimeMath.mod(k + nMod4 - xBegin, 4);
+					}
+				}
+				// for kn = 1 mod 3 we know x = 0 mod 3 -> try to adjust xBegin
+				while (xStepMultiplier == 3 && xBegin <= xEnd && xBegin % 3 != 0) {
+					xBegin += xStep;
+				}
+				// since the upper limit is the lower limit plus a number lower then 1
+				// in most of the cases checking the upper limit is very helpful
+				for (long x = xBegin; x <= xEnd; x += xStep * xStepMultiplier) {
+					// here we start using long values
+					// in java the trick to replace the multiplication with an addition does not help
+					final long x2 = x * x;
+					final long right = x2 - k * n4;
+					// instead of taking the square root (which is a very expensive operation)
+					// and squaring it, we do some mod arguments to filter out non squares
+					//				if (PrimeMath.isSquare(right)) {
+					if (isProbableSquare(right)) {
+						final long y = (long) Math.sqrt(right);
+						if (y * y == right) {
+							final long factor = PrimeMath.gcd(n, x - y);
+							if (factor != 1) {
+								if (primeFactors == null || maxTrialFactorMultiplier > 1)
+									return factor;
+								// when maxFactorMultiplier == 1 we have done the trial division first -> the factor
+								// has to be a prime factor, n/factor is of size < n^2/3 and can not be a composite factor
+								else {
+									primeFactors.add(factor);
+									if (n != factor)
+										primeFactors.add(n / factor);
+									return 1;
+								}
+							}
+						}
+					}
+				}
+			}
+		}
 		// if we have not found a factor we still have to do the trial division phase
 		if (maxFactorMultiplier > 1)
 			n = smallFactoriser.findPrimeFactors(n, primeFactors, 0, begin);

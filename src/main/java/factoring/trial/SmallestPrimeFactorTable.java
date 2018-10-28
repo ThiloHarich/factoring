@@ -3,8 +3,6 @@ package factoring.trial;
 import java.util.Collection;
 
 import factoring.FactorizationOfLongs;
-import factoring.FactorsFinder;
-import factoring.SinglePrimeFactorFinder;
 
 /**
  * This implementation is generating a array of all number up to a limit.
@@ -16,7 +14,7 @@ import factoring.SinglePrimeFactorFinder;
  *
  * Created by Thilo Harich on 02.03.2017.
  */
-public class SmallestPrimeFactorTable implements FactorizationOfLongs, SinglePrimeFactorFinder, FactorsFinder {
+public class SmallestPrimeFactorTable implements FactorizationOfLongs {
 
 	// The number of values to be printed
 	private static final int PRINT_NUM = 20000;
@@ -59,7 +57,6 @@ public class SmallestPrimeFactorTable implements FactorizationOfLongs, SinglePri
 	}
 
 
-	@Override
 	public long findPrimeFactor(long n) {
 		if (n > maxFactor)
 			return n;
