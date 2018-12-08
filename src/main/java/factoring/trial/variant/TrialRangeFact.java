@@ -1,4 +1,4 @@
-package factoring.trial;
+package factoring.trial.variant;
 
 import java.util.Collection;
 
@@ -18,7 +18,7 @@ import java.util.Collection;
  **
  * Created by Thilo Harich on 02.03.2017.
  */
-public class TrialRangeInvFact {
+public class TrialRangeFact {
 
 	// The number of values to be printed
 	private static final int PRINT_NUM = 20000;
@@ -65,7 +65,7 @@ public class TrialRangeInvFact {
 	}
 
 
-	public TrialRangeInvFact(int maxFactor) {
+	public TrialRangeFact(int maxFactor) {
 		//        if (maxFactor > 65535)
 		//            throw new IllegalArgumentException("the maximal factor has to be lower then 65536");
 		this.maxFactor = maxFactor;
@@ -75,9 +75,12 @@ public class TrialRangeInvFact {
 
 
 	/**
-	 * Find the prime factor and store it in primeFactors if not null otherwise return it.
-	 * Start with prime with index maxFactorIndex*begin and end with index maxFactorIndex*end in an
-	 * decreasing order. this means begin >= end.
+	 * since
+	 * f(x) = x * ln (x)
+	 * f(x*b) = x*b * ln (x*b) = x*b * (ln (x) + ln(b)) = f(x)*b + x*b*ln(b) < =  f(x)*b * (1 +  b*ln(b)/ln(x))
+	 * b = begin - begin * Math.
+	 * begin - 1 =
+	 * primes [(int)(maxFactorIndex*begin)] < primes [maxFactorIndex]
 	 * @param n
 	 * @param primeFactors
 	 * @param begin
@@ -92,7 +95,7 @@ public class TrialRangeInvFact {
 //		double correctFakt = b - b * Math.log(b) * 3 / Math.log(n);
 //		begin = begin == 0 ? 0 : correctFakt;
 //		end = end == 1 ? 1 : correctFakt;
-		for (int primeIndex = (int)(maxFactorIndex*begin); primeIndex > maxFactorIndex*end; primeIndex--) {
+		for (int primeIndex = (int)(maxFactorIndex*begin); primeIndex < maxFactorIndex*end; primeIndex++) {
 			double nDivPrime = n*primesInv[primeIndex];
 			// TODO choose the precision factor with respect to the maxFactor!?
 //			if (primes[primeIndex] == 0)

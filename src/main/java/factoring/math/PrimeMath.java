@@ -1,9 +1,12 @@
 package factoring.math;
+import java.math.BigInteger;
 import java.util.BitSet;
 
 public class PrimeMath {
 
 	private static final long MATH_SQRT_WORKS = 10354000L;
+	private static final int GCD_MASK = 0xFFFF; //65535; //(2 << 16) -1;
+	private static final int GCD_MASK_LENGHT = 16; //65535; //(2 << 16) -1;
 	//	private static final long MATH_SQRT_WORKS = 4503599627370496L;
 	public static boolean [] squaresMod2Pow;
 	//	static boolean [] squaresModSmallPrimes;
@@ -14,6 +17,7 @@ public class PrimeMath {
 	static int modSmallPrimes = 3*3 * 5 * 7 * 11; // 3465
 	static int modSmallPrimes2 = 13 * 17 * 19; // 4212
 	static BitSet squares = new BitSet(mod2Pow);
+	private static long[] gcdTable;
 
 	static {
 		squaresMod2Pow = new boolean[mod2Pow];
@@ -29,6 +33,99 @@ public class PrimeMath {
 			//			squares.set(square);
 			//			squaresMask |= 1l << square;
 		}
+	}
+	/**
+	 *
+	 * @param n has to be odd
+	 * @param a, 1 < a < n-1
+	 * @return false if the number is composite. true if a^(n-1) == 1 mod n.
+	 * According to fermats little theorem, all prime numbers (but also other numbers)
+	 * are fulfilling this condition.
+	 */
+	public static boolean isProbablePrime (int n, int a) {
+		// write n-1 = d*2^j, j>0 since n-1 is odd
+		final long nMinus1 = n - 1;
+		long d = nMinus1 >> 1;
+		int j = 1;
+		for(; (d & 1) == 0; j++, d >>= 1);
+		long t = 1;
+		long p = a;
+
+		//square and multiply: t = a^d mod n
+		while (d > 0) {
+			if ((d & 1) != 0)
+				t = t*p % n;
+			p = p*p % n;
+			d >>= 1;
+		}
+		// if a^d == +/- 1 mod n -> a^(d*j) == 1 -> n is probable prime
+		if (t == 1 || t == nMinus1)
+			return true;
+
+		// if a^(d*k) == -1 mod n -> a^(d*j) == 1 -> n is probable prime
+		for (int k=1 ; k<j && (t != nMinus1); k++) {
+			t = t*t % n;
+		}
+		// if we found a^(d*k) == -1 -> n is probable prime
+		return t == nMinus1;
+	}
+
+	public static boolean isProbablePrime (BigInteger n, long a) {
+		final BigInteger nMinusOne = n.subtract(BigInteger.ONE);
+		final int j = nMinusOne.getLowestSetBit();
+		final BigInteger d = nMinusOne.shiftRight(j);
+		final BigInteger two = BigInteger.valueOf(2);
+
+		//		t = a^d mod n
+		BigInteger t = BigInteger.valueOf(a).modPow(d, n);
+
+		if (t.equals(BigInteger.ONE) || t.equals(nMinusOne))
+			return true;
+
+		for (int k=1 ; k<j && !t.equals(nMinusOne); k++) {
+			t = t.modPow(two, n);
+		}
+		return t.equals(nMinusOne);
+	}
+
+
+	/**
+	 * This a deterministic variant of the Rabin Miller test for up to 32 Bits.
+	 * It is sufficient to call the rabin miller test with a = 2, 7, 61
+	 * @param n
+	 * @return
+	 */
+	public static boolean isPrime32 (int n) {
+		if (n <= 3 || n %2 == 0)
+			return n <= 3;
+		final int [] as = {2, 7, 61};
+		final long nMin1 = n - 1;
+		for (int i = 0; i < as.length && as[i] < nMin1; i++) {
+			final boolean probablePrime = isProbablePrime(n, as[i]);
+			if (!probablePrime)
+				return false;
+		}
+		return true;
+	}
+
+	/**
+	 * This a deterministic variant of the Rabin Miller test for up to 41 Bits.
+	 * It is sufficient to call the rabin miller test with a = 2, 3, 5, 7, 11
+	 * @param n
+	 * @return
+	 */
+	public static boolean isPrime41Bit (long n) {
+		if (n <= 3 || n %2 == 0)
+			return n <= 3;
+		final int [] as = {2, 3, 5, 7, 11};
+		final long nMin1 = n - 1;
+		for (int i = 0; i < as.length && as[i] < nMin1; i++) {
+			final boolean probablePrime = isProbablePrime(BigInteger.valueOf(n), as[i]);
+			//			final boolean probablePrime = isProbablePrime((int) n, as[i]);
+			if (!probablePrime)
+				return false;
+		}
+		return true;
 	}
 
 
@@ -244,6 +341,9 @@ public class PrimeMath {
 		//		return squaresModSmallPrimes2[nMod];
 
 	}
+
+
+
 	public static boolean isSquareBitSet(long n)
 	{
 		final int nMod = (int) (n & (mod2Pow -1));
@@ -256,17 +356,20 @@ public class PrimeMath {
 	}
 
 	/**
-	 * Binary gcd implementation.
+	 * Binary gcd implementation. From Till Neumann
 	 * @param m
 	 * @param n
 	 * @return gcd(m, n)
+	 *
 	 */
-	public long gcdBinary/*_binary*/(long m, long n) {
+	public static long gcdBinaryTill/*_binary*/(long m, long n) {
 		m = Math.abs(m);
 		n = Math.abs(n);
 		final long mCmp1 = m-1;
 		final long nCmp1 = n-1;
-		if (mCmp1>0 && nCmp1>0) {
+
+		if (mCmp1>0 && nCmp1>0)
+		{
 			final int m_lsb = Long.numberOfTrailingZeros(m);
 			final int n_lsb = Long.numberOfTrailingZeros(n);
 			final int shifts = Math.min(m_lsb, n_lsb);
@@ -300,7 +403,7 @@ public class PrimeMath {
 	 * @param b
 	 * @return
 	 */
-	static int binaryGcd(int a, int b) {
+	static int gcdBinary(int a, int b) {
 		if (b == 0)
 			return a;
 		if (a == 0)
@@ -326,6 +429,54 @@ public class PrimeMath {
 						return a<<t;
 	}
 
+
+	/**
+	 * use the fastest implementation
+	 * @param a
+	 * @param b
+	 * @return
+	 */
+	public static long gcd(long a, long b) {
+		final Long e;
+		return gcdBinary(a, b);
+	}
+
+	/**
+	 * use the fastest implementation
+	 *
+	 * if we do this often we can reuse the gcd from previous checks.
+	 * take a hash from a,b          (int)(a ^ b ^ (a >>> 32) ^(a >>> 32)) & MASK
+	 * store all results for samml a,b -> shift b by MASK / 2
+	 *
+	 * a1 a2
+	 * a3 a4
+	 *    b1
+	 * b2 b3
+	 * b4
+	 *
+	 * if only a1, b1 are set they do not interfere
+	 * Look it up.
+	 * @param a
+	 * @param b
+	 * @return
+	 */
+	public static long gcdCached(long a, long b) {
+		if (gcdTable == null)
+			gcdTable = new long [4*(GCD_MASK+1)];
+
+		final int hash = (int)(a ^ b ^ (a >>> 32) ^(a >>> 32)) & GCD_MASK;
+
+		if (gcdTable[4*hash] != 0 && gcdTable[4*hash] == a && gcdTable[4*hash+1] == b)
+			return gcdTable[4*hash+2];
+
+		final long gcd = gcdBinary(a, b);
+
+		gcdTable[4*hash] = a;
+		gcdTable[4*hash+1] = b;
+		gcdTable[4*hash+2] = gcd;
+		return gcd;
+	}
+
 	/**
 	 * Stolen from java.math.MutableBigInteger#binaryGcd(int, int)
 	 * and adapted to long
@@ -333,7 +484,7 @@ public class PrimeMath {
 	 * @param b
 	 * @return
 	 */
-	static long binaryGcd(long a, long b) {
+	static long gcdBinary(long a, long b) {
 		if (b == 0)
 			return a;
 		if (a == 0)
@@ -344,24 +495,42 @@ public class PrimeMath {
 		final int aZeros = Long.numberOfTrailingZeros(a);
 		final int bZeros = Long.numberOfTrailingZeros(b);
 		a >>>= aZeros;
-						b >>>= bZeros;
+		b >>>= bZeros;
 
-						final int t = (aZeros < bZeros ? aZeros : bZeros);
+		final int t = (aZeros < bZeros ? aZeros : bZeros);
 
-						while (a != b) {
-							if ((a+0x8000000000000000l) > (b+0x8000000000000000l)) {  // a > b as unsigned
-								a -= b;
-								a >>>= Long.numberOfTrailingZeros(a);
-							} else {
-								b -= a;
-								b >>>= Long.numberOfTrailingZeros(b);
-							}
-						}
-						return a<<t;
+		while (a != b) {
+			if ((a+0x8000000000000000l) > (b+0x8000000000000000l)) {  // a > b as unsigned
+				a -= b;
+				a >>>= Long.numberOfTrailingZeros(a);
+			} else {
+				b -= a;
+				b >>>= Long.numberOfTrailingZeros(b);
+			}
+			//			final int hash = (int)(a ^ b ^ (a >>> 32) ^(a >>> 32)) & GCD_MASK;
+			//
+			//			if (gcdTable[4*hash] != 0 && gcdTable[4*hash] == a && gcdTable[4*hash+1] == b)
+			//				return gcdTable[4*hash+2];
+			//
+			//			final long gcd = gcdBinary(a, b);
+			//
+			//			gcdTable[4*hash] = a;
+			//			gcdTable[4*hash+1] = b;
+			//			gcdTable[4*hash+2] = gcd;
+		}
+		return a<<t;
 	}
 
 
 
+	/**
+	 * Old Euclidean algorithm based on substrations from school book.
+	 * Slow -> do not use it. Just to compare other variants against.
+	 * @param a
+	 * @param b
+	 * @return
+	 */
+	@Deprecated
 	public static long gcdBySubstractionOnly (long a, long b) {
 		if (a == 0)
 			return b;
@@ -373,6 +542,14 @@ public class PrimeMath {
 		return a;
 	}
 
+	/**
+	 * New Euclidean algorithm based on modulus from school book.
+	 * Slow ->  do not use it. Just to compare other variants against.
+	 * @param a
+	 * @param b
+	 * @return
+	 */
+	@Deprecated
 	public static long gcdByMod (long a, long b) {
 		while (b > 0) {
 			final long tmp = a % b;
@@ -383,12 +560,31 @@ public class PrimeMath {
 	}
 
 	/**
+	 * New Euclidean algorithm based on modulus from school book.
+	 * Slow ->  do not use it. Just to compare other variants against.
+	 * @param a
+	 * @param b
+	 * @return
+	 */
+	public static long gcdByMod (double a, double b) {
+		while (b > 0) {
+			final double tmp = a % b;
+			a = b;
+			b = tmp;
+		}
+		return (long) a;
+	}
+	/**
 	 * A variant of the Euclidean algorithm.
 	 * We try to not use the expensive modulus operation "%".
 	 * Instead we try to use
-	 * - subtract the lower number from the bigger one and if the bigger number is still bigger then the lower
-	 * - we reduce the bigger number by shifted values of the lower number
-	 * We do not need to reduce the bigger number by the modulus of the lower number.
+	 * 1) subtract the lower number from the bigger one and if the bigger number is still bigger then the lower
+	 * 2) we reduce the bigger number by shifted values of the lower number
+	 * the cost of calculating big / small by shifts is limited by
+	 * by shifts is log(big / small). Since the probability that big / small > i is less then 1/i,
+	 * the expected cost = Sum log(i)/i = 1/2 log(x)^2.
+	 * Instead of reducing the bigger number by the modulus of the lower number in step 2,
+	 *
 	 * It is around 2 times faster then the Algorithms which are just based on
 	 * subtractions or mod. It is ~ 10 % slower then the binary euclidean algorithm.
 	 *
@@ -396,7 +592,7 @@ public class PrimeMath {
 	 * @param b
 	 * @return
 	 */
-	public static long gcdBySubstraction (long a, long b)
+	public static long gcdBySubstraction2 (long a, long b)
 	//	public static long gcdBySubstractionAndShifts (long a, long b)
 	{
 		if (a == 1 || b == 1)
@@ -405,42 +601,46 @@ public class PrimeMath {
 		long big = Math.max(a, b);
 		long small = Math.min(a, b);
 
+		// usually we check here for small > 0; but handling small == 1 separately saves time
 		while (small > 1)
 		{
-			big -= small;         // q=1
+			// do substractions for some time. The number of iterated substractions has a low impact on the performance
+			big -= small;         // big/small =1
 			if (big > small) {
-				big -= small;         // q=2
+				big -= small;         // big/small =2
 				if (big > small) {
-					big -= small;         // q=3
+					big -= small;         // big/small =3
 					if (big > small) {
-						big -= small;         // q=4
+						big -= small;         // big/small =4
 						if (big > small) {
-							big -= small;         // q=5
+							big -= small;         // big/small =5
 							if (big > small) {
-								big -= small;         // q=6
+								big -= small;         // big/small =6
 								if (big > small) {
-									big -= small;         // q=7
+									big -= small;         // big/small =7
 									if (big > small) {
-										big -= small;         // q=8
+										big -= small;         // big/small =8
 										if (big > small) {
-											big -= small;         // q=9
+											big -= small;         // big/small =9
 											if (big > small) {
-												big -= small;         // q=10
+												big -= small;         // big/small =10
 												if (big > small) {
-													big -= small;         // q=11
+													big -= small;         // big/small =11
 													if (big > small) {
-														big -= small;         // q=12
+														big -= small;         // big/small =12
 														if (big > small) {
-															big -= small;         // q=13
+															big -= small;         // big/small =13
 															if (big > small) {
-																big -= small;         // q=11
+																big -= small;         // big/small =14
 																if (big > small) {
-																	big -= small;         // q=12
+																	big -= small;         // big/small =15
 																	if (big > small) {
-																		big -= small;         // q=13
+																		big -= small;         // big/small =16
 																		if (big > small) {
+																			// we will calculate  big = big  % small in a more efficient way.
+																			// since big and small are usually not completely different in size, we
 																			// approximate the quotient big/small by just looking at the length of the
-																			// numbers. Then we subtract the small number shifted by the bits from the
+																			// numbers. Then we subtract the small number shifted by the (log) of the approximation of the quotient from the
 																			// bigger one.
 																			while (big > small) {
 																				final int quotientApprox = Long.numberOfLeadingZeros(small) - Long.numberOfLeadingZeros(big);
@@ -472,6 +672,167 @@ public class PrimeMath {
 
 		return big;
 	}
+	/**
+	 * A variant of the Euclidean algorithm.
+	 * We try to not use the expensive modulus operation "%".
+	 * Instead we try to use
+	 * 1) subtract the lower number from the bigger one and if the bigger number is still bigger then the lower
+	 * 2) we reduce the bigger number by shifted values of the lower number
+	 * the cost of calculating big / small by shifts is limited by
+	 * by shifts is log(big / small). Since the probability that big / small > i is less then 1/i,
+	 * the expected cost = Sum log(i)/i = 1/2 log(x)^2.
+	 * Instead of reducing the bigger number by the modulus of the lower number in step 2,
+	 *
+	 * It is around 2 times faster then the Algorithms which are just based on
+	 * subtractions or mod. It is ~ 10 % slower then the binary euclidean algorithm.
+	 *
+	 * @param a
+	 * @param b
+	 * @return
+	 */
+	public static long gcdBySubtraction (long a, long b)
+	//	public static long gcdBySubstractionAndShifts (long a, long b)
+	{
+		if (a == 1 || b == 1)
+			return 1;
+
+		long big = Math.max(a, b);
+		long small = Math.min(a, b);
+
+		// usually we check here for small > 0; but handling small == 1 separately saves time
+		while (small > 1)
+		{
+			// do substractions for some time. The number of iterated substractions has a low impact on the performance
+			big -= small;         // big/small =1
+			if (big > small) {
+				big -= small;         // big/small =2
+				if (big > small) {
+					big -= small;         // big/small =3
+					if (big > small) {
+						big -= small;         // big/small =4
+						if (big > small) {
+							big -= small;         // big/small =5
+							if (big > small) {
+								big -= small;         // big/small =6
+								if (big > small) {
+									big -= small;         // big/small =7
+									if (big > small) {
+										big -= small;         // big/small =8
+										if (big > small) {
+											big -= small;         // big/small =9
+											if (big > small) {
+												big -= small;         // big/small =10
+												if (big > small) {
+													big -= small;         // big/small =11
+													if (big > small) {
+														big -= small;         // big/small =12
+														if (big > small) {
+															big -= small;         // big/small =13
+															if (big > small) {
+																big -= small;         // big/small =14
+																if (big > small) {
+																	big -= small;         // big/small =15
+																	if (big > small) {
+																		big -= small;         // big/small =16
+																		if (big > small) {
+																			// we will calculate  big = big  % small in a different way.
+																			// since big and small are usually not completely different in size, we
+																			// approximate the quotient big/small by just looking at the length of the
+																			// numbers. Then we subtract the small number shifted by the (log) of the approximation of the quotient from the
+																			// bigger one.
+																			big = modByShiftAndSub(big, small);
+																			//																			big = big % small;
+																			//																																																									}
+																		}
+																	}
+																}
+															}
+														}
+													}
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+			final long tmp = small;
+			small = big;
+			big = tmp;
+		}
+		if (small == 1)
+			return 1;
+
+		return big;
+	}
+	/**
+	 * A variant of the Euclidean algorithm.
+	 * We try to not use the expensive modulus operation "%".
+	 * Instead we try to use
+	 * 1) subtract the lower number from the bigger one and if the bigger number is still bigger then the lower
+	 * 2) we reduce the bigger number by shifted values of the lower number
+	 * the cost of calculating big / small by shifts is limited by
+	 * by shifts is log(big / small). Since the probability that big / small > i is less then 1/i,
+	 * the expected cost = Sum log(i)/i = 1/2 log(x)^2.
+	 * Instead of reducing the bigger number by the modulus of the lower number in step 2,
+	 *
+	 * It is around 2 times faster then the Algorithms which are just based on
+	 * subtractions or mod. It is ~ 10 % slower then the binary euclidean algorithm.
+	 *
+	 * @param a
+	 * @param b
+	 * @return
+	 */
+	public static long gcdDouble (double a, double b)
+	{
+		if (a == 1 || b == 1)
+			return 1;
+
+		double big = Math.max(a, b);
+		double small = Math.min(a, b);
+		final Double s;
+
+		// usually we check here for small > 0; but handling small == 1 separately saves time
+		while (small > 1)
+		{
+			// do substractions for some time. The number of iterated substractions has a low impact on the performance
+			big -= small;         // big/small =1
+			if (big > small) {
+				big -= small;         // big/small =2
+				if (big > small) {
+					big -= small;         // big/small =3
+					if (big > small) {
+						big -= small;         // big/small =4
+						if (big > small) {
+							big -= small;         // big/small =5
+							if (big > small) {
+								big -= small;         // big/small =6
+								if (big > small) {
+									// we will calculate  big = big  % small in a different way.
+									// since big and small are usually not completely different in size, we
+									// approximate the quotient big/small by just looking at the length of the
+									// numbers. Then we subtract the small number shifted by the (log) of the approximation of the quotient from the
+									// bigger one.
+									//																			big = modByShiftAndSub(big, small);
+									big = big % small;
+								}
+							}
+						}
+					}
+				}
+			}
+			final double tmp = small;
+			small = big;
+			big = tmp;
+		}
+		if (small == 1)
+			return 1;
+
+		return (long) big;
+	}
 
 	/**
 	 * A variant of the Euclidean algorithm.
@@ -487,7 +848,7 @@ public class PrimeMath {
 	 * @param b
 	 * @return
 	 */
-	public static long gcdBySubstraction4 (long a, long b)
+	public static long gcdBySubtraction2Var (long a, long b)
 	{
 		if (a == 1 || b == 1)
 			return 1;
@@ -495,10 +856,10 @@ public class PrimeMath {
 		long big = Math.max(a, b);
 		long small = Math.min(a, b);
 
-		// c > d  ; e = c - d
+		// usually we check here for small > 0; but handling small == 1 separately saves time
 		while (small > 1)
 		{
-			// introduce a new variable
+			// introduce a new variable, but looks like it is not reducing the hole time
 			long newSmall = big - small;         // q=1
 			if (newSmall > small) {
 				newSmall -= small;         // q=2
@@ -525,14 +886,12 @@ public class PrimeMath {
 														if (newSmall > small) {
 															newSmall -= small;         // q=2
 															if (newSmall > small) {
-																//														big -= small;         // q=8
-																//												big = modByShift(big, small);
-																//																			big = big % small;
-																while (newSmall > small) {
-																	final int quotientApprox = Long.numberOfLeadingZeros(small) - Long.numberOfLeadingZeros(newSmall);
-																	final int shifts = quotientApprox < 1 ? 0 : quotientApprox -1;
-																	newSmall -= small << shifts;
-																}
+																newSmall = modByShiftAndSub(newSmall, small);
+																//																while (newSmall > small) {
+																//																	final int quotientApprox = Long.numberOfLeadingZeros(small) - Long.numberOfLeadingZeros(newSmall);
+																//																	final int shifts = quotientApprox < 1 ? 0 : quotientApprox -1;
+																//																	newSmall -= small << shifts;
+																//																}
 															}
 														}
 													}
@@ -563,7 +922,7 @@ public class PrimeMath {
 	 * @param modulus
 	 * @return
 	 */
-	public static long modByShift(long number, long modulus) {
+	public static long modByShift2(long number, long modulus) {
 		while (number > modulus) {
 			final int quotientApprox = Long.numberOfLeadingZeros(modulus) - Long.numberOfLeadingZeros(number);
 			final int shifts = quotientApprox < 1 ? 0 : quotientApprox -1;
@@ -572,151 +931,50 @@ public class PrimeMath {
 		return number;
 	}
 
-	public static long gcdBySubtraction (long a, long b)
-	{
-		long rem, rem3, rem2;
-
-		if (b > a)
-		{
-			final long tmp = a;
-			a = b;
-			b = tmp;
-		}
-		if (b == 0)
-			return a;
-
-		rem3 = a;
-		rem2 = b;
-		rem  = a - b;
-
-
-		while (rem > 0)
-		{
-			rem = rem3 - rem2;
-
-			if (rem >= rem2)
-			{
-				rem -= rem2;// q=1
-
-				if (rem >= rem2)
-				{
-					rem -= rem2;         // q=2
-
-					if (rem >= rem2)
-					{
-						if (rem >> 2 < rem2)
-						{
-							rem = remLower4 (rem, rem2);	// q=3,4,5
-						}
-						else
-						{
-							rem -= rem2 << 2;        // q=6
-
-							if (rem >> 2 < rem2)
-							{
-
-								rem = rem4 (rem, rem2);
-								//								if (rem >= rem2)
-								//								{
-								//									rem = rem3 (rem, rem2);		// q=7,8,9
-								//								}
-							}
-							else
-							{
-								//								rem += rem2 << 2;
-								rem = rem3 % rem2 - 4;
-							}
-						}
-					}
-				}
-			}
-			rem3 = rem2;
-			rem2 = rem;
-		}
-		return rem3;
-	}
-	protected static long rem4 (long rem, long rem2)
-	{
-		//		rem -= rem2;        // q=0
-
-		if (rem >= rem2)
-		{
-			rem = remLower4 (rem, rem2);
-		}
-		return rem;
-	}
-	protected static long rem2 (long rem, long rem2)
-	{
-		rem -= rem2;        // q=0
-
-		if (rem >= rem2)
-		{
-			rem -= rem2;    // q=1
-		}
-		return rem;
-	}
 	/**
-	 * @param rem
-	 * @param rem2
+	 * calculates number % modulus by reducing number by a power of modulus.
+	 *
+	 * @param number
+	 * @param modulus
 	 * @return
 	 */
-	protected static long remLower4 (long rem, long rem2)
-	{
-		rem -= rem2;        // q=0
-
-		if (rem >= rem2)
-		{
-			rem = rem2 (rem, rem2);
+	public static long modByShift(long number, long modulus) {
+		//		if (modulus == 0)
+		//			return 0;
+		while (number > modulus) {
+			final int quotientApprox = Long.numberOfLeadingZeros(modulus) - Long.numberOfLeadingZeros(number);
+			final int shifts = quotientApprox < 1 ? 0 : quotientApprox -1;
+			number -= modulus << shifts;
 		}
-		return rem;
+		if (number == modulus)
+			return 0;
+		return number;
 	}
-
-	public static long gcd (long a, long b)
-	{
-		a = Math.abs (a);
-
-		long rem, divident, divisor;
-
-		if (b > a)
-		{
-			final long tmp = a;
-			a = b;
-			b = tmp;
-		}
-		if (b == 0)
-			return a;
-
-		divident = a;
-		divisor = b;
-		rem = a % b;
-
-		if (rem == 0)
-			return divisor;
-
-		while (rem > 0)
-		{
-			rem = divident - divisor;
-
-			if (rem >= divisor)
-			{
-				rem -= divisor; // rem/rem2 = 1
-
-				if (rem >= divisor)
-				{
-					rem -= divisor; // rem/rem2 = 2
-
-					if (rem >= divisor)
-					{
-						rem = divident % divisor;
-					}
-				}
+	/**
+	 * calculates number % modulus by reducing number by a power of modulus.
+	 *
+	 * @param number
+	 * @param modulus
+	 * @return
+	 */
+	public static long modByShiftAndSub(long number, long modulus) {
+		//		if (modulus == 0)
+		//			return 0;
+		while (number > modulus) {
+			final int quotientApprox = Long.numberOfLeadingZeros(modulus) - Long.numberOfLeadingZeros(number);
+			// just use subtractions for small numbers
+			if (quotientApprox < 4) {
+				while (number > modulus)
+					number -= modulus;
+				return number == modulus ? 0 : number;
 			}
 
-			divident = divisor;
-			divisor = rem;
+			final int shifts = quotientApprox < 1 ? 0 : quotientApprox -1;
+			number -= modulus << shifts;
 		}
-		return divident;
+		return number == modulus ? 0 : number;
 	}
+
 
 
 	private final static boolean isPerfectSquare(long n)
@@ -825,4 +1083,59 @@ public class PrimeMath {
 		System.out.println("time : "+ (Math.abs(0.0 + split1 - split2))/1000);
 		System.out.println(count3);
 	}
+
+	/**
+	 * Calculates number % modulus, when modulusInv = 1.0 / modulus.
+	 * This can be around 4 times faster then number % modulus, but will only work
+	 * for number < 2^52, since double uses only 52 bits for the fraction.
+	 * If the modulus is precalculated and the method is called at least twice
+	 * with the same modulusInv this is overall faster then using the % on long numbers.
+	 * @param number
+	 * @param modulus
+	 * @param modulusInv
+	 * @return
+	 */
+	public static long mod(long number, long modulus, final double modulusInv) {
+		final double numberDivMod = number * modulusInv;
+		final long divRounded = (long)numberDivMod;
+		final long remainder = number - modulus * divRounded;
+		return remainder;
+	}
+
+	public static double mod(double number, double modulus, final double modulusInv) {
+		final double numberDivMod = number * modulusInv;
+		final double divRounded = Math.floor(numberDivMod);
+		final double remainder = number - modulus * divRounded;
+		return remainder;
+	}
+
+	/**
+	 * Calculates number % modulus,
+	 * @param number
+	 * @param modulus
+	 * @param modulusInv
+	 * @return
+	 */
+	public static long mod(long number, long modulus, int multiplier, int shifts) {
+		final long divRounded = (number * multiplier) >> shifts;
+		long remainder = number - modulus * divRounded;
+		if (remainder > modulus)
+			remainder -= modulus;
+		return remainder;
+	}
+
+	public static int [] barrettParams(long mod) {
+		final int shifts = 64 - Long.numberOfLeadingZeros(mod -1);
+		final int multiplier = (int) ((1l << shifts) / mod);
+		final int [] params = {multiplier, shifts};
+
+		return params;
+	}
+
+	public static long mod(int number, double i, double iInv) {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+
 }

@@ -2,9 +2,10 @@ package factoring.fermat.lehman;
 
 import java.util.Collection;
 
+import factoring.FactorFinder;
 import factoring.FactorizationOfLongs;
 import factoring.math.PrimeMath;
-import factoring.trial.TrialInvFact;
+import factoring.trial.TrialDoubleFact;
 
 /**
  * This is a version of the lehman factorization, which is a variant of the fermat
@@ -107,7 +108,7 @@ public class LehmanFactorFinderMod12 implements FactorizationOfLongs {
 	double[] sqrt;
 	float[] sqrtInv;
 	// a fast way to do the trial division phase
-	final TrialInvFact smallFactoriser;
+	final FactorFinder smallFactoriser;
 	int maxTrialFactor;
 
 	static {
@@ -156,7 +157,7 @@ public class LehmanFactorFinderMod12 implements FactorizationOfLongs {
 		this.maxTrialFactorMultiplier = maxTrialFactorMultiplier < 1 ? 1 : maxTrialFactorMultiplier;
 		maxTrialFactor = (int) Math.ceil(this.maxTrialFactorMultiplier * Math.pow(1L << bits, ONE_THIRD));
 		maxTrialFactorMultiplierCube = this.maxTrialFactorMultiplier * this.maxTrialFactorMultiplier * this.maxTrialFactorMultiplier;
-		smallFactoriser = new TrialInvFact(maxTrialFactor);
+		smallFactoriser = new TrialDoubleFact(maxTrialFactor);
 		this.doTrialFirst = doTrialFirst;
 		initSquares();
 	}
@@ -316,7 +317,7 @@ public class LehmanFactorFinderMod12 implements FactorizationOfLongs {
 		return false;
 	}
 	@Override
-	public boolean findsPrimes(){
+	public boolean findsPrimesOnly(){
 		return maxTrialFactorMultiplier <= 1;
 	}
 

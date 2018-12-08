@@ -4,7 +4,9 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Multiset;
 import com.google.common.collect.TreeMultiset;
-import factoring.trial.TrialFact;
+
+import factoring.trial.variant.TrialFact;
+
 import org.junit.Test;
 
 import java.util.Arrays;

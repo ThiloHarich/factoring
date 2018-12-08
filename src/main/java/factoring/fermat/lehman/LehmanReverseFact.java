@@ -4,7 +4,7 @@ import java.util.Collection;
 
 import factoring.FactorizationOfLongs;
 import factoring.math.PrimeMath;
-import factoring.trial.TrialRangeInvFact;
+import factoring.trial.variant.TrialRangeInvFact;
 
 /**
  * This is a version of the lehman factorizationByFactors, which is a variant of the fermat

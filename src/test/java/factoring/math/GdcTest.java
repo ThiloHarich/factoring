@@ -53,10 +53,10 @@ public class GdcTest {
 
 	public void doThilo(final Random rand, final int range) {
 		for ( long countA = 0; countA < range; countA++) {
-			final long a = Math.abs(rand.nextLong());
-			final long bStart = Math.abs(rand.nextLong());
+			final long a = Math.abs(rand.nextInt());
+			final long bStart = Math.abs(rand.nextInt());
 			for (long bCount = 1; bCount < range; bCount++) {
-				final long gdc = PrimeMath.gcdBySubstraction(a, bStart+bCount);
+				final long gdc = PrimeMath.gcdCached(a, bStart+bCount);
 			}
 		}
 	}
@@ -64,11 +64,11 @@ public class GdcTest {
 	public void doCompare(final Random rand, final int range) {
 		final Gcd63 gcd2 = new Gcd63();
 		for ( long countA = 0; countA < range; countA++) {
-			final long a = Math.abs(rand.nextLong());
-			final long bStart = Math.abs(rand.nextLong());
+			final long a = Math.abs(rand.nextInt());
+			final long bStart = Math.abs(rand.nextInt());
 			for (long bCount = 1; bCount < range; bCount++) {
-				gcd2.gcd(a, bStart+bCount);
-				//				PrimeMath.binaryGcd(a, bStart+bCount);
+				//				gcd2.gcd(a, bStart+bCount);
+				PrimeMath.gcdDouble((double)a, bStart+bCount);
 			}
 		}
 	}
@@ -83,14 +83,15 @@ public class GdcTest {
 
 
 		for ( long countA = 0; countA < range; countA++) {
-			a = Math.abs(rand.nextLong());
-			//			a = 52;
+			a = Math.abs(rand.nextInt());
+			//			a = 2;
 			for (  long countB = 0; countB < range; countB++) {
-				b = Math.abs(rand.nextLong());
-				//				b = 55;
+				b = Math.abs(rand.nextInt());
+				//				b = 3;
 				//            long gcd1 = PrimeMath.gcd(begin + offset, other);
 				final long gcd2 = gcd63.gcd(a, b);
-				final long gcd3 = PrimeMath.gcdBySubstraction(a, b);
+				//				final long gcd3 = PrimeMath.gcdByMod((double)a, (double)b);
+				final long gcd3 = PrimeMath.gcdCached(a, b);
 				//            Assert.assertEquals (gcd1, gcd2);
 				Assert.assertEquals (a + ", " + b, gcd2, gcd3);
 			}

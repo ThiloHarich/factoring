@@ -6,7 +6,7 @@ import com.google.common.annotations.VisibleForTesting;
 
 import factoring.FactorizationOfLongs;
 import factoring.math.PrimeMath;
-import factoring.trial.TrialInvFact;
+import factoring.trial.variant.TrialInvFact;
 
 /**
  * We analyze the lehman fermat function

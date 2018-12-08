@@ -1,7 +1,6 @@
 package factoring.trial.variant;
 
 import com.google.common.primitives.Bytes;
-import factoring.trial.TrialFact;
 
 import java.util.ArrayList;
 

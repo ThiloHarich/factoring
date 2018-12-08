@@ -4,7 +4,7 @@ import java.util.Collection;
 
 import factoring.FactorizationOfLongs;
 import factoring.math.PrimeMath;
-import factoring.trial.TrialInvFact;
+import factoring.trial.variant.TrialInvFact;
 
 /**
  * Here we calculate n^1/6 and calculate n^1/2 and n^1/3 out of this value just by

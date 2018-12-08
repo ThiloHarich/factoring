@@ -132,8 +132,13 @@ public class LehmanFactorization implements FactorizationOfLongs, FactorFinder {
 	}
 
 	@Override
-	public boolean findsPrimes(){
+	public boolean findsPrimesOnly(){
 		return factorizationByPrimes;
+	}
+
+	@Override
+	public FactorFinder getImpl(long n) {
+		return impl;
 	}
 
 }

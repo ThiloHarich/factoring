@@ -3,9 +3,10 @@ package factoring.fermat.lehman.playground;
 import java.math.BigInteger;
 import java.util.Collection;
 
+import factoring.FactorFinder;
 import factoring.FactorizationOfLongs;
 import factoring.math.PrimeMath;
-import factoring.trial.TrialInvFact;
+import factoring.trial.TrialDoubleFact;
 
 /**
  * This is a version of the lehman factorizationByFactors, which is a variant of the fermat
@@ -52,7 +53,7 @@ public class LehmanBigFact implements FactorizationOfLongs {
 	double [] sqrt;
 	double [] sqrtInv;
 
-	final TrialInvFact smallFactoriser;
+	final FactorFinder smallFactoriser;
 	int maxTrialFactor;
 
 	/**
@@ -68,7 +69,7 @@ public class LehmanBigFact implements FactorizationOfLongs {
 		//		this.balanceTrial = balanceTrial;
 		//		balanceTrialCube = balanceTrial * balanceTrial * balanceTrial;
 		//        smallFactoriser = new TrialPrimesDynamicFact(maxTrialFactor);
-		smallFactoriser = new TrialInvFact(maxTrialFactor);
+		smallFactoriser = new TrialDoubleFact(maxTrialFactor);
 
 		initSquares();
 	}

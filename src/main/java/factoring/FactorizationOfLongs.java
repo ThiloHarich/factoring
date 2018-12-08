@@ -44,15 +44,13 @@ public interface FactorizationOfLongs extends FactorFinder {
 		if (n == 1) {
 			return factors;
 		}
-		if (getImpl(n).findsPrimes() && !getImpl(n).findsOneFactor())
+		if (getImpl(n).findsPrimesOnly())
 			return factorizationByPrimes(n, factors);
-		if (getImpl(n).findsPrimes() && getImpl(n).findsOneFactor())
-			return factorizationBySinglePrime(n, factors);
-		// now handle composite numbers
-		if (!getImpl(n).findsOneFactor())
-			factors.addAll(factorizationByComposites(n));
-		else
-			factors.addAll(factorizationBySingleComposite(n));
+		if (getImpl(n).returnsCompositeOnly()) {
+			factors.addAll(factorizationByCompositesOnly(n));
+			return factors;
+		}
+		factors.addAll(factorizationByFactors(n));
 		return factors;
 	}
 
@@ -77,6 +75,18 @@ public interface FactorizationOfLongs extends FactorFinder {
 		return String.join(" * ", s);
 	}
 
+	default TreeMultiset<Long> factorizationByPrimes(long n, TreeMultiset<Long> primes) {
+		// try to find all prime factors
+		final long remainder = getImpl(n).findFactors(n, primes);
+		// if we do not find a trivial divisor add it; this should only be the case if n
+		// without the powers of 2 is a prime
+		if (remainder != 1){
+			primes.add(remainder);
+		}
+		return primes;
+	}
+
+
 	/**
 	 * This method returns a complete factorizationByFactors of n.
 	 * It uses the implementation returned by {@link #getImpl(long)} and calls
@@ -90,28 +100,32 @@ public interface FactorizationOfLongs extends FactorFinder {
 	 * @param primeFactors a Multiset of primes
 	 * @return
 	 */
-	default Collection<Long> factorizationByComposites(long n) {
+	default Collection<Long> factorizationByFactors(long n) {
 		// if we have a prime return an empty set
-		final TreeMultiset<Long> composites = TreeMultiset.create();
-		// find one factor and decomposite this factor and n/factor
-		final long remainder = getImpl(n).findFactors(n, composites);
-		// if we do not find a divisor it must be a prime factor just return it
-		if (remainder == n){
-			return ImmutableMultiset.of(remainder);
-		}
-		composites.add(remainder);
-
 		final TreeMultiset<Long> primes = TreeMultiset.create();
-		for (final Long composite : composites) {
-			primes.addAll(factorizationByComposites(composite));
+		// find one factor and decomposite this factor and n/factor
+		final long compositeFactor = getImpl(n).findFactors(n, primes);
+		// if we do not find a divisor it must be a prime factor just return it
+		if (compositeFactor == n){
+			return ImmutableMultiset.of(compositeFactor);
 		}
+		long compositeFactor2 = n/compositeFactor;
+		for (final long prime : primes)
+		{
+			// TODO multiply instead of division?
+			compositeFactor2 /= prime;
+		}
+		primes.addAll(factorizationByFactors(compositeFactor));
+		if (compositeFactor2 != 1)
+			primes.addAll(factorizationByFactors(compositeFactor2));
+
 		return primes;
 	}
 
-	default Collection<Long> factorizationBySingleComposite(long n){
+	default Collection<Long> factorizationByCompositesOnly(long n){
 		final TreeMultiset<Long> factorsEven = TreeMultiset.create();
 		// find one factor and decomposite this factor and n/factor
-		final long factor1 = getImpl(n).findFactors(n, factorsEven);
+		final long factor1 = getImpl(n).findFactors(n, null);
 		// if we do not find a divisor it must be a prime factor just return it
 		if (factor1 == n){
 			return ImmutableMultiset.of(factor1);
@@ -119,23 +133,12 @@ public interface FactorizationOfLongs extends FactorFinder {
 		//		factorsEven.add(factor1);
 		// also divide out the prime factorsEven
 		final long factor2 = n/factor1;
-		final Collection<Long> subFactors1 = factorizationBySingleComposite(factor1);
-		final Collection<Long> subFactors2 = factorizationBySingleComposite(factor2);
+		final Collection<Long> subFactors1 = factorizationByCompositesOnly(factor1);
+		final Collection<Long> subFactors2 = factorizationByCompositesOnly(factor2);
 		factorsEven.addAll(subFactors1);
 		factorsEven.addAll(subFactors2);
 		return factorsEven;
 
-	}
-
-	default TreeMultiset<Long> factorizationByPrimes(long n, TreeMultiset<Long> primes) {
-		// try to find all prime factors
-		final long remainder = getImpl(n).findFactors(n, primes);
-		// if we do not find a trivial divisor add it; this should only be the case if n
-		// without the powers of 2 is a prime
-		if (remainder != 1){
-			primes.add(n);
-		}
-		return primes;
 	}
 
 	default TreeMultiset<Long> factorizationBySinglePrime(long n, TreeMultiset<Long> primeFactors) {

@@ -12,9 +12,9 @@ import org.junit.Test;
 import com.google.common.collect.Multiset;
 import com.google.common.collect.TreeMultiset;
 
-import factoring.fermat.lehman.LehmanFactorFinder;
-import factoring.rho.PollardRho;
+import factoring.rho.PollardRhoBrentDouble52;
 import factoring.shift.ErrorShiftFact;
+import factoring.trial.variant.TrialFact;
 
 public class CorrectnessTest {
 
@@ -37,42 +37,92 @@ public class CorrectnessTest {
 
 	@Test
 	public void testCorrect() {
-		final int bits = 32;
+		final int bits = 34;
 		final int bitsMax = 32;
 
+		long begin = (1L << bits) +1;
+		//		begin = 100l	; // * 23
 		//		final Factorizer factorizer1 = new TrialPrimesDynamicFact(1 << bits + 4);
 		//		Factorizer factorizer1 = new Fermat24();
 		//		Factorizer factorizer1 = new LehmanBigFact(bitsMax, 1);
 		//		final Factorizer factorizer2 = new LehmanMod16Fact(bitsMax);
 		//		final Factorizer factorizer2 = new LehmanApproxFact();
 		//		final FactorizationOfLongs factorizer2 = new LehmanNoSqrtFact(bitsMax, 1.01f);
-		final FactorizationOfLongs factorizer1 = new PollardRho();
-		final FactorizationOfLongs factorizer2 = new LehmanFactorFinder(bitsMax, 1.01f, false);
+		final FactorizationOfLongs factorizer2 = new PollardRhoBrentDouble52();
+		//		final FactorizationOfLongs factorizer1 = new PollardRhoBrentParallel();
+		//		final FactorizationOfLongs factorizer1 = new PollardRho((int) (Math.sqrt(begin)));
 		//		final FactorizationOfLongs factorizer2 = new LehmanFactorFinderMod36(bitsMax, 1.01f);
-		//		final Factorizer factorizer2 = new TrialInvFact(1 << bits + 4);
+		final FactorizationOfLongs factorizer1 = new TrialFact();
+		//		final FactorAlgorithm factorizer2 = new CombinedFactorAlgorithm(1, false);
 
-		//		for (int i = 65538; i < 1 << (bits + 1); i++)
-		//		long begin = (1L << bits) +1;  // = 2^4 * 3^2 * 5
-		long begin =25l	; // * 23
-		// 29*23 * 53
-		// 29*53 * 23 ->
+
 		while (begin < Long.MAX_VALUE / 1000)
 		{
-			for (long i = begin; i < begin + begin/8; i++) {
+			for (long i = begin; i < begin + begin/1; i++) {
 				final Collection<Long> factors = factorizer1.factorization(i);
 				System.out.println(i + ": " + factorizer1.printFactorization(i));
 				//			Collection<Integer> factors = factorizer1.findAllPrimeFactors(i);
 				final Collection<Long> factors2 = factorizer2.factorization(i);
 				System.out.println(i + ": " + factorizer2.printFactorization(i));
+				//				final SortedMultiset<BigInteger> factors2 = factorizer2.factor(BigInteger.valueOf(i));
+				//				System.out.println(i + ": " + factors2);
 
+				if (factors.size()!=factors2.size())
+					System.out.println();
 				assertEquals("Test failed for " + i, factors.size(), factors2.size());
 				final Multiset<Long> factorsSet = TreeMultiset.create();
-				factorsSet.addAll(factors2);
+				//				factorsSet.addAll(factors2);
+				//
+				//				for (final long factor :
+				//					factors) {
+				//					assertTrue("Test failed for " + i, factorsSet.contains(factor));
+				//				}
+			}
+			begin = begin + begin;
+		}
 
-				for (final long factor :
-					factors) {
-					assertTrue("Test failed for " + i, factorsSet.contains(factor));
-				}
+	}
+
+	@Test
+	public void testCorrectThird() {
+		final int bits = 41;
+
+		final int numPrimes = 1634;
+		final int loop = 20;
+		final int smallFactorBits = bits / 3;
+		final long[] semiprimes = PerformanceTest.makeSemiPrimesList(bits, smallFactorBits, numPrimes);
+
+
+		long begin = (1L << bits) +1;
+		final FactorizationOfLongs factorizer2 = new PollardRhoBrentDouble52();
+		factorizer2.setMaxFactor(1 << smallFactorBits);
+		final FactorizationOfLongs factorizer1 = new TrialFact();
+		//		final FactorAlgorithm factorizer2 = new CombinedFactorAlgorithm(1, false);
+
+
+		for (int i = 0; i < loop; i++) {
+
+		}
+		{
+			for (final long k : semiprimes) {
+				final Collection<Long> factors = factorizer1.factorization(k);
+				System.out.println(k + ": " + factorizer1.printFactorization(k));
+				//			Collection<Integer> factors = factorizer1.findAllPrimeFactors(i);
+				final Collection<Long> factors2 = factorizer2.factorization(k);
+				System.out.println(k + ": " + factorizer2.printFactorization(k));
+				//				final SortedMultiset<BigInteger> factors2 = factorizer2.factor(BigInteger.valueOf(i));
+				//				System.out.println(i + ": " + factors2);
+
+				if (factors.size()!=factors2.size())
+					System.out.println();
+				assertEquals("Test failed for " + k, factors.size(), factors2.size());
+				final Multiset<Long> factorsSet = TreeMultiset.create();
+				//				factorsSet.addAll(factors2);
+				//
+				//				for (final long factor :
+				//					factors) {
+				//					assertTrue("Test failed for " + i, factorsSet.contains(factor));
+				//				}
 			}
 			begin = begin + begin;
 		}

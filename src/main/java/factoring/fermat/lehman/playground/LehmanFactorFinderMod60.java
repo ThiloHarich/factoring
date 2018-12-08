@@ -4,7 +4,7 @@ import java.util.Collection;
 
 import factoring.FactorizationOfLongs;
 import factoring.math.PrimeMath;
-import factoring.trial.TrialInvFact;
+import factoring.trial.variant.TrialInvFact;
 
 /**
  * Here we first look at k's with many factor 3 and 5
@@ -249,13 +249,13 @@ public class LehmanFactorFinderMod60 implements FactorizationOfLongs {
 		return false;
 	}
 	@Override
-	public boolean findsPrimes(){
+	public boolean findsPrimesOnly(){
 		return maxTrialFactorMultiplier <= 1;
 	}
 
 	@Override
 	public String toString() {
-		return "LehmanFactorFinder{" +
+		return "LehmanFactorFinderMod60{" +
 				"maxFactorMultiplier=" + maxTrialFactorMultiplier +
 				'}';
 	}

@@ -4,7 +4,7 @@ import java.util.Collection;
 
 import factoring.FactorizationOfLongs;
 import factoring.math.PrimeMath;
-import factoring.trial.TrialInvFact;
+import factoring.trial.variant.TrialInvFact;
 
 /**
  * Here we first look at even k for which x has a higher chance to be a solution.
