@@ -63,17 +63,6 @@ import factoring.trial.TrialDoubleFact;
  * - can we improve the range checks beside from the things we do in {@link LehmanFactorFinderMod12}?
  * - use a clever Pollard Rho variant for small factors
  *
- * We create the Squre Roots by a sive simmilar to the sieve of erathosthenes:
- *
- * we precalculate sqrt(2), sqrt(3)
- *
- * 1 -> sqrt(1) = 1, sqrt(2), sqrt(3), sqrt(4)=2
- * 5 -> sqrt(5), sqrt(10) = sqrt(2)*sqrt(5), sqrt(15) = sqrt(3)*sqrt(5), sqrt(20) = sqrt(4)*sqrt(5)
- * 6 -> sqrt(6), sqrt(12) = sqrt(2)*sqrt(6), sqrt(18) = sqrt(3)*sqrt(6), sqrt(24) = sqrt(4)*sqrt(6)
- * 7 -> sqrt(7), sqrt(14) = sqrt(2)*sqrt(7), sqrt(21) = sqrt(3)*sqrt(7), sqrt(28) = sqrt(4)*sqrt(7)
- * 8 -> sqrt(8), sqrt(16) = sqrt(2)*sqrt(8), sqrt(24) = sqrt(3)*sqrt(8), sqrt(32) = sqrt(4)*sqrt(8)
- * 9 -> sqrt(9), sqrt(18) = sqrt(2)*sqrt(9), sqrt(27) = sqrt(3)*sqrt(9), sqrt(36) = sqrt(4)*sqrt(9)
- *11
  *
  * Created by Thilo Harich on 28.06.2017.
  */
@@ -191,7 +180,8 @@ public class LehmanFactorFinderSqrt implements FactorizationOfLongs, FactorFinde
 		// TODO use ROUND_UP_DOUBLE
 		// TODO do this only if we have found factors
 		// TODO just calculate n^1/6 and use multiplications
-		maxTrialFactor = (int) Math.ceil(maxFactorMultiplier * Math.pow(n, ONE_THIRD));
+		maxTrialFactor = (int) Math.ceil(maxFactorMultiplier * Math.cbrt(n));
+		//		maxTrialFactor = (int) Math.ceil(maxFactorMultiplier * Math.pow(n, ONE_THIRD));
 		// effectively kMax is reduced by maxFactorMultiplier^2 ->
 		final int kMax = (int) (Math.ceil(maxTrialFactor / maxFactorMultiplierCube));
 		//		kVisited = new boolean [kMax+1];
