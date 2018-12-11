@@ -59,7 +59,6 @@ import factoring.trial.TrialDoubleFact;
  *
  *
  * Open questions, possible improvements :
- * - can we get rid of storing the square roots? how can we calculate them efficiently?
  * - can we improve the range checks beside from the things we do in {@link LehmanFactorFinderMod12}?
  * - use a clever Pollard Rho variant for small factors
  *
@@ -112,7 +111,7 @@ public class LehmanFactorFinderSqrt implements FactorizationOfLongs, FactorFinde
 				//				isSquareMod_1024[(i*i) % mod_1024] = true;
 				isSquareMod_1024[(i * i) & 1023] = true;
 			//			isSquareMod_9_5_7_11[(i*i) % mod_9_5_7_11] = true;
-			isSquareMod_9_5_7_11[(i * i) % 3456] = true;
+			isSquareMod_9_5_7_11[(i * i) % 3465] = true;
 		}
 		System.out.println("sqrt mod table built                       bytes used : " + (isSquareMod_1024.length + isSquareMod_9_5_7_11.length));
 	}
@@ -254,10 +253,11 @@ public class LehmanFactorFinderSqrt implements FactorizationOfLongs, FactorFinde
 
 	protected static boolean isProbableSquare(final long number) {
 		if (isSquareMod_1024[(int) (number & 1023)]) {
-			// using mod9_5_7_11 instead of hard 3456 coded number causes double run time
+			// using mod9_5_7_11 instead of hard 3465 coded number causes double run time
 			// the % is expensive, but saves ~ 10% of the time, since the sqrt takes even more time
 			// another mod filter gives not gain, in the YAFU impl it is used
-			if (isSquareMod_9_5_7_11[(int) (number % 3456)]) {
+			if (isSquareMod_9_5_7_11[(int) (number % 3465)])
+			{
 
 				final long y = (long) Math.sqrt(number);
 				return y * y == number;
