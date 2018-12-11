@@ -12,6 +12,8 @@ import org.junit.Test;
 import com.google.common.collect.Multiset;
 import com.google.common.collect.TreeMultiset;
 
+import factoring.fermat.lehman.LehmanFactorFinder;
+import factoring.fermat.lehman.LehmanFactorFinderSqrt;
 import factoring.rho.PollardRhoBrentDouble52;
 import factoring.shift.ErrorShiftFact;
 import factoring.trial.variant.TrialFact;
@@ -41,18 +43,18 @@ public class CorrectnessTest {
 		final int bitsMax = 32;
 
 		long begin = (1L << bits) +1;
-		//		begin = 100l	; // * 23
+		begin = 17179869194l	; // * 23
 		//		final Factorizer factorizer1 = new TrialPrimesDynamicFact(1 << bits + 4);
 		//		Factorizer factorizer1 = new Fermat24();
 		//		Factorizer factorizer1 = new LehmanBigFact(bitsMax, 1);
 		//		final Factorizer factorizer2 = new LehmanMod16Fact(bitsMax);
 		//		final Factorizer factorizer2 = new LehmanApproxFact();
-		//		final FactorizationOfLongs factorizer2 = new LehmanNoSqrtFact(bitsMax, 1.01f);
-		final FactorizationOfLongs factorizer2 = new PollardRhoBrentDouble52();
+		final FactorizationOfLongs factorizer2 = new LehmanFactorFinderSqrt(bits, 1, true);
+		//		final FactorizationOfLongs factorizer2 = new PollardRhoBrentDouble52();
 		//		final FactorizationOfLongs factorizer1 = new PollardRhoBrentParallel();
 		//		final FactorizationOfLongs factorizer1 = new PollardRho((int) (Math.sqrt(begin)));
-		//		final FactorizationOfLongs factorizer2 = new LehmanFactorFinderMod36(bitsMax, 1.01f);
-		final FactorizationOfLongs factorizer1 = new TrialFact();
+		final FactorizationOfLongs factorizer1 = new LehmanFactorFinder(bits, 1.0f, true);
+		//		final FactorizationOfLongs factorizer1 = new TrialFact();
 		//		final FactorAlgorithm factorizer2 = new CombinedFactorAlgorithm(1, false);
 
 

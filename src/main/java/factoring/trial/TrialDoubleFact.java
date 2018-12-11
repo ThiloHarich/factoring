@@ -23,11 +23,6 @@ import factoring.FactorizationOfLongs;
  * maxFactor were added to the factors. {@link #findFactors(long, Collection)} then might return a
  * composite number.
  *
- * n/(p+2) = n *p /(p(p+2)) = n/p * p/(p+2) = n/p * p* (p-2)/((p+2)(p-2))
- * = n/p * p* (p-2)/(p^2 - 4)
- * = n/p * (p^2 -2p)/(p^2 - 4)
- * ~ n/p * (1 - 2/p)
- * n(p+2) / ((p-2)(p+2)) = n(p+2) / (p^2 - 4)
  *
  * Created by Thilo Harich on 02.03.2017.
  */
