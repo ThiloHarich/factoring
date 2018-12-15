@@ -45,13 +45,13 @@ public class CorrectnessTest {
 		final int bits = 40;
 
 		long begin = (1L << bits) +1;
-		begin = 1099511627809l	; // * 23
+		begin = 9l	; // * 23
 		final FactorAlgorithm factorizer2 = new Lehman_Till(1);
 		//		Factorizer factorizer1 = new Fermat24();
 		//		Factorizer factorizer1 = new LehmanBigFact(bitsMax, 1);
 		//		final Factorizer factorizer2 = new LehmanMod16Fact(bitsMax);
 		//		final Factorizer factorizer2 = new LehmanApproxFact();
-		final FactorizationOfLongs factorizer1 = new LehmanFactorFinderRange(bits, 2f, false);
+		final FactorizationOfLongs factorizer1 = new LehmanFactorFinderRange(bits, 2f, true);
 		//		final FactorizationOfLongs factorizer2 = new TrialDoubleFact(1 << (bits/2));
 		//		final FactorizationOfLongs factorizer1 = new PollardRhoBrentParallel();
 		//		final FactorizationOfLongs factorizer1 = new PollardRho((int) (Math.sqrt(begin)));
