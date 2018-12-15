@@ -88,7 +88,7 @@ public class Lehman_Till extends FactorAlgorithmBase {
 
 		// 1. Main loop for small k, where we can have more than 1 a-value
 		final int kLimit = (int) cbrt;
-		// For kLimit / 64 the range for a is 2
+		// For kLimit / 64 the range for a is at most 2
 		final int kMedium = kLimit >> 6;
 		//LOG.debug("kLimit = " + kLimit);
 		final long fourN = N<<2;
@@ -98,7 +98,7 @@ public class Lehman_Till extends FactorAlgorithmBase {
 		for (; k <= kMedium; k++) {
 			final double sqrt4kN = sqrt4N * sqrt[k];
 			final int aStart = (int) (sqrt4kN + ROUND_UP_DOUBLE); // much faster than ceil() !
-			long aLimit = (int) (sqrt4kN + sixthRootTerm * sqrtInv[k]);
+			long aLimit = (long) (sqrt4kN + sixthRootTerm * sqrtInv[k]);
 			long aStep = 1;
 			final long kn = k * N;
 			if ((k&1)==0) {
@@ -106,7 +106,7 @@ public class Lehman_Till extends FactorAlgorithmBase {
 				aLimit |= 1l;
 				aStep = 2;
 			} else {
-				// this extra case gives ~ 10 %
+				// this extra case gives ~ 5 %
 				if (kn % 4 == 3) {
 					aStep = 8;
 					aLimit = (int) (aLimit + ((7 - kn - aLimit) & 7));
@@ -118,9 +118,9 @@ public class Lehman_Till extends FactorAlgorithmBase {
 			}
 
 			// processing the a-loop top-down is faster than bottom-up
-			final long fourKN = k*fourN;
+			//			final long fourKN = k*fourN;
 			for (long a=aLimit; a >= aStart; a-=aStep) {
-				final long test = a*a - fourKN;
+				final long test = a*a - kn * 4;
 				if (isSquareMod1024[(int) (test & 1023)]) {
 					final long b = (long) Math.sqrt(test);
 					if (b*b == test) {
@@ -130,13 +130,13 @@ public class Lehman_Till extends FactorAlgorithmBase {
 			}
 		}
 
-		//		 2. continue main loop for larger k, where we can have only 1 a-value per k
+		// 2. continue main loop for larger k, where we can have only 2 a-value per k
 		for ( ; k <= kLimit; k++) {
 			final long kn = k * N;
-			int a = (int) (sqrt4N * sqrt[k] + ROUND_UP_DOUBLE);
+			long a = (long) (sqrt4N * sqrt[k] + ROUND_UP_DOUBLE);
 			if ((k&1)==0) {
 				// k even -> make sure aLimit is odd
-				a |= 1;
+				a |= 1l;
 			}
 			else {
 				if (kn % 4 == 3) {
@@ -146,7 +146,7 @@ public class Lehman_Till extends FactorAlgorithmBase {
 					a = (int) (a + ((k + N - a) & 3));
 				}
 			}
-			final long test = a*(long)a - k*fourN;
+			final long test = a*a - k*fourN;
 			if (isSquareMod1024[(int) (test & 1023)]) {
 				final long b = (long) Math.sqrt(test);
 				if (b*b == test) {
