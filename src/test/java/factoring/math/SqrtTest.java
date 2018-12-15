@@ -8,30 +8,71 @@ import org.junit.Test;
 public class SqrtTest {
 
 	double [] sqrts;
+	double [] sqrtInvs;
 	int loops = 40000;
 
 	@Test
 	public void testSqrtGen () {
-		final int range = 1 << (41/3);
-		sqrts = new double [range+1];
+		final long range = 1l << (41/3);
+		//		sqrts = new double [range+1];
+
+		sqrts = new double[(int) range];
+		sqrtInvs = new double[(int) range];
+		for (int i = 0; i < sqrts.length; i++) {
+			sqrts[i] = Math.sqrt(i);
+			sqrtInvs[i] = 1.0/Math.sqrt(i);
+		}
 
 		long start, end;
 
 		start = System.currentTimeMillis();
 		multiply(range);
 		end  = System.currentTimeMillis();
-		System.out.println(" time mult : " + (end- start));
+		System.out.println(" time mult  : " + (end- start));
 
 		start = System.currentTimeMillis();
-		sqrt(range);
+		sqrt2(range);
 		end  = System.currentTimeMillis();
-		System.out.println(" time sqrt  : " + (end- start));
+		System.out.println(" time sqrt2  : " + (end- start));
 
 		start = System.currentTimeMillis();
-		clever(range);
+		array2(range);
 		end  = System.currentTimeMillis();
-		System.out.println(" time clever : " + (end- start));
+		System.out.println(" time array2 : " + (end- start));
 
+		start = System.currentTimeMillis();
+		array(range);
+		end  = System.currentTimeMillis();
+		System.out.println(" time array  : " + (end- start));
+
+	}
+
+	private double array(long range) {
+		double prod = 1;
+		final long n = 1l << 21;
+		final double sqrtN =  Math.sqrt(n);
+		for (int j = 1; j <loops; j++) {
+			for (int i = 1; i < range; i++) {
+				final double sqrt = sqrts[i] * sqrtN;
+				prod += sqrt  + 1d/sqrt ;
+			}
+
+		}
+		return prod;
+	}
+	private double array2(long range) {
+		double prod = 1;
+		final long n = 1l << 21;
+		final double sqrtN =  Math.sqrt(n);
+		final double sqrtNInv =  1d/Math.sqrt(n);
+		for (int j = 1; j <loops; j++) {
+			for (int i = 1; i < range; i++) {
+				final double sqrt = sqrts[i] * sqrtN;
+				final double sqrtInv = sqrtInvs[i] * sqrtNInv;
+				prod += sqrt  + sqrtInv ;
+			}
+		}
+		return prod;
 	}
 
 	private double clever(int range) {
@@ -117,21 +158,75 @@ public class SqrtTest {
 
 	}
 
-	private double sqrt(int range) {
+	private double sqrt(long range) {
 		double prod = 1;
+		final long n = 1l << 21;
 		for (int j = 0; j <loops; j++) {
-			for (int i = 0; i < range; i++) {
-				prod *= Math.sqrt(i);
+			for (long i = 0; i < range; i++) {
+				final double sqrt = Math.sqrt(i*n);
+				final double sqrtInv = 1.0d/sqrt;
+				prod += sqrt  + sqrtInv;
 			}
 
 		}
 		return prod;
 	}
-	private double multiply(int range) {
+
+	/**
+	 * 1 -> 1,2
+	 * 3 -> 3,6
+	 * 4
+	 * 5 -> 5, 10
+	 * 7 -> 7, 14
+	 * 8
+	 * 9 -> 9, 18
+	 * 11->11, 22
+	 * 12
+	 *
+	 * @param range
+	 * @return
+	 */
+	private double sqrt2(long range) {
 		double prod = 1;
+		final long n = 1l << 21;
+		final double sqrt2 = Math.sqrt(2);
+		final double sqrt2Inv = 1d / sqrt2;
+		for (int j = 1; j <loops; j++) {
+			for (long i = 1; i < range; i +=2) {
+				final double sqrt = Math.sqrt(i*n);
+				final double sqrtInv = 1.0/sqrt;
+				prod += sqrt  + sqrtInv;
+				if (2*j < loops) {
+					final double sqrt2IN = sqrt2 * sqrt;
+					//					prod += sqrt2IN  + sqrt2Inv *  sqrtInv;
+					prod += sqrt2IN  + 1d / sqrt2IN;
+				}
+			}
+			for (long i = 4; i < range; i+=4) {
+				final double sqrt = Math.sqrt(i*n);
+				prod += sqrt  + 1/sqrt;
+			}
+		}
+		return prod;
+	}
+	private double sqrtBig(long range) {
+		double prod = 1;
+		final long n = 1l << 21;
+		final double sqrtN =  Math.sqrt(n);
 		for (int j = 0; j <loops; j++) {
-			for (int i = 0; i < range; i++) {
-				prod *= i*i;
+			for (long i = 0; i < range; i++) {
+				final double sqrt = Math.sqrt(i) * sqrtN;
+				prod += sqrt  + 1/sqrt ;
+			}
+
+		}
+		return prod;
+	}
+	private double multiply(long range) {
+		double prod = 1;
+		for (int j =1; j <loops; j++) {
+			for (int i = 1; i < range; i++) {
+				prod += i*i;
 			}
 		}
 		return prod;

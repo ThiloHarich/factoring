@@ -5,7 +5,7 @@ import java.util.Collection;
 import factoring.FactorFinder;
 import factoring.FactorizationOfLongs;
 import factoring.math.PrimeMath;
-import factoring.trial.TrialDoubleFact;
+import factoring.trial.variant.TrialInvFact;
 
 /**
  * This is a version of the lehman factorization, which is a variant of the fermat
@@ -59,32 +59,27 @@ import factoring.trial.TrialDoubleFact;
  *
  *
  * Open questions, possible improvements :
+ * - can we get rid of storing the square roots? how can we calculate them efficiently?
  * - can we improve the range checks beside from the things we do in {@link LehmanFactorFinderMod12}?
  * - use a clever Pollard Rho variant for small factors
  *
- *
  * Created by Thilo Harich on 28.06.2017.
  */
-public class LehmanFactorFinderSqrt implements FactorizationOfLongs, FactorFinder {
+public class LehmanFactorFinderRange implements FactorizationOfLongs, FactorFinder {
 
-	static double ONE_THIRD = 1.0 / 3;
 	// to be fast to decide if a number is a square we consider the
 	// number modulo some values. First filer/modulus is a power of 2
 	// since we can easily calculate the remainder by using bit and operation
 	// here also low mod like 64 work fine as well
+	//	static int mod_1024 = 1024;
+	//
+	//	private static boolean[] isSquareMod_1024;
 	static int mod_1024 = 1024;
-	// using an additional second filter gives around 10% of speedup
-	// Since we do not want to exceed the running time of  then n^1/3 ~ 20000 we
-	// restrict the mod to the product of small primes below these limit
-	static int mod_9_5_7_11 = 3 * 3 * 5 * 7 * 11; // 3465
-	// we might extend this limit if we know we have to factorize more number we might extend
-	//	static int mod_9_5_7_11 = 3*3 * 5 * 7 * 11 * 13; // 45045
 
 	private static boolean[] isSquareMod_1024;
 	// for the other mod arguments we have to do a real expensive "%" operation
 	// so we might have time to do a bit more expensive but space saving representation
 	// of the squares
-	private static boolean[] isSquareMod_9_5_7_11;
 
 	float maxFactorMultiplier = 1.0f;
 	float maxFactorMultiplierCube;
@@ -93,27 +88,17 @@ public class LehmanFactorFinderSqrt implements FactorizationOfLongs, FactorFinde
 	// This is a constant that is below 1 for rounding up double values to long
 	protected static final double ROUND_UP_DOUBLE = 0.9999999665;
 
-	//	boolean[] kVisited;
-	//	double[] sqrt;
-	//	float[] sqrtInv;
-	//	final int sqrtNums = 5;
-
+	double[] sqrt;
+	double[] sqrtInv;
 	// a fast way to do the trial division phase
 	final FactorFinder smallFactoriser;
 	int maxTrialFactor;
 
 	static {
 		isSquareMod_1024 = new boolean[mod_1024];
-		//		isSquareMod9_5_7_11 = new BitSet(mod9_5_7_11);
-		isSquareMod_9_5_7_11 = new boolean[mod_9_5_7_11];
-		for (int i = 0; i < mod_9_5_7_11; i++) {
-			if (i < mod_1024)
-				//				isSquareMod_1024[(i*i) % mod_1024] = true;
-				isSquareMod_1024[(i * i) & 1023] = true;
-			//			isSquareMod_9_5_7_11[(i*i) % mod_9_5_7_11] = true;
-			isSquareMod_9_5_7_11[(i * i) % 3465] = true;
+		for (int i = 0; i < mod_1024; i++) {
+			isSquareMod_1024[(i * i) & 1023] = true;
 		}
-		System.out.println("sqrt mod table built                       bytes used : " + (isSquareMod_1024.length + isSquareMod_9_5_7_11.length));
 	}
 
 
@@ -140,17 +125,32 @@ public class LehmanFactorFinderSqrt implements FactorizationOfLongs, FactorFinde
 	 *                              - if you know for most of the numbers the maximal factors will exceed 3*n^1/3<br>
 	 *                              In the last case {@link #findFactors(long, Collection)} might return a composite number
 	 */
-	public LehmanFactorFinderSqrt(int bits, float maxFactorMultiplierIn, boolean doTrialFirst) {
+	public LehmanFactorFinderRange(int bits, float maxFactorMultiplierIn, boolean doTrialFirst) {
 		if (bits > 41)
 			throw new IllegalArgumentException("numbers above 41 bits can not be factorized");
 		maxFactorMultiplier = maxFactorMultiplierIn < 1 ? 1 : maxFactorMultiplierIn;
-		maxTrialFactor = (int) Math.ceil(maxFactorMultiplier * Math.pow(1L << bits, ONE_THIRD));
+		maxTrialFactor = (int) Math.ceil(maxFactorMultiplier * Math.cbrt(1L << bits));
 		maxFactorMultiplierCube = maxFactorMultiplier * maxFactorMultiplier * maxFactorMultiplier;
-		smallFactoriser = new TrialDoubleFact(maxTrialFactor);
+		smallFactoriser = new TrialInvFact(maxTrialFactor);
 		this.doTrialFirst = doTrialFirst;
-		//		initSquares();
+		initSquares();
 	}
 
+	protected void initSquares() {
+		// precalculate the square of all possible multipliers. This takes at most n^1/3
+		final int kMax = (int) (maxTrialFactor / maxFactorMultiplierCube);
+
+		sqrt = new double[kMax + 20];
+		sqrtInv = new double[kMax + 20];
+		for (int i = 1; i < sqrt.length; i++) {
+			final double sqrtI = Math.pow(i, .5);
+			sqrt[i] = sqrtI;
+			// Since a multiplication is
+			// faster then the division we also calculate the square root and the inverse
+			sqrtInv[i] = 1.0 / sqrtI;
+		}
+		System.out.println("sqrt tables for max trial factor " + maxFactorMultiplier + " built bytes used : " + sqrt.length);
+	}
 
 	@Override
 	public long findFactors(long n, Collection<Long> primeFactors) {
@@ -158,7 +158,7 @@ public class LehmanFactorFinderSqrt implements FactorizationOfLongs, FactorFinde
 			throw new IllegalArgumentException("numbers above 41 bits can not be factorized");
 		// with this implementation the lehman part is not slower then the trial division
 		// we only apply the multiplier if we want to cut down the numbers to be tested
-		maxTrialFactor = (int) Math.ceil(maxFactorMultiplier * Math.pow(n, ONE_THIRD));
+		maxTrialFactor = (int) Math.ceil(maxFactorMultiplier * Math.cbrt(n));
 		//		maxTrialFactor =  (int) Math.ceil(Math.pow(nOrig, ONE_THIRD));
 		smallFactoriser.setMaxFactor(maxTrialFactor);
 		// factor out all small factors if
@@ -175,54 +175,58 @@ public class LehmanFactorFinderSqrt implements FactorizationOfLongs, FactorFinde
 
 		// re-adjust the maximal factor we have to search for. If small factors were found by trial division,
 		// which is quite often the case for arbitrary numbers, this cuts down the runtime dramatically.
-		// TODO maybe we can do even better here?
-		// TODO use ROUND_UP_DOUBLE
-		// TODO do this only if we have found factors
-		// TODO just calculate n^1/6 and use multiplications
 		maxTrialFactor = (int) Math.ceil(maxFactorMultiplier * Math.cbrt(n));
-		//		maxTrialFactor = (int) Math.ceil(maxFactorMultiplier * Math.pow(n, ONE_THIRD));
 		// effectively kMax is reduced by maxFactorMultiplier^2 ->
 		final int kMax = (int) (Math.ceil(maxTrialFactor / maxFactorMultiplierCube));
-		final long n4 = 4 * n;
 		final double sqrtN = Math.sqrt(n);
 		final int nMod4 = (int) (n % 4);
 		// we calculate n^1/6 = n^1/3*n^1/3 / n^1/2 -> we no not need to use Math
 		final long nPow2Third = ((long) maxTrialFactor) * ((long) maxTrialFactor);
-		final float nPow1Sixth = (float) ((nPow2Third / 4) / sqrtN);
+		final double nPow1Sixth = (nPow2Third / 4) / sqrtN;
 		// surprisingly it gives no speedup when using k's with many prime factors as lehman suggests
 		// for k=2 we know that x has to be even and results in a factor more often
 		final double sqrt4N = 2 * sqrtN;
-		for (int k = 1; k <= kMax; k++)
-		{
-			final double sqrtK = Math.sqrt(k);
-			final double sqrt4kn = sqrtK * sqrt4N;
-			// adding a small constant to avoid rounding issues and rounding up is much slower then
+		double xRange = Double.MAX_VALUE;
+		for (int k = 1; k <= kMax ; k++) {
+			final double sqrt4kn = sqrt[k] * sqrt4N;
+			// adding a small constant to avoid rounding issues and rounding up is ~ 5% slower then
 			// using the downcast and adding a constant close to 1. Took the constant from the yafu code
-			int xBegin = (int) (sqrt4kn + ROUND_UP_DOUBLE);
-			final double xRange = nPow1Sixth / sqrtK;
-			final int xEnd = (int) (sqrt4kn + xRange);
+			//			final long xBegin = (long) Math.ceil(sqrt4kn);
+			final long xBegin = (int) (sqrt4kn + ROUND_UP_DOUBLE);
+			// use only multiplications instead of division here
 			// instead of using a step 1 here we use the mod argument from lehman
 			// to reduce the possible numbers to verify.
-			int xStep = 2;
-			if (k % 2 == 0) {
-				xBegin |= 1;
-			} else {
-				xStep = 4;
-				xBegin = xBegin + PrimeMath.mod(k + nMod4 - xBegin, 4);
-				//				if (xBegin % 2 == 1)
-				//					xBegin++;
+			long xStep;
+			long xFirst;
+			final long kn = k * n;
+			if (k % 2 == 0)
+			{
+				xStep = 2;
+				xFirst = xBegin | 1l;
 			}
-			// since the upper limit is the lower limit plus a number lower then 1
-			// in most of the cases checking the upper limit is very helpful
-			for (long x = xBegin; x <= xEnd; x += xStep) {
-				// here we start using long values
-				// in java the trick to replace the multiplication with an addition does not help
-				final long x2 = x * x;
-				final long right = x2 - k * n4;
+			else
+			{
+				// this extra case gives ~ 10 %
+				if (kn % 4 == 3) {
+					xStep = 8;
+					xFirst = (xBegin + ((7 - kn - xBegin) & 7));
+				} else
+				{
+					xStep = 4;
+					xFirst = xBegin + ((k + nMod4 - xBegin) & 3);
+				}
+			}
+			xRange = nPow1Sixth * sqrtInv[k];
+			// if we do not cast to long we have to compare long with double ->  50 % slower
+			final long xEnd =  (long) (sqrt4kn + xRange);
+			// a maxFactorMultiplier > 2 ensures that xEnd >= xBegin + 2
+			for (long x = xFirst; x <= xEnd; x += xStep)
+			{
+				final long xSquare = x * x;
+				final long right = xSquare - kn * 4;
 				// instead of taking the square root (which is a very expensive operation)
 				// and squaring it, we do some mod arguments to filter out non squares
-				//				if (PrimeMath.isSquare(right)) {
-				if (isProbableSquare(right)) {
+				if (isSquare(right)) {
 					final long y = (long) Math.sqrt(right);
 					if (y * y == right) {
 						final long factor = PrimeMath.gcd(n, x - y);
@@ -249,17 +253,10 @@ public class LehmanFactorFinderSqrt implements FactorizationOfLongs, FactorFinde
 		return n;
 	}
 
-	protected static boolean isProbableSquare(final long number) {
+	protected static boolean isSquare(final long number) {
 		if (isSquareMod_1024[(int) (number & 1023)]) {
-			// using mod9_5_7_11 instead of hard 3465 coded number causes double run time
-			// the % is expensive, but saves ~ 10% of the time, since the sqrt takes even more time
-			// another mod filter gives not gain, in the YAFU impl it is used
-			if (isSquareMod_9_5_7_11[(int) (number % 3465)])
-			{
-
-				final long y = (long) Math.sqrt(number);
-				return y * y == number;
-			}
+			final long y = (long) Math.sqrt(number);
+			return y * y == number;
 		}
 		return false;
 	}
@@ -276,7 +273,7 @@ public class LehmanFactorFinderSqrt implements FactorizationOfLongs, FactorFinde
 
 	@Override
 	public String toString() {
-		return "LehmanFactorFinderSqrt{" +
+		return "LehmanFactorFinderRange{" +
 				"maxFactorMultiplier=" + maxFactorMultiplier +
 				'}';
 	}

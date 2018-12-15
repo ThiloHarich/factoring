@@ -65,7 +65,7 @@ import factoring.trial.TrialDoubleFact;
  *
  * Created by Thilo Harich on 28.06.2017.
  */
-public class LehmanFactorFinderSqrt implements FactorizationOfLongs, FactorFinder {
+public class LehmanFactorFinderSqrt2 implements FactorizationOfLongs, FactorFinder {
 
 	static double ONE_THIRD = 1.0 / 3;
 	// to be fast to decide if a number is a square we consider the
@@ -140,7 +140,7 @@ public class LehmanFactorFinderSqrt implements FactorizationOfLongs, FactorFinde
 	 *                              - if you know for most of the numbers the maximal factors will exceed 3*n^1/3<br>
 	 *                              In the last case {@link #findFactors(long, Collection)} might return a composite number
 	 */
-	public LehmanFactorFinderSqrt(int bits, float maxFactorMultiplierIn, boolean doTrialFirst) {
+	public LehmanFactorFinderSqrt2(int bits, float maxFactorMultiplierIn, boolean doTrialFirst) {
 		if (bits > 41)
 			throw new IllegalArgumentException("numbers above 41 bits can not be factorized");
 		maxFactorMultiplier = maxFactorMultiplierIn < 1 ? 1 : maxFactorMultiplierIn;
@@ -195,7 +195,7 @@ public class LehmanFactorFinderSqrt implements FactorizationOfLongs, FactorFinde
 		for (int k = 1; k <= kMax; k++)
 		{
 			final double sqrtK = Math.sqrt(k);
-			final double sqrt4kn = sqrtK * sqrt4N;
+			final double sqrt4kn = sqrtK * 2 * sqrtN;
 			// adding a small constant to avoid rounding issues and rounding up is much slower then
 			// using the downcast and adding a constant close to 1. Took the constant from the yafu code
 			int xBegin = (int) (sqrt4kn + ROUND_UP_DOUBLE);
@@ -227,16 +227,17 @@ public class LehmanFactorFinderSqrt implements FactorizationOfLongs, FactorFinde
 					if (y * y == right) {
 						final long factor = PrimeMath.gcd(n, x - y);
 						if (factor != 1) {
-							if (findsPrimesOnly())
-							{
+							// if we have not done trial division first, the factor might be composite -> we just return the factor
+							if (!findsPrimesOnly())
+								return factor;
+							// when maxFactorMultiplier == 1 we have done the trial division first -> the factor
+							// has to be a prime factor, n/factor is of size < n^2/3 and can not be a composite factor
+							else {
 								primeFactors.add(factor);
 								if (n != factor)
 									primeFactors.add(n / factor);
 								return 1;
 							}
-							else
-								// if we have not done trial division first, the factor might be composite -> we just return the factor
-								return factor;
 						}
 					}
 				}

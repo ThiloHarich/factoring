@@ -47,17 +47,17 @@ public class TrialDoubleFact implements FactorizationOfLongs {
 		primesInv = new double [maxPrimeIndex]; //the 6542 primesInv up to 65536=2^16, then sentinel 65535 at end
 		primes = new int [maxPrimeIndex]; //the 6542 primesInv up to 65536=2^16, then sentinel 65535 at end
 		int primeIndex = 0;
-		final boolean [] noPrimes = new boolean [maxFactor];
+		final boolean [] noPrimes = new boolean [maxFactor+1];
 		for (int i = 2; i <= Math.sqrt(maxFactor); i++) {
 			if (!noPrimes[i]) {
 				primes[primeIndex] = i;
 				primesInv[primeIndex++] = 1.0 / i;
 			}
-			for (int j = i * i; j < maxFactor; j += i) {
+			for (int j = i * i; j <= maxFactor; j += i) {
 				noPrimes[j] = true;
 			}
 		}
-		for (int i = (int) (Math.sqrt(maxFactor)+1); i < maxFactor; i++) {
+		for (int i = (int) (Math.sqrt(maxFactor)+1); i <= maxFactor; i++) {
 			if (!noPrimes[i]) {
 				primes[primeIndex] = i;
 				primesInv[primeIndex++] = 1.0 / i;
@@ -82,17 +82,17 @@ public class TrialDoubleFact implements FactorizationOfLongs {
 
 	@Override
 	public long findFactors(long n, Collection<Long> primeFactors) {
-		final double nD = n;
+		double nD = n;
 		for (int primeIndex = 1; primes[primeIndex] <= maxFactor; primeIndex++) {
 			double nDivPrime = nD * primesInv[primeIndex];
 			if (primes[primeIndex] == 0)
 				System.out.println();
 			// TODO choose the precision factor with respect to the maxFactor, if we are close to 52 bits
-			while (Math.abs(Math.round(nDivPrime) - nDivPrime) < 0.001 && n % primes[primeIndex] == 0) {
+			while (Math.abs(Math.round(nDivPrime) - nDivPrime) < 0.001 && nD > 1.0 && nD % primes[primeIndex] == 0) {
 				if (primeFactors == null)
 					return primes[primeIndex];
 				primeFactors.add((long) primes[primeIndex]);
-				n = Math.round(nDivPrime);
+				nD = Math.round(nDivPrime);
 				//				// if the remainder n is lower then the maximal prime factor and it can not be split it must also
 				//				// be prime factor
 				//				if (n < maxFactor && n*n > maxFactor) {
@@ -100,10 +100,10 @@ public class TrialDoubleFact implements FactorizationOfLongs {
 				//					return 1;
 				//				}
 
-				nDivPrime = n*primesInv[primeIndex];
+				nDivPrime = nD*primesInv[primeIndex];
 			}
 		}
-		return n;
+		return (long) nD;
 	}
 
 

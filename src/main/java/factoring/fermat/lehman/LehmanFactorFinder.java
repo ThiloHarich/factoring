@@ -5,7 +5,7 @@ import java.util.Collection;
 import factoring.FactorFinder;
 import factoring.FactorizationOfLongs;
 import factoring.math.PrimeMath;
-import factoring.trial.TrialDoubleFact;
+import factoring.trial.variant.TrialInvFact;
 
 /**
  * This is a version of the lehman factorization, which is a variant of the fermat
@@ -143,7 +143,7 @@ public class LehmanFactorFinder implements FactorizationOfLongs, FactorFinder {
 		maxFactorMultiplier = maxFactorMultiplierIn < 1 ? 1 : maxFactorMultiplierIn;
 		maxTrialFactor = (int) Math.ceil(maxFactorMultiplier * Math.pow(1L << bits, ONE_THIRD));
 		maxFactorMultiplierCube = maxFactorMultiplier * maxFactorMultiplier * maxFactorMultiplier;
-		smallFactoriser = new TrialDoubleFact(maxTrialFactor);
+		smallFactoriser = new TrialInvFact(maxTrialFactor);
 		this.doTrialFirst = doTrialFirst;
 		initSquares();
 	}
@@ -237,17 +237,16 @@ public class LehmanFactorFinder implements FactorizationOfLongs, FactorFinder {
 					if (y * y == right) {
 						final long factor = PrimeMath.gcd(n, x - y);
 						if (factor != 1) {
-							// if we have not done trial division first, the factor might be composite -> we just return the factor
-							if (!findsPrimesOnly())
-								return factor;
-							// when maxFactorMultiplier == 1 we have done the trial division first -> the factor
-							// has to be a prime factor, n/factor is of size < n^2/3 and can not be a composite factor
-							else {
+							if (findsPrimesOnly())
+							{
 								primeFactors.add(factor);
 								if (n != factor)
 									primeFactors.add(n / factor);
 								return 1;
 							}
+							else
+								// if we have not done trial division first, the factor might be composite -> we just return the factor
+								return factor;
 						}
 					}
 				}
@@ -276,7 +275,7 @@ public class LehmanFactorFinder implements FactorizationOfLongs, FactorFinder {
 
 	@Override
 	public boolean findsPrimesOnly(){
-		return maxFactorMultiplier <= 1;
+		return doTrialFirst;
 	}
 
 	@Override

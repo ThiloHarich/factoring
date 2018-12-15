@@ -5,7 +5,7 @@ import java.util.Collection;
 import factoring.FactorFinder;
 import factoring.FactorizationOfLongs;
 import factoring.math.PrimeMath;
-import factoring.trial.TrialDoubleFact;
+import factoring.trial.variant.TrialInvFact;
 
 /**
  * This is a version of the lehman factorization, which is a variant of the fermat
@@ -157,7 +157,7 @@ public class LehmanFactorFinderMod12 implements FactorizationOfLongs {
 		this.maxTrialFactorMultiplier = maxTrialFactorMultiplier < 1 ? 1 : maxTrialFactorMultiplier;
 		maxTrialFactor = (int) Math.ceil(this.maxTrialFactorMultiplier * Math.pow(1L << bits, ONE_THIRD));
 		maxTrialFactorMultiplierCube = this.maxTrialFactorMultiplier * this.maxTrialFactorMultiplier * this.maxTrialFactorMultiplier;
-		smallFactoriser = new TrialDoubleFact(maxTrialFactor);
+		smallFactoriser = new TrialInvFact(maxTrialFactor);
 		this.doTrialFirst = doTrialFirst;
 		initSquares();
 	}
@@ -277,16 +277,15 @@ public class LehmanFactorFinderMod12 implements FactorizationOfLongs {
 						if (y * y == right) {
 							final long factor = PrimeMath.gcd(n, x - y);
 							if (factor != 1) {
-								if (primeFactors == null || maxTrialFactorMultiplier > 1)
-									return factor;
-								// when maxFactorMultiplier == 1 we have done the trial division first -> the factor
-								// has to be a prime factor, n/factor is of size < n^2/3 and can not be a composite factor
-								else {
+								if (findsPrimesOnly())
+								{
 									primeFactors.add(factor);
 									if (n != factor)
 										primeFactors.add(n / factor);
 									return 1;
 								}
+								else
+									return factor;
 							}
 						}
 					}
@@ -308,8 +307,8 @@ public class LehmanFactorFinderMod12 implements FactorizationOfLongs {
 			// using mod9_5_7_11 instead of hard 3465 coded number causes double run time
 			// the % is expensive, but saves ~ 10% of the time, since the sqrt takes even more time
 			// another mod filter gives not gain, in the YAFU impl it is used
-			if (isSquareMod_9_5_7_11[(int) (number % 3465)]) {
-
+			if (isSquareMod_9_5_7_11[(int) (number % 3465)])
+			{
 				final long y = (long) Math.sqrt(number);
 				return y * y == number;
 			}
@@ -318,7 +317,7 @@ public class LehmanFactorFinderMod12 implements FactorizationOfLongs {
 	}
 	@Override
 	public boolean findsPrimesOnly(){
-		return maxTrialFactorMultiplier <= 1;
+		return doTrialFirst;
 	}
 
 	@Override

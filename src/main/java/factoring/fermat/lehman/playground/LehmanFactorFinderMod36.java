@@ -7,7 +7,7 @@ import java.util.Collection;
 import factoring.FactorFinder;
 import factoring.FactorizationOfLongs;
 import factoring.math.PrimeMath;
-import factoring.trial.TrialDoubleFact;
+import factoring.trial.variant.TrialInvFact;
 
 /**
  * if the smallest factor is near n^1/2 we might use
@@ -203,7 +203,7 @@ public class LehmanFactorFinderMod36 implements FactorizationOfLongs {
 		maxFactorMultiplier = maxFactorMultiplierIn < 1 ? 1 : maxFactorMultiplierIn;
 		maxTrialFactor = (int) Math.ceil(maxFactorMultiplier * Math.pow(1L << bits, ONE_THIRD));
 		maxFactorMultiplierCube = maxFactorMultiplier * maxFactorMultiplier * maxFactorMultiplier;
-		smallFactoriser = new TrialDoubleFact(maxTrialFactor);
+		smallFactoriser = new TrialInvFact(maxTrialFactor);
 		initSquares();
 	}
 

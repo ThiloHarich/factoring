@@ -7,11 +7,10 @@ import org.junit.Test;
 
 import de.tilman_neumann.jml.factor.FactorAlgorithm;
 import de.tilman_neumann.jml.factor.FactorAlgorithmBase;
-import de.tilman_neumann.jml.factor.lehman.Lehman;
 import de.tilman_neumann.jml.factor.squfof.SquFoF63;
-import factoring.fermat.lehman.LehmanFactorFinderSqrt;
+import factoring.fermat.lehman.LehmanFactorFinder;
+import factoring.fermat.lehman.LehmanFactorFinderRange;
 import factoring.fermat.lehman.LehmanFactorization;
-import factoring.fermat.lehman.playground.LehmanFactorFinderMod60;
 import factoring.rho.PollardRhoBrentDouble52;
 import factoring.rho.variants.PollardRhoBrentDouble;
 import factoring.rho.variants.PollardRhoBrentProd;
@@ -25,52 +24,121 @@ public class PerformanceTest {
 	@Test
 	public void testPerfHard(){
 		// based on the the second biggest factor
-		// 17 Bits TrialInvFact is the fastest
+		// 15 Bits TrialDoubleFact is the fastest
 		// 31 Bits SquFoF31
+		// 4x Bits Lehman
 
 		final int bits = 40;
-		final int numPrimes = 1450;
-		final int loop = 30;
+		final int numPrimes = 945;
+		final int loop = 40;
 		final int smallFactorBits = bits / 2;
 		final long[] semiprimes = makeSemiPrimesList(bits, smallFactorBits, numPrimes);
 
 		System.out.println("finished making hard numbers");
 		final long start = System.currentTimeMillis();
-		final Lehman factorizer3 = new Lehman(2);
-		final FactorizationOfLongs factorizer1 = new LehmanFactorFinderMod60(bits, 3.2f);
-		//		final FactorizationOfLongs factorizer1 = new LehmanFactorFinderSqrt(bits, 3.2f, false);
+		//		final SquFoF63 factorizer1 = new SquFoF63();
+		//		final Lehman factorizer3 = new Lehman(2);
+		FactorizationOfLongs factorizer;
+		//		factorizer = new LehmanFactorFinder(bits, 2.5f, false);
+		factorizer = new LehmanFactorFinderRange(bits, 2.5f, false);
+		//		final FactorizationOfLongs factorizer3 = new TrialInvFact(1 << (40/3));
 
 		final long end = System.currentTimeMillis();
 		System.out.println("time for setup : " + (end - start));
-		final FactorizationOfLongs factorizer2 = new LehmanFactorFinderSqrt(bits,3.2f, false);
-		//		final FactorizationOfLongs factorizer2 = new PollardRhoBrentDouble52();
-		//        final FactorizationOfLongs factorizer2 = new LehmanYafuFact(5.8f);
-		//		final FactorizationOfLongs factorizer2 = new LehmanFactorization(bits, .5f);
-		//		final FactorizationOfLongs factorizer3 = new TrialInvFact(1 << smallFactorBits);
 
+		final long time1 = findFactors(factorizer, semiprimes, loop, 1l);
+		findFactors(factorizer, semiprimes, loop, time1);
+		//		findFactors(factorizer3, semiprimes, loop, time1);
 
-		final long time1 = findFactors(factorizer1, semiprimes, loop, 1l);
-		findFactors(factorizer2, semiprimes, loop, time1);
-		findFactors(factorizer3, semiprimes, loop, time1);
+		final long time2 = findFactors(factorizer, semiprimes, loop, time1);
+		//		factorizer = new LehmanFactorFinderRange(bits, 2.5f, false);
+		findFactors(factorizer, semiprimes, loop, time2);
+		//		findFactors(factorizer3, semiprimes, loop, time2);
+		//		factorizer = new LehmanFactorFinderRange(bits, 2.5f, false);
+		final long time3 = findFactors(factorizer, semiprimes, loop, time2);
+		factorizer = new LehmanFactorFinderRange(bits, 2.5f, false);
+		//		factorizer = new LehmanFactorFinder(bits, 2.5f, false);
 
-		final long time2 = findFactors(factorizer1, semiprimes, loop, time1);
-		findFactors(factorizer2, semiprimes, loop, time2);
-		findFactors(factorizer3, semiprimes, loop, time2);
+		findFactors(factorizer, semiprimes, loop, time3);
+		findFactors(factorizer, semiprimes, loop, time3);
 
-		final long time3 = findFactors(factorizer1, semiprimes, loop, time2);
-		findFactors(factorizer2, semiprimes, loop, time3);
-		findFactors(factorizer3, semiprimes, loop, time3);
+		//		factorizer = new LehmanFactorFinderRange(bits, 2.5f, false);
+		factorizer = new LehmanFactorFinder(bits, 2.5f, false);
+		findFactors(factorizer, semiprimes, loop, time3);
+		//		factorizer = new LehmanFactorFinderRange(bits, 2.5f, false);
+		findFactors(factorizer, semiprimes, loop, time3);
+		findFactors(factorizer, semiprimes, loop, time3);
+		//		findFactors(factorizer3, semiprimes, loop, time3);
 
-		final long time4 = findFactors(factorizer1, semiprimes, loop, time3);
-		findFactors(factorizer2, semiprimes, loop, time4);
-		findFactors(factorizer3, semiprimes, loop, time4);
+		factorizer = new LehmanFactorFinderRange(bits, 2.5f, false);
+		//		factorizer = new LehmanFactorFinder(bits, 2.5f, false);
+
+		findFactors(factorizer, semiprimes, loop, time3);
+		findFactors(factorizer, semiprimes, loop, time3);
+
+	}
+	@Test
+	public void testPerfHard2(){
+		// based on the the second biggest factor
+		// 15 Bits TrialDoubleFact is the fastest
+		// 31 Bits SquFoF31
+		// 4x Bits Lehman
+
+		final int bits = 40;
+		final int numPrimes = 945;
+		final int loop = 40;
+		final int smallFactorBits = bits / 2;
+		final long[] semiprimes = makeSemiPrimesList(bits, smallFactorBits, numPrimes);
+
+		System.out.println("finished making hard numbers");
+		final long start = System.currentTimeMillis();
+		//		final SquFoF63 factorizer1 = new SquFoF63();
+		//		final Lehman factorizer3 = new Lehman(2);
+		FactorizationOfLongs factorizer;
+		factorizer = new LehmanFactorFinder(bits, 2.5f, false);
+		//		factorizer = new LehmanFactorFinderRange(bits, 2.5f, false);
+		//		final FactorizationOfLongs factorizer3 = new TrialInvFact(1 << (40/3));
+
+		final long end = System.currentTimeMillis();
+		System.out.println("time for setup : " + (end - start));
+
+		final long time1 = findFactors(factorizer, semiprimes, loop, 1l);
+		findFactors(factorizer, semiprimes, loop, time1);
+		//		findFactors(factorizer3, semiprimes, loop, time1);
+
+		final long time2 = findFactors(factorizer, semiprimes, loop, time1);
+		//		factorizer = new LehmanFactorFinderRange(bits, 2.5f, false);
+		findFactors(factorizer, semiprimes, loop, time2);
+		//		findFactors(factorizer3, semiprimes, loop, time2);
+		//		factorizer = new LehmanFactorFinderRange(bits, 2.5f, false);
+		final long time3 = findFactors(factorizer, semiprimes, loop, time2);
+		//		factorizer = new LehmanFactorFinderRange(bits, 2.5f, false);
+		factorizer = new LehmanFactorFinder(bits, 2.5f, false);
+
+		findFactors(factorizer, semiprimes, loop, time3);
+		findFactors(factorizer, semiprimes, loop, time3);
+
+		factorizer = new LehmanFactorFinderRange(bits, 2.5f, false);
+		//		factorizer = new LehmanFactorFinder(bits, 2.5f, false);
+		findFactors(factorizer, semiprimes, loop, time3);
+		//		factorizer = new LehmanFactorFinderRange(bits, 2.5f, false);
+		findFactors(factorizer, semiprimes, loop, time3);
+		findFactors(factorizer, semiprimes, loop, time3);
+		//		findFactors(factorizer3, semiprimes, loop, time3);
+
+		//		factorizer = new LehmanFactorFinderRange(bits, 2.5f, false);
+		factorizer = new LehmanFactorFinder(bits, 2.5f, false);
+
+		findFactors(factorizer, semiprimes, loop, time3);
+		findFactors(factorizer, semiprimes, loop, time3);
+
 	}
 
 	@Test
 	public void testPerfOneThird(){
 		final int bits = 50;
-		final int numPrimes = 164;
-		final int loop = 20;
+		final int numPrimes = 16;
+		final int loop = 500;
 		final int smallFactorBits = bits / 3+2;
 		final long[] semiprimes = makeSemiPrimesList(bits, smallFactorBits, numPrimes);
 
@@ -100,6 +168,10 @@ public class PerformanceTest {
 		findFactors(factorizer3, semiprimes, loop, time3);
 
 		final long time4 = findFactors(factorizer1, semiprimes, loop, time3);
+		findFactors(factorizer2, semiprimes, loop, time4);
+		findFactors(factorizer3, semiprimes, loop, time4);
+
+		final long time5 = findFactors(factorizer1, semiprimes, loop, time3);
 		findFactors(factorizer2, semiprimes, loop, time4);
 		findFactors(factorizer3, semiprimes, loop, time4);
 

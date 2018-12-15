@@ -310,16 +310,16 @@ public class LehmanFactorFinderStep8Mod3 implements FactorizationOfLongs {
 						if (y * y == right) {
 							final long factor = PrimeMath.gcd(n, x - y);
 							if (factor != 1) {
-								if (primeFactors == null || maxFactorMultiplier > 1)
-									return factor;
-								// when maxFactorMultiplier == 1 we have done the trial division first -> the factor
-								// has to be a prime factor, n/factor is of size < n^2/3 and can not be a composite factor
-								else {
+								if (findsPrimesOnly())
+								{
 									primeFactors.add(factor);
 									if (n != factor)
 										primeFactors.add(n / factor);
 									return 1;
 								}
+								else
+									// if we have not done trial division first, the factor might be composite -> we just return the factor
+									return factor;
 							}
 						}
 					}
