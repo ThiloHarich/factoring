@@ -6,7 +6,7 @@ import java.util.Random;
 import org.junit.Test;
 
 import de.tilman_neumann.jml.factor.FactorAlgorithmBase;
-import de.tilman_neumann.jml.factor.lehman.Lehman_TDivLast;
+import de.tilman_neumann.jml.factor.squfof.SquFoF63;
 
 //import de.tilman_neumann.math.factor.CombinedFactorAlgorithm;
 //import de.tilman_neumann.math.factor.FactorAlgorithm;
@@ -20,7 +20,8 @@ public class PerformanceHard {
 	static long[] semiprimes;
 
 	public static void main(String[] args) {
-		final FactorAlgorithmBase factorizer3 = new Lehman_TDivLast(1);
+		//		final FactorAlgorithmBase factorizer3 = new Lehman_TDivLast(1);
+		final FactorAlgorithmBase factorizer3 = new SquFoF63();
 		//		final FactorizationOfLongs factorizer1 = new LehmanFactorFinderMod12(bits, 2.f, false);
 		//		final FactorizationOfLongs factorizer2 = new LehmanFactorFinder(bits, 2.f, false);
 		//		final FactorizationOfLongs factorizer1 = new LehmanFactorFinderRange(bits, 1.f, false);
