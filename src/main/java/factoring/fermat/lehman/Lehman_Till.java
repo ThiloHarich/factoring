@@ -88,20 +88,20 @@ public class Lehman_Till extends FactorAlgorithmBase {
 
 		// 1. Main loop for small k, where we can have more than 1 a-value
 		final int kLimit = (int) cbrt;
-		// For kLimit / 64 the range for a is at most 2
+		// For kLimit / 64 the range for a is at most 2, this is what we want to have
 		final int kMedium = kLimit >> 6;
 		//LOG.debug("kLimit = " + kLimit);
 		final long fourN = N<<2;
 		final double sqrt4N = Math.sqrt(fourN);
 		final double sixthRootTerm = 0.25 * Math.pow(N, 1/6.0); // double precision is required for stability
 		int k=1;
-		for (; k <= kMedium; k++) {
+		long kn = N;
+		for (; k <= kMedium; k++, kn += N) {
 			final double sqrt4kN = sqrt4N * sqrt[k];
 			// only use long values
 			final long aStart = (long) (sqrt4kN + ROUND_UP_DOUBLE); // much faster than ceil() !
 			long aLimit = (long) (sqrt4kN + sixthRootTerm * sqrtInv[k]);
 			long aStep;
-			final long kn = k * N;
 			if ((k & 1) == 0) {
 				// k even -> make sure aLimit is odd
 				aLimit |= 1l;
@@ -132,8 +132,7 @@ public class Lehman_Till extends FactorAlgorithmBase {
 		}
 
 		// 2. continue main loop for larger k, where we can have only 2 a-value per k
-		for ( ; k <= kLimit; k++) {
-			final long kn = k * N;
+		for ( ; k <= kLimit; k++, kn += N) {
 			long a = (long) (sqrt4N * sqrt[k] + ROUND_UP_DOUBLE);
 			if ((k&1)==0) {
 				// k even -> make sure aLimit is odd
