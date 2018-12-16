@@ -156,7 +156,7 @@ public class Lehman_Till extends FactorAlgorithmBase {
 					}
 				}
 
-				// 3. continue main loop for larger odd k
+				//				 3. continue main loop for larger odd k
 				int k2 = k + 1;
 				for ( ; k2 <= kLimit; k2 += 2) {
 					kn = k2 * N;
