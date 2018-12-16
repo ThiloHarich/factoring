@@ -88,8 +88,9 @@ public class Lehman_Till extends FactorAlgorithmBase {
 
 		// 1. Main loop for small k, where we can have more than 1 a-value
 		final int kLimit = (int) cbrt;
-		// For kLimit / 64 the range for a is at most 2, this is what we want to have
-		final int kMedium = kLimit >> 6;
+		// For kLimit / 64 the range for a is at most 2, this is what we can ensure
+		// make it odd
+		final int kMedium = (kLimit >> 6 - 1) | 1;
 		//LOG.debug("kLimit = " + kLimit);
 		final long fourN = N<<2;
 		final double sqrt4N = Math.sqrt(fourN);
@@ -131,21 +132,32 @@ public class Lehman_Till extends FactorAlgorithmBase {
 			}
 		}
 
-		// 2. continue main loop for larger k, where we can have only 2 a-value per k
-		for ( ; k <= kLimit; k++, kn += N) {
-			long a = (long) (sqrt4N * sqrt[k] + ROUND_UP_DOUBLE);
-			if ((k&1)==0) {
-				// k even -> make sure aLimit is odd
-				a |= 1l;
-			}
-			else {
-				if ((kn & 3) == 3) {
-					a += (int) ((7 - kn - a) & 7);
-				} else
-				{
-					a += (int) ((k + N - a) & 3);
+		// 2. continue main loop for larger even k, where we can have only 2 a-value per k
+		int k1 = k;
+		for ( ; k1 <= kLimit; k1+=2) {
+			final long a = (long) (sqrt4N * sqrt[k1] + ROUND_UP_DOUBLE) | 1l;
+			final long test = a*a - k1 * fourN;
+			if (isSquareMod1024[(int) (test & 1023)]) {
+				final long b = (long) Math.sqrt(test);
+				if (b*b == test) {
+					return gcdEngine.gcd(a+b, N);
 				}
 			}
+		}
+
+		// 2. continue main loop for larger odd k
+		// TODO can be optimized since not all solutions are possible
+		int k2 = k + 1;
+		for ( ; k2 <= kLimit; k2 += 2) {
+			kn = k2 * N;
+			long a = (long) (sqrt4N * sqrt[k2] + ROUND_UP_DOUBLE);
+			if ((kn & 3) == 3) {
+				a += (int) ((7 - kn - a) & 7);
+			} else
+			{
+				a += (int) ((k2 + N - a) & 3);
+			}
+			//			final long test = a*a - (kn << 2);
 			final long test = a*a - (kn << 2);
 			if (isSquareMod1024[(int) (test & 1023)]) {
 				final long b = (long) Math.sqrt(test);
@@ -155,7 +167,7 @@ public class Lehman_Till extends FactorAlgorithmBase {
 			}
 		}
 
-		// 3. Check via trial division whether N has a nontrivial divisor d <= cbrt(N), and if so, return d.
+		// 4. Check via trial division whether N has a nontrivial divisor d <= cbrt(N), and if so, return d.
 		final int tDivLimit = (int) (tDivLimitMultiplier*cbrt);
 		int i=0, p;
 		while ((p = SMALL_PRIMES.getPrime(i++)) <= tDivLimit) {
