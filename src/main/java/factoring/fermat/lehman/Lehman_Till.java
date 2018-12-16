@@ -97,17 +97,18 @@ public class Lehman_Till extends FactorAlgorithmBase {
 		int k=1;
 		for (; k <= kMedium; k++) {
 			final double sqrt4kN = sqrt4N * sqrt[k];
-			final int aStart = (int) (sqrt4kN + ROUND_UP_DOUBLE); // much faster than ceil() !
+			// only use long values
+			final long aStart = (long) (sqrt4kN + ROUND_UP_DOUBLE); // much faster than ceil() !
 			long aLimit = (long) (sqrt4kN + sixthRootTerm * sqrtInv[k]);
-			long aStep = 1;
+			long aStep;
 			final long kn = k * N;
-			if ((k&1)==0) {
+			if ((k & 1) == 0) {
 				// k even -> make sure aLimit is odd
 				aLimit |= 1l;
 				aStep = 2;
 			} else {
 				// this extra case gives ~ 5 %
-				if (kn % 4 == 3) {
+				if ((kn & 3) == 3) {
 					aStep = 8;
 					aLimit = (int) (aLimit + ((7 - kn - aLimit) & 7));
 				} else
@@ -120,7 +121,7 @@ public class Lehman_Till extends FactorAlgorithmBase {
 			// processing the a-loop top-down is faster than bottom-up
 			//			final long fourKN = k*fourN;
 			for (long a=aLimit; a >= aStart; a-=aStep) {
-				final long test = a*a - kn * 4;
+				final long test = a*a - (kn << 2);
 				if (isSquareMod1024[(int) (test & 1023)]) {
 					final long b = (long) Math.sqrt(test);
 					if (b*b == test) {
@@ -139,14 +140,14 @@ public class Lehman_Till extends FactorAlgorithmBase {
 				a |= 1l;
 			}
 			else {
-				if (kn % 4 == 3) {
+				if ((kn & 3) == 3) {
 					a = (int) (a + ((7 - kn - a) & 7));
 				} else
 				{
 					a = (int) (a + ((k + N - a) & 3));
 				}
 			}
-			final long test = a*a - k*fourN;
+			final long test = a*a - (kn << 2);
 			if (isSquareMod1024[(int) (test & 1023)]) {
 				final long b = (long) Math.sqrt(test);
 				if (b*b == test) {
