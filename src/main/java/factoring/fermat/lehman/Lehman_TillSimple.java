@@ -29,8 +29,8 @@ import de.tilman_neumann.jml.gcd.Gcd63;
  *
  * @author Tilman Neumann
  */
-public class Lehman_Till extends FactorAlgorithmBase {
-	private static final Logger LOG = Logger.getLogger(Lehman_Till.class);
+public class Lehman_TillSimple extends FactorAlgorithmBase {
+	private static final Logger LOG = Logger.getLogger(Lehman_TillSimple.class);
 
 	/** This is a constant that is below 1 for rounding up double values to long. */
 	private static final double ROUND_UP_DOUBLE = 0.9999999665;
@@ -52,7 +52,7 @@ public class Lehman_Till extends FactorAlgorithmBase {
 
 	private double[] sqrt, sqrtInv;
 
-	public Lehman_Till(float tDivLimitMultiplier) {
+	public Lehman_TillSimple(float tDivLimitMultiplier) {
 		this.tDivLimitMultiplier = tDivLimitMultiplier;
 		SMALL_PRIMES.ensurePrimeCount(10000); // for tDivLimitMultiplier ~ 2 we need more than 4793 primes
 		initSqrts();
@@ -89,16 +89,14 @@ public class Lehman_Till extends FactorAlgorithmBase {
 		// 1. Main loop for small k, where we can have more than four a-value
 
 		final int kLimit = (int) cbrt;
-		// For kLimit / 64 the range for a is at most 4, this is what we can ensure
+		// For kLimit / 64 the range for a is at most 2, this is what we can ensure
 		// make it odd
-		final int fourA = (kLimit >> 8 - 1) | 1;
-		//LOG.debug("kLimit = " + kLimit);
+		final int fourA = (kLimit >> 6 - 1) | 1;
 		final long fourN = N<<2;
 		final double sqrt4N = Math.sqrt(fourN);
 		final double sixthRootTerm = 0.25 * Math.pow(N, 1/6.0); // double precision is required for stability
 		int k=1;
-		long kn = N;
-		for (; k <= fourA; k++, kn += N) {
+		for (; k <= fourA; k++) {
 			final double sqrt4kN = sqrt4N * sqrt[k];
 			// only use long values
 			final long aStart = (long) (sqrt4kN + ROUND_UP_DOUBLE); // much faster than ceil() !
@@ -109,6 +107,7 @@ public class Lehman_Till extends FactorAlgorithmBase {
 				aLimit |= 1l;
 				aStep = 2;
 			} else {
+				final long kn = k*N;
 				// this extra case gives ~ 5 %
 				if ((kn & 3) == 3) {
 					aStep = 8;
@@ -122,7 +121,8 @@ public class Lehman_Till extends FactorAlgorithmBase {
 
 			// processing the a-loop top-down is faster than bottom-up
 			for (long a=aLimit; a >= aStart; a-=aStep) {
-				final long test = a*a - (kn << 2);
+				//				final long test = a*a - (kn << 2);
+				final long test = a*a - k * fourN;
 				if (isSquareMod1024[(int) (test & 1023)]) {
 					final long b = (long) Math.sqrt(test);
 					if (b*b == test) {
@@ -132,58 +132,39 @@ public class Lehman_Till extends FactorAlgorithmBase {
 			}
 		}
 		// 2. continue main loop for larger even k, where we can have only 4 a values per k
-		final int twoA = kLimit >> 6;
-				for (int k1 = k; k1 <= kLimit; k1+=2) {
-					long a = (long) (sqrt4N * sqrt[k1] + ROUND_UP_DOUBLE) | 1l;
-					long test = a*a - k1 * fourN;
-					if (isSquareMod1024[(int) (test & 1023)]) {
-						final long b = (long) Math.sqrt(test);
-						if (b*b == test) {
-							return gcdEngine.gcd(a+b, N);
-						}
-					}
-					// for smaller k there might be two a values within the limit
-					if (k1 <= twoA)
-					{
-						a += 2;
-						test = a*a - k1 * fourN;
-						if (isSquareMod1024[(int) (test & 1023)]) {
-							final long b = (long) Math.sqrt(test);
-							if (b*b == test) {
-								return gcdEngine.gcd(a+b, N);
-							}
-						}
-					}
+		for (int k1 = k; k1 <= kLimit; k1+=2) {
+			final long a = (long) (sqrt4N * sqrt[k1] + ROUND_UP_DOUBLE) | 1;
+			final long test = a*a - k1 * fourN;
+			if (isSquareMod1024[(int) (test & 1023)]) {
+				final long b = (long) Math.sqrt(test);
+				if (b*b == test) {
+					return gcdEngine.gcd(a+b, N);
 				}
+			}
+		}
 
-				//				 3. continue main loop for larger odd k
-				int k2 = k + 1;
-				for ( ; k2 <= kLimit; k2 += 2) {
-					kn = k2 * N;
-					long a = (long) (sqrt4N * sqrt[k2] + ROUND_UP_DOUBLE);
-					if ((kn & 3) == 3) {
-						a += ((7 - kn - a) & 7);
-					} else
-					{
-						a += ((k2 + N - a) & 3);
-					}
-					final long test = a*a - (kn << 2);
-					if (isSquareMod1024[(int) (test & 1023)]) {
-						final long b = (long) Math.sqrt(test);
-						if (b*b == test) {
-							return gcdEngine.gcd(a+b, N);
-						}
-					}
+		// 3. continue main loop for larger odd k
+		int k2 = k + 1;
+		for ( ; k2 <= kLimit; k2 += 2) {
+			long a = (long) (sqrt4N * sqrt[k2] + ROUND_UP_DOUBLE);
+			a += (k2 + N - a) & 3;
+			final long test = a*a - k2 * fourN;
+			if (isSquareMod1024[(int) (test & 1023)]) {
+				final long b = (long) Math.sqrt(test);
+				if (b*b == test) {
+					return gcdEngine.gcd(a+b, N);
 				}
+			}
+		}
 
-				// 4. Check via trial division whether N has a nontrivial divisor d <= cbrt(N), and if so, return d.
-				final int tDivLimit = (int) (tDivLimitMultiplier*cbrt);
-				int i=0, p;
-				while ((p = SMALL_PRIMES.getPrime(i++)) <= tDivLimit) {
-					if (N%p==0) return p;
-				}
+		// 4. Check via trial division whether N has a nontrivial divisor d <= cbrt(N), and if so, return d.
+		final int tDivLimit = (int) (tDivLimitMultiplier*cbrt);
+		int i=0, p;
+		while ((p = SMALL_PRIMES.getPrime(i++)) <= tDivLimit) {
+			if (N%p==0) return p;
+		}
 
-				// Nothing found. Either N is prime or the algorithm didn't work because N > 45 bit.
-				return 0;
+		// Nothing found. Either N is prime or the algorithm didn't work because N > 45 bit.
+		return 0;
 	}
 }
