@@ -110,11 +110,11 @@ public class Lehman_Till extends FactorAlgorithmBase {
 				// this extra case gives ~ 5 %
 				if ((kn & 3) == 3) {
 					aStep = 8;
-					aLimit = (int) (aLimit + ((7 - kn - aLimit) & 7));
+					aLimit += (int) ((7 - kn - aLimit) & 7);
 				} else
 				{
 					aStep = 4;
-					aLimit = (int) (aLimit + ((k + N - aLimit) & 3));
+					aLimit += (int) ((k + N - aLimit) & 3);
 				}
 			}
 
@@ -140,10 +140,10 @@ public class Lehman_Till extends FactorAlgorithmBase {
 			}
 			else {
 				if ((kn & 3) == 3) {
-					a = (int) (a + ((7 - kn - a) & 7));
+					a += (int) ((7 - kn - a) & 7);
 				} else
 				{
-					a = (int) (a + ((k + N - a) & 3));
+					a += (int) ((k + N - a) & 3);
 				}
 			}
 			final long test = a*a - (kn << 2);
