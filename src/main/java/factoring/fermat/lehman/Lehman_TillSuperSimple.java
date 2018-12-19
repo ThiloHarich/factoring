@@ -35,15 +35,6 @@ public class Lehman_TillSuperSimple extends FactorAlgorithmBase {
 	/** This is a constant that is below 1 for rounding up double values to long. */
 	private static final double ROUND_UP_DOUBLE = 0.9999999665;
 
-	private static final boolean[] isSquareMod1024 = isSquareMod1024();
-
-	private static boolean[] isSquareMod1024() {
-		final boolean[] isSquareMod_1024 = new boolean[1024];
-		for (int i = 0; i < 1024; i++) {
-			isSquareMod_1024[(i * i) & 1023] = true;
-		}
-		return isSquareMod_1024;
-	}
 
 	private final Gcd63 gcdEngine = new Gcd63();
 
@@ -55,7 +46,7 @@ public class Lehman_TillSuperSimple extends FactorAlgorithmBase {
 
 	private void initSqrts() {
 		// precompute sqrts for all possible k. Requires ~ (tDivLimitMultiplier*2^15) entries.
-		final int kMax = (int) (Math.cbrt(1L<<45) + 1);
+		final int kMax = (int) (6*Math.cbrt(1L<<45) + 1);
 		//LOG.debug("kMax = " + kMax);
 
 		sqrt = new double[kMax + 1];
@@ -64,6 +55,7 @@ public class Lehman_TillSuperSimple extends FactorAlgorithmBase {
 			sqrt[i] = sqrtI;
 		}
 	}
+
 
 	@Override
 	public String getName() {
@@ -76,46 +68,45 @@ public class Lehman_TillSuperSimple extends FactorAlgorithmBase {
 	}
 
 	public long findSingleFactor(long N) {
+		final int kLimit = (int)  Math.ceil(Math.cbrt(N));;
+
 		final long fourN = N<<2;
 		final double sqrt4N = Math.sqrt(fourN);
 
-		long a1 = (long) (sqrt4N  + ROUND_UP_DOUBLE);
-		a1 += ((1 + N - a1) & 3);
+		long aForK1 = (long) (sqrt4N  + ROUND_UP_DOUBLE);
+		long aStep;
+		if ((N & 3) == 3) {
+			aStep = 8;
+			aForK1 += ((7 - N - aForK1) & 7);
+		} else
+		{
+			aStep = 4;
+			aForK1 += ((1 + N - aForK1) & 3);
+		}
 
-		int k = 2;
-		for (; k < sqrt.length; k+=2, a1 += 4) {
+
+		// we have to increase kLimit here, because for each k we only take one a
+		for (int k=2; k < 6*kLimit; k+=2) {
 			final long a = (long) (sqrt4N * sqrt[k] + ROUND_UP_DOUBLE) | 1;
 			long test = a*a - k * fourN;
-			if (isSquareMod1024[(int) (test & 1023)]) {
-				final long b = (long) Math.sqrt(test);
-				if (b*b == test) {
-					return gcdEngine.gcd(a+b, N);
-				}
+			long b = (long) Math.sqrt(test);
+			if (b*b == test) {
+				return gcdEngine.gcd(a+b, N);
 			}
-			test = a1*a1 - fourN;
-			if (isSquareMod1024[(int) (test & 1023)]) {
-				final long b = (long) Math.sqrt(test);
-				if (b*b == test) {
-					return gcdEngine.gcd(a+b, N);
-				}
+			// Here k is always 1 and we increase a by aStep.
+			test = aForK1*aForK1 - fourN;
+			b = (long) Math.sqrt(test);
+			if (b*b == test) {
+				return gcdEngine.gcd(aForK1+b, N);
 			}
+			aForK1 += aStep;
 		}
-		//		for (; ; k+=1) {
-		//			final long a = (long) (Math.sqrt((N << 2) * k) + ROUND_UP_DOUBLE);
-		//			final long test = a*a - k * fourN;
-		//			if (isSquareMod1024[(int) (test & 1023)]) {
-		//				final long b = (long) Math.sqrt(test);
-		//				if (b*b == test) {
-		//					return gcdEngine.gcd(a+b, N);
-		//				}
-		//			}
-		//		}
-		// 4. Check via trial division whether N has a nontrivial divisor d <= cbrt(N), and if so, return d.
-		//		final int tDivLimit = (int) (Math.cbrt(N));
-		//		int i=0, p;
-		//		while ((p = SMALL_PRIMES.getPrime(i++)) <= tDivLimit) {
-		//			if (N%p==0) return p;
-		//		}
-		return 0;
+		//		 4. Check via trial division whether N has a nontrivial divisor d <= cbrt(N), and if so, return d.
+		final int tDivLimit = (int) (Math.cbrt(N));
+		int i=0, p;
+		while ((p = SMALL_PRIMES.getPrime(i++)) <= tDivLimit) {
+			if (N%p==0) return p;
+		}
+		return N;
 	}
 }

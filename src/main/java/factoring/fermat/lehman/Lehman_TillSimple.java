@@ -38,9 +38,9 @@ public class Lehman_TillSimple extends FactorAlgorithmBase {
 	private static final boolean[] isSquareMod1024 = isSquareMod1024();
 
 	private static boolean[] isSquareMod1024() {
-		final boolean[] isSquareMod_1024 = new boolean[1024];
-		for (int i = 0; i < 1024; i++) {
-			isSquareMod_1024[(i * i) & 1023] = true;
+		final boolean[] isSquareMod_1024 = new boolean[512];
+		for (int i = 0; i < 512; i++) {
+			isSquareMod_1024[(i * i) & 511] = true;
 		}
 		return isSquareMod_1024;
 	}
@@ -95,19 +95,19 @@ public class Lehman_TillSimple extends FactorAlgorithmBase {
 		final long fourN = N<<2;
 		final double sqrt4N = Math.sqrt(fourN);
 		final double sixthRootTerm = 0.25 * Math.pow(N, 1/6.0); // double precision is required for stability
-		int k=1;
-		for (; k <= twoA; k++) {
-			final double sqrt4kN = sqrt4N * sqrt[k];
+		int kSmall=1;
+		for (; kSmall <= twoA; kSmall++) {
+			final double sqrt4kN = sqrt4N * sqrt[kSmall];
 			// only use long values
 			final long aStart = (long) (sqrt4kN + ROUND_UP_DOUBLE); // much faster than ceil() !
-			long aLimit = (long) (sqrt4kN + sixthRootTerm * sqrtInv[k]);
+			long aLimit = (long) (sqrt4kN + sixthRootTerm * sqrtInv[kSmall]);
 			long aStep;
-			if ((k & 1) == 0) {
+			if ((kSmall & 1) == 0) {
 				// k even -> make sure aLimit is odd
 				aLimit |= 1l;
 				aStep = 2;
 			} else {
-				final long kn = k*N;
+				final long kn = kSmall*N;
 				// this extra case gives ~ 5 %
 				if ((kn & 3) == 3) {
 					aStep = 8;
@@ -115,49 +115,38 @@ public class Lehman_TillSimple extends FactorAlgorithmBase {
 				} else
 				{
 					aStep = 4;
-					aLimit += ((k + N - aLimit) & 3);
+					aLimit += ((kSmall + N - aLimit) & 3);
 				}
 			}
 
 			// processing the a-loop top-down is faster than bottom-up
 			for (long a=aLimit; a >= aStart; a-=aStep) {
-				final long test = a*a - k * fourN;
-				if (isSquareMod1024[(int) (test & 1023)]) {
-					final long b = (long) Math.sqrt(test);
-					if (b*b == test) {
-						return gcdEngine.gcd(a+b, N);
-					}
+				final long test = a*a - kSmall * fourN;
+				final long b = (long) Math.sqrt(test);
+				if (b*b == test) {
+					return gcdEngine.gcd(a+b, N);
 				}
 			}
 		}
 		// 2. continue main loop for larger even k, where we can have only 4 a values per k
-		// given sqrt(n) we look for i with sqrt(n*i) is a little bit smaller then a natural (odd) number.
-		// if sqrt(i) = l * sqrt(j)
-		// 2 * x.51 = 2x.02 , 2 * x.74 = 2x.48  , x even
-		// if a odd, und nachstelle < .75 a for 2 * k1 can not be odd
-		for (int k1 = k; k1 <= kLimit; k1+=2) {
-			final long a = (long) (sqrt4N * sqrt[k1] + ROUND_UP_DOUBLE) | 1;
-			final long test = a*a - k1 * fourN;
-			if (isSquareMod1024[(int) (test & 1023)])
-			{
-				final long b = (long) Math.sqrt(test);
-				if (b*b == test) {
-					return gcdEngine.gcd(a+b, N);
-				}
+		for (int kEven = kSmall; kEven <= kLimit; kEven+=2) {
+			final long a = (long) (sqrt4N * sqrt[kEven] + ROUND_UP_DOUBLE) | 1;
+			final long test = a*a - kEven * fourN;
+			final long b = (long) Math.sqrt(test);
+			if (b*b == test) {
+				return gcdEngine.gcd(a+b, N);
 			}
 		}
 
 		// 3. continue main loop for larger odd k
-		int k2 = k + 1;
-		for ( ; k2 <= kLimit; k2 += 2) {
-			long a = (long) (sqrt4N * sqrt[k2] + ROUND_UP_DOUBLE);
-			a += (k2 + N - a) & 3;
-			final long test = a*a - k2 * fourN;
-			if (isSquareMod1024[(int) (test & 1023)]) {
-				final long b = (long) Math.sqrt(test);
-				if (b*b == test) {
-					return gcdEngine.gcd(a+b, N);
-				}
+		int kOdd = kSmall + 1;
+		for ( ; kOdd <= kLimit; kOdd += 2) {
+			long a = (long) (sqrt4N * sqrt[kOdd] + ROUND_UP_DOUBLE);
+			a += (kOdd + N - a) & 3;
+			final long test = a*a - kOdd * fourN;
+			final long b = (long) Math.sqrt(test);
+			if (b*b == test) {
+				return gcdEngine.gcd(a+b, N);
 			}
 		}
 
@@ -171,4 +160,5 @@ public class Lehman_TillSimple extends FactorAlgorithmBase {
 		// Nothing found. Either N is prime or the algorithm didn't work because N > 45 bit.
 		return 0;
 	}
+
 }

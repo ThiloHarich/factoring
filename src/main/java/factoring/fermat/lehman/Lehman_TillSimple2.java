@@ -51,7 +51,7 @@ public class Lehman_TillSimple2 extends FactorAlgorithmBase {
 
 	private void initSqrts() {
 		// precompute sqrts for all possible k. Requires ~ (tDivLimitMultiplier*2^15) entries.
-		final int kMax = (int) (tDivLimitMultiplier*Math.cbrt(1L<<45) + 1);
+		final int kMax = (int) (tDivLimitMultiplier*Math.cbrt(1L<<48) + 1);
 		//LOG.debug("kMax = " + kMax);
 
 		sqrt = new double[kMax + 1];
@@ -83,23 +83,23 @@ public class Lehman_TillSimple2 extends FactorAlgorithmBase {
 		// For kLimit / 64 the range for a is at most 2, this is what we can ensure
 		// make it odd
 		int twoA = Math.max(((kLimit >> 6) - 1), 0) | 1;
-		twoA = (twoA / 6) * 6 + 5;
+		twoA = (twoA / (2*3)) * 2*3 + 2*3 - 1;
 		final long fourN = N<<2;
 		final double sqrt4N = Math.sqrt(fourN);
 		final double sixthRootTerm = 0.25 * Math.pow(N, 1/6.0); // double precision is required for stability
-		int k=1;
-		for (; k <= twoA; k++) {
-			final double sqrt4kN = sqrt4N * sqrt[k];
+		int kSmall=1;
+		for (; kSmall <= twoA; kSmall++) {
+			final double sqrt4kN = sqrt4N * sqrt[kSmall];
 			// only use long values
 			final long aStart = (long) (sqrt4kN + ROUND_UP_DOUBLE); // much faster than ceil() !
-			long aLimit = (long) (sqrt4kN + sixthRootTerm * sqrtInv[k]);
+			long aLimit = (long) (sqrt4kN + sixthRootTerm * sqrtInv[kSmall]);
 			long aStep;
-			if ((k & 1) == 0) {
+			if ((kSmall & 1) == 0) {
 				// k even -> make sure aLimit is odd
 				aLimit |= 1l;
 				aStep = 2;
 			} else {
-				final long kn = k*N;
+				final long kn = kSmall*N;
 				// this extra case gives ~ 5 %
 				if ((kn & 3) == 3) {
 					aStep = 8;
@@ -107,39 +107,37 @@ public class Lehman_TillSimple2 extends FactorAlgorithmBase {
 				} else
 				{
 					aStep = 4;
-					aLimit += ((k + N - aLimit) & 3);
+					aLimit += ((kSmall + N - aLimit) & 3);
 				}
 			}
 
 			// processing the a-loop top-down is faster than bottom-up
 			for (long a=aLimit; a >= aStart; a-=aStep) {
-				final long test = a*a - k * fourN;
+				final long test = a*a - kSmall * fourN;
 				final long b = (long) Math.sqrt(test);
 				if (b*b == test) {
 					return gcdEngine.gcd(a+b, N);
 				}
 			}
 		}
-		// 2. continue main loop for larger even k, where we can have only 4 a values per k
-		for (int i = 0; i < 3; i++)
-		{
-			//			for (int k1 = k; k1 <= kLimit; k1 += 2) {
-			for (int k1 = k + i*2; k1 <= kLimit; k1 += 6) {
-				final long a = (long) (sqrt4N * sqrt[k1] + ROUND_UP_DOUBLE) | 1;
-				final long test = a*a - k1 * fourN;
-				final long b = (long) Math.sqrt(test);
-				if (b*b == test) {
-					return gcdEngine.gcd(a+b, N);
-				}
+		// 2. continue main loop for larger even k, where we can have only 2 'a' values per k
+		// here we only inspect k = 6*i since they much more likely have a solution x^2 - sqrt(k*n) = y^2
+		// but we have to increase the upper limit a bit
+		for (int kEven = kSmall ; kEven <= kLimit << 1 ; kEven += 6) {
+			final long a = (long) (sqrt4N * sqrt[kEven] + ROUND_UP_DOUBLE) | 1;
+			final long test = a*a - kEven * fourN;
+			final long b = (long) Math.sqrt(test);
+			if (b*b == test) {
+				return gcdEngine.gcd(a+b, N);
 			}
 		}
 
 		// 3. continue main loop for larger odd k
-		int k2 = k + 1;
-		for ( ; k2 <= kLimit; k2 += 2) {
-			long a = (long) (sqrt4N * sqrt[k2] + ROUND_UP_DOUBLE);
-			a += (k2 + N - a) & 3;
-			final long test = a*a - k2 * fourN;
+		int kOdd = kSmall + 1;
+		for ( ; kOdd <= kLimit; kOdd += 2) {
+			long a = (long) (sqrt4N * sqrt[kOdd] + ROUND_UP_DOUBLE);
+			a += (kOdd + N - a) & 3;
+			final long test = a*a - kOdd * fourN;
 			{
 				final long b = (long) Math.sqrt(test);
 				if (b*b == test) {
