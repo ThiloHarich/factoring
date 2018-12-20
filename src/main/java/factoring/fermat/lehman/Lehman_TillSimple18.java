@@ -137,7 +137,8 @@ public class Lehman_TillSimple18 extends FactorAlgorithmBase {
 		for (int kEven = kSmall + 3; kEven <= kLimit ; kEven += 6) {
 			// make a even
 			long a = (long) (sqrt4N * sqrt[kEven] + ROUND_UP_DOUBLE);
-			a = (a & 1) == 1 ? a+1 : a;
+			//			a = (a & 1) == 1 ? a+1 : a;
+			a += (kEven + N - a) & 3;
 			final long test = a*a - kEven * fourN;
 			final long b = (long) Math.sqrt(test);
 			if (b*b == test) {

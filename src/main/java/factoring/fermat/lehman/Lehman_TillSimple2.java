@@ -133,8 +133,8 @@ public class Lehman_TillSimple2 extends FactorAlgorithmBase {
 		}
 
 		// 3. continue main loop for larger odd k
-		int kOdd = kSmall + 1;
-		for ( ; kOdd <= kLimit; kOdd += 2) {
+		int kOdd = kSmall + 3;
+		for ( ; kOdd <= kLimit; kOdd += 6) {
 			long a = (long) (sqrt4N * sqrt[kOdd] + ROUND_UP_DOUBLE);
 			a += (kOdd + N - a) & 3;
 			final long test = a*a - kOdd * fourN;
