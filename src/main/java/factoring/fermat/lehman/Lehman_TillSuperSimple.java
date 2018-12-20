@@ -93,7 +93,7 @@ public class Lehman_TillSuperSimple extends FactorAlgorithmBase {
 			if (b*b == test) {
 				return gcdEngine.gcd(a+b, N);
 			}
-			// Here k is always 1 and we increase a by aStep.
+			// Here k is always 1 and we increase 'a' by aStep.
 			test = aForK1*aForK1 - fourN;
 			b = (long) Math.sqrt(test);
 			if (b*b == test) {

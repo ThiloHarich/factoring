@@ -6,8 +6,8 @@ import java.util.Random;
 import org.junit.Test;
 
 import de.tilman_neumann.jml.factor.FactorAlgorithmBase;
+import factoring.fermat.lehman.Lehman_TillSimple18;
 import factoring.fermat.lehman.Lehman_TillSimple2;
-import factoring.fermat.lehman.Lehman_TillSuperSimple;
 
 //import de.tilman_neumann.math.factor.CombinedFactorAlgorithm;
 //import de.tilman_neumann.math.factor.FactorAlgorithm;
@@ -21,18 +21,22 @@ public class PerformanceHard {
 	static long[] semiprimes;
 
 	public static void main(String[] args) {
-		final FactorAlgorithmBase factorizer2 = new Lehman_TillSimple2(1);
+		final FactorAlgorithmBase factorizer1 = new Lehman_TillSimple18(1);
 		//		final FactorAlgorithmBase factorizer3 = new SquFoF31();
 		//		final FactorizationOfLongs factorizer1 = new LehmanFactorFinderMod12(bits, 2.f, false);
 		//		final FactorizationOfLongs factorizer2 = new LehmanFactorFinder(bits, 2.f, false);
 		//		final FactorizationOfLongs factorizer1 = new LehmanFactorFinderRange(bits, 1.f, false);
-		final FactorAlgorithmBase factorizer3 = new Lehman_TillSuperSimple();
+		final FactorAlgorithmBase factorizer2 = new Lehman_TillSimple2(1);
 		semiprimes = makeSemiPrimesList(bits, smallFactorBits, numPrimes);
-		test2(factorizer3);
+		test2(factorizer1);
 		//		test2(factorizer1);
 		//		findFactors(factorizer1, semiprimes, loop);
 
 		test2(factorizer2);
+		//		System.out.println("count1 " + factorizer1.countLoop1);
+		//		System.out.println("count2 " + factorizer1.countLoop2);
+		//		System.out.println("count3 " + factorizer1.countLoop3);
+		//		System.out.println("count4 " + factorizer1.countLoop4);
 	}
 
 	public static void test2(FactorAlgorithmBase factorizer) {
