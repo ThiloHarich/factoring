@@ -1,4 +1,4 @@
-package factoring.trial.variant;
+package factoring.trial;
 
 import java.util.Collection;
 

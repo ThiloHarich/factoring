@@ -7,7 +7,7 @@ import java.util.Collection;
 import factoring.FactorFinder;
 import factoring.FactorizationOfLongs;
 import factoring.math.PrimeMath;
-import factoring.trial.variant.TrialInvFact;
+import factoring.trial.TrialInvFact;
 
 /**
  * if the smallest factor is near n^1/2 we might use

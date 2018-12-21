@@ -4,7 +4,7 @@ import java.util.Collection;
 
 import factoring.FactorizationOfLongs;
 import factoring.math.PrimeMath;
-import factoring.trial.variant.TrialInvFact;
+import factoring.trial.TrialInvFact;
 
 /**
  * Here we first look at k's with many factor 3 and 5
