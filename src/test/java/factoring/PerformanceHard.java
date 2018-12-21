@@ -21,7 +21,7 @@ public class PerformanceHard {
 	static long[] semiprimes;
 
 	public static void main(String[] args) {
-		final FactorAlgorithmBase factorizer1 = new Lehman_TillSimple3();
+		final FactorAlgorithmBase factorizer1 = new Lehman_TillSimple3(true);
 		//		final FactorAlgorithmBase factorizer3 = new SquFoF31();
 		//		final FactorizationOfLongs factorizer1 = new LehmanFactorFinderMod12(bits, 2.f, false);
 		//		final FactorizationOfLongs factorizer2 = new LehmanFactorFinder(bits, 2.f, false);

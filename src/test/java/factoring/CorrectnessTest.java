@@ -51,7 +51,7 @@ public class CorrectnessTest {
 		//		Factorizer factorizer1 = new LehmanBigFact(bitsMax, 1);
 		//		final Factorizer factorizer2 = new LehmanMod16Fact(bitsMax);
 		//		final Factorizer factorizer2 = new LehmanApproxFact();
-		final FactorAlgorithm factorizer2 = new Lehman_TillSimple3();
+		final FactorAlgorithm factorizer2 = new Lehman_TillSimple3(true);
 		//		final FactorizationOfLongs factorizer1 = new LehmanFactorFinderRange(bits, 2f, true);
 		//		final FactorizationOfLongs factorizer2 = new TrialDoubleFact(1 << (bits/2));
 		//		final FactorizationOfLongs factorizer1 = new PollardRhoBrentParallel();

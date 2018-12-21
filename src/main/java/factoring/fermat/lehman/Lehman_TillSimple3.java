@@ -22,13 +22,12 @@ import de.tilman_neumann.jml.gcd.Gcd63;
 import factoring.trial.TrialInvFact;
 
 /**
- * Faster implementation of Lehmans factor algorithm following https://programmingpraxis.com/2017/08/22/lehmans-factoring-algorithm/.
- * Many improvements inspired by Thilo Harich (https://github.com/ThiloHarich/factoring.git).
+ * Faster implementation of Lehmans factor algorithm .
  * Works for N <= 45 bit.
  *
- * This version does trial division after the main loop.
+ * This version also might do trial division before or after (if factorSemiprimes == true) the main loop.
  *
- * @author Tilman Neumann
+ * @author Tilman Neumann + Thilo Harich
  */
 public class Lehman_TillSimple3 extends FactorAlgorithmBase {
 	private static final Logger LOG = Logger.getLogger(Lehman_TillSimple3.class);
@@ -36,7 +35,9 @@ public class Lehman_TillSimple3 extends FactorAlgorithmBase {
 	/** This is a constant that is below 1 for rounding up double values to long. */
 	private static final double ROUND_UP_DOUBLE = 0.9999999665;
 
-	TrialInvFact smallFact;
+	static TrialInvFact smallFact= new TrialInvFact((int) (1L << (48/3)));;
+
+	boolean factorSemiprimes;
 
 
 	private final Gcd63 gcdEngine = new Gcd63();
@@ -46,9 +47,13 @@ public class Lehman_TillSimple3 extends FactorAlgorithmBase {
 	long fourN;
 	double sqrt4N;
 
-	public Lehman_TillSimple3() {
-		//		SMALL_PRIMES.ensurePrimeCount(10000); // for tDivLimitMultiplier ~ 2 we need more than 4793 primes
-		smallFact = new TrialInvFact((int) (1L << 48/3));
+	/**
+	 *
+	 * @param factorSemiprimes if the number to be factored might be a semiprimes were each factor is greater then n^1/3
+	 * then set this to true. The algorithm will always work. But this might have a very positive effect on the performance.
+	 */
+	public Lehman_TillSimple3(boolean factorSemiprimes) {
+		this.factorSemiprimes = factorSemiprimes;
 		initSqrts();
 	}
 
@@ -80,6 +85,12 @@ public class Lehman_TillSimple3 extends FactorAlgorithmBase {
 		this.N = N;
 		final double cbrt = Math.ceil(Math.cbrt(N));
 
+		long factor;
+		smallFact.setMaxFactor((int) cbrt);
+		if (!factorSemiprimes && (factor = smallFact.findFactors(N, null)) != N)
+			return factor;
+
+
 		// 1. Main loop for small k, where we can have more than four a-value
 
 		final int kLimit = ((int) cbrt  + 6) / 6 * 6;
@@ -94,7 +105,7 @@ public class Lehman_TillSimple3 extends FactorAlgorithmBase {
 		// first investigate in solutions a^2 - sqrt(k*n) = y^2 were we only have two possible 'a' values per k
 		// but do not go to far, since there we have a lower chance to finda factor
 		// here we only inspect k = 6*i since they much more likely have a solution x^2 - sqrt(k*n) = y^2
-		long factor = lehmanEven(kTwoA, kLimit);
+		factor = lehmanEven(kTwoA, kLimit);
 		if (factor != N && factor > 1)
 			return factor;
 
@@ -110,8 +121,6 @@ public class Lehman_TillSimple3 extends FactorAlgorithmBase {
 				aLimit |= 1l;
 				aStep = 2;
 			} else {
-				//				final long kn = kSmall*N;
-				// this extra case gives ~ 5 %
 				final long kPlusN = k + N;
 				if ((kPlusN & 3) == 0) {
 					aStep = 8;
@@ -146,7 +155,11 @@ public class Lehman_TillSimple3 extends FactorAlgorithmBase {
 		if ((factor = lehmanOdd(kLimit + 3, kLimit << 1)) > 1)
 			return factor;
 
-		// 4. Check via trial division whether N has a nontrivial divisor d <= cbrt(N).
+		// we might also use different residues like k = 4 mod 6 with kBegin = kTwoA + 4 in the last step
+		//		if ((factor = lehmanEven(kTwoA + 4, kLimit)) > 1)
+		//			return factor;
+
+		// Check via trial division whether N has a nontrivial divisor d <= cbrt(N).
 		return smallFact.findFactors(N, null);
 	}
 

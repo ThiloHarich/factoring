@@ -80,6 +80,13 @@ public class Lehman_TillSimple2 extends FactorAlgorithmBase {
 		// 1. Main loop for small k, where we can have more than four a-value
 
 		final int kLimit = (int) cbrt;
+
+		final int tDivLimit = (int) (tDivLimitMultiplier*cbrt);
+		int i=0, p;
+		while ((p = SMALL_PRIMES.getPrime(i++)) <= tDivLimit) {
+			if (N%p==0) return p;
+		}
+
 		// For kLimit / 64 the range for a is at most 2, this is what we can ensure
 		// make it odd
 		int twoA = Math.max(((kLimit >> 6) - 1), 0) | 1;
@@ -147,11 +154,11 @@ public class Lehman_TillSimple2 extends FactorAlgorithmBase {
 		}
 
 		// 4. Check via trial division whether N has a nontrivial divisor d <= cbrt(N), and if so, return d.
-		final int tDivLimit = (int) (tDivLimitMultiplier*cbrt);
-		int i=0, p;
-		while ((p = SMALL_PRIMES.getPrime(i++)) <= tDivLimit) {
-			if (N%p==0) return p;
-		}
+		//		final int tDivLimit = (int) (tDivLimitMultiplier*cbrt);
+		//		int i=0, p;
+		//		while ((p = SMALL_PRIMES.getPrime(i++)) <= tDivLimit) {
+		//			if (N%p==0) return p;
+		//		}
 
 		// Nothing found. Either N is prime or the algorithm didn't work because N > 45 bit.
 		return 0;
