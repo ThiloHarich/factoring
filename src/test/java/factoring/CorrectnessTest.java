@@ -45,7 +45,7 @@ public class CorrectnessTest {
 		final int bits = 40;
 
 		long begin = (1L << bits) +1;
-		begin = 111l	; // * 23
+		//		begin = 111l	; // * 23
 		final FactorAlgorithm factorizer1 = new Lehman_TillSimple4();
 		//		Factorizer factorizer1 = new Fermat24();
 		//		Factorizer factorizer1 = new LehmanBigFact(bitsMax, 1);

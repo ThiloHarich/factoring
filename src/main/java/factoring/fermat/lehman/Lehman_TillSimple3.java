@@ -90,9 +90,6 @@ public class Lehman_TillSimple3 extends FactorAlgorithmBase {
 		if (!factorSemiprimes && (factor = smallFact.findFactors(N, null)) != N)
 			return factor;
 
-
-		// 1. Main loop for small k, where we can have more than four a-value
-
 		final int kLimit = ((int) cbrt  + 6) / 6 * 6;
 		// For kLimit / 64 the range for a is at most 2, this is what we can ensure
 		int kTwoA = Math.max(((kLimit >> 6) - 1), 0) | 1;
@@ -105,6 +102,7 @@ public class Lehman_TillSimple3 extends FactorAlgorithmBase {
 		// first investigate in solutions a^2 - sqrt(k*n) = y^2 were we only have two possible 'a' values per k
 		// but do not go to far, since there we have a lower chance to finda factor
 		// here we only inspect k = 6*i since they much more likely have a solution x^2 - sqrt(k*n) = y^2
+		// this is we use a multiplier of 6
 		factor = lehmanEven(kTwoA, kLimit);
 		if (factor != N && factor > 1)
 			return factor;
@@ -155,9 +153,11 @@ public class Lehman_TillSimple3 extends FactorAlgorithmBase {
 		if ((factor = lehmanOdd(kLimit + 3, kLimit << 1)) > 1)
 			return factor;
 
-		// we might also use different residues like k = 4 mod 6 with kBegin = kTwoA + 4 in the last step
-		//		if ((factor = lehmanEven(kTwoA + 4, kLimit)) > 1)
-		//			return factor;
+		// the following code might not be reached
+		if ((factor = lehmanEven(kTwoA + 2, kLimit)) > 1)
+			return factor;
+		if ((factor = lehmanEven(kTwoA + 4, kLimit)) > 1)
+			return factor;
 
 		// Check via trial division whether N has a nontrivial divisor d <= cbrt(N).
 		return smallFact.findFactors(N, null);
