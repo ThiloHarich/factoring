@@ -13,10 +13,10 @@ import org.junit.Test;
 import com.google.common.collect.Multiset;
 import com.google.common.collect.TreeMultiset;
 
-import de.tilman_neumann.jml.factor.FactorAlgorithm;
+import de.tilman_neumann.jml.factor.FactorAlgorithmBase;
 import de.tilman_neumann.util.SortedMultiset;
+import factoring.fermat.lehman.Lehman_TillSimple;
 import factoring.fermat.lehman.Lehman_TillSimple3;
-import factoring.fermat.lehman.Lehman_TillSimple4;
 import factoring.rho.PollardRhoBrentDouble52;
 import factoring.shift.ErrorShiftFact;
 import factoring.trial.variant.TrialFact;
@@ -45,13 +45,15 @@ public class CorrectnessTest {
 		final int bits = 40;
 
 		long begin = (1L << bits) +1;
-		//		begin = 111l	; // * 23
-		final FactorAlgorithm factorizer1 = new Lehman_TillSimple4();
+		begin = 5640012124823l	; // * 23
+		//		final FactorAlgorithm factorizer1 = new Lehman_TillSimple4();
+		final FactorAlgorithmBase factorizer1 = new Lehman_TillSimple(1);
+
 		//		Factorizer factorizer1 = new Fermat24();
 		//		Factorizer factorizer1 = new LehmanBigFact(bitsMax, 1);
 		//		final Factorizer factorizer2 = new LehmanMod16Fact(bitsMax);
 		//		final Factorizer factorizer2 = new LehmanApproxFact();
-		final FactorAlgorithm factorizer2 = new Lehman_TillSimple3(true);
+		final FactorAlgorithmBase factorizer2 = new Lehman_TillSimple3(true);
 		//		final FactorizationOfLongs factorizer1 = new LehmanFactorFinderRange(bits, 2f, true);
 		//		final FactorizationOfLongs factorizer2 = new TrialDoubleFact(1 << (bits/2));
 		//		final FactorizationOfLongs factorizer1 = new PollardRhoBrentParallel();

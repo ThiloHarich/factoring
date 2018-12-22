@@ -113,6 +113,34 @@ public class BigDouble {
 	}
 
 	/**
+	 * calculates x*y and returns an array representing the value.
+	 * Needs 4 multiplications
+	 *
+	 *            51           25          0
+	 * x[0]*d[0] |
+	 *      |       x[1]*d[0] |
+	 *      |       x[0]*d[1] |
+	 *           |              x[1]*d[1] |
+	 *       77
+	 *
+	 * @param x - a long value lower 2^52
+	 * @param y - a long value lower 2^52
+	 * @return an array xy with x*y = xy[0] * 2^52 + xy[1] * 2^26 + xy[2]
+	 */
+	public static long[] square(long x) {
+		final long[] x26 = split(x);
+
+		final long xy0 = x26[0] * x26[0];
+		final long xy1 = x26[1] * x26[0] << 1;
+		final long xy2 = x26[1] * x26[1];
+
+		final long[] xy = new long [2];
+		xy[0] = xy0 + (xy1 >> 26);
+		xy[1] =      ((xy1 & maskLower) << 26) + xy2;
+		return xy;
+	}
+
+	/**
 	 * calculates x*d and returns an array representing the value.
 	 *
 	 *

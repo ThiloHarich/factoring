@@ -19,6 +19,8 @@ import org.apache.log4j.Logger;
 
 import de.tilman_neumann.jml.factor.FactorAlgorithmBase;
 import de.tilman_neumann.jml.gcd.Gcd63;
+import factoring.math.BigDouble;
+import factoring.math.PrimeMath;
 import factoring.trial.TrialInvFact;
 
 /**
@@ -29,11 +31,13 @@ import factoring.trial.TrialInvFact;
  *
  * @author Tilman Neumann + Thilo Harich
  */
-public class Lehman_TillSimple3 extends FactorAlgorithmBase {
-	private static final Logger LOG = Logger.getLogger(Lehman_TillSimple3.class);
+public class Lehman52Bit extends FactorAlgorithmBase {
+	private static final Logger LOG = Logger.getLogger(Lehman52Bit.class);
 
 	/** This is a constant that is below 1 for rounding up double values to long. */
 	private static final double ROUND_UP_DOUBLE = 0.9999999665;
+
+	private static final BigInteger big24 = BigInteger.valueOf(24);
 
 	static TrialInvFact smallFact= new TrialInvFact((int) (1L << (48/3)));;
 
@@ -45,6 +49,7 @@ public class Lehman_TillSimple3 extends FactorAlgorithmBase {
 	private double[] sqrt, sqrtInv;
 	long N;
 	long fourN;
+	BigInteger fourNBig = BigInteger.valueOf(fourN);
 	double sqrt4N;
 
 	/**
@@ -52,7 +57,7 @@ public class Lehman_TillSimple3 extends FactorAlgorithmBase {
 	 * @param factorSemiprimes if the number to be factored might be a semiprimes were each factor is greater then n^1/3
 	 * then set this to true. The algorithm will always work. But this might have a very positive effect on the performance.
 	 */
-	public Lehman_TillSimple3(boolean factorSemiprimes) {
+	public Lehman52Bit(boolean factorSemiprimes) {
 		this.factorSemiprimes = factorSemiprimes;
 		initSqrts();
 	}
@@ -149,13 +154,14 @@ public class Lehman_TillSimple3 extends FactorAlgorithmBase {
 		if ((factor = lehmanEven(kLimit, kLimit << 1)) > 1)
 			return factor;
 
-		// we now have loops for offset 0,3 -> missing 1,2,4,5
-		// this code will be executed very rarely, but to be sure we did not miss fators
-		// from the lehman argument we have to execute it.
-		if ((factor = lehmanOdd(kTwoA + 1, kLimit)) > 1 ||
-				(factor = lehmanEven(kTwoA + 2, kLimit)) > 1 ||
-				(factor = lehmanEven(kTwoA + 4, kLimit)) > 1 ||
-				(factor = lehmanOdd(kTwoA + 5, kLimit)) > 1)
+		//	continue additional loop for larger k = 3 mod 6.
+		if ((factor = lehmanOdd(kLimit + 3, kLimit << 1)) > 1)
+			return factor;
+
+		// the following code might not be reached
+		if ((factor = lehmanEven(kTwoA + 2, kLimit)) > 1)
+			return factor;
+		if ((factor = lehmanEven(kTwoA + 4, kLimit)) > 1)
 			return factor;
 
 		// Check via trial division whether N has a nontrivial divisor d <= cbrt(N).
@@ -163,17 +169,25 @@ public class Lehman_TillSimple3 extends FactorAlgorithmBase {
 	}
 
 	long lehmanOdd(int kBegin, final int kLimit) {
+		BigInteger fourKNBig = BigInteger.valueOf(kBegin).multiply(fourNBig);
+		//		BigInteger twoPow26 = BigInteger.valueOf(1l << 26);
+		//		BigInteger[] divAndRem = fourKNBig.divideAndRemainder(twoPow26);
+		//		long[] fourKNs = {divAndRem[0].longValue(), divAndRem[1].longValue()};
+
 		for (int k = kBegin; k <= kLimit; k += 6) {
 			long a = (long) (sqrt4N * sqrt[k] + ROUND_UP_DOUBLE);
 			// for k = 0 mod 6 a must be even and k + n + a = 0 mod 4
 			a += (k + N - a) & 3;
-			final long test = a*a - k * fourN;
+			//			long[] aSquare = BigDouble.square(a);
+			aBig = BigInteger.valueOf(	)
+					final long test = a*a - k * fourN;
 			{
 				final long b = (long) Math.sqrt(test);
 				if (b*b == test) {
 					return gcdEngine.gcd(a+b, N);
 				}
 			}
+			fourKNBig = fourKNBig.add(fourKNBig.multiply(big24));
 		}
 		return -1;
 	}
