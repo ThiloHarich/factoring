@@ -147,7 +147,7 @@ public class Lehman_TillSimple3 extends FactorAlgorithmBase {
 			return factor;
 
 		// continue even loop, because we are looking at very high numbers this now done after the k = 3 mod 6 loop
-		if ((factor = lehmanEven(kLimit, kLimit<< 1)) > 1)
+		if ((factor = lehmanEven(kLimit, kLimit << 1)) > 1)
 			return factor;
 
 		// we now have loops for offset 0,3 -> missing 1,2,4,5
