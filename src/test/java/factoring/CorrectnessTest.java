@@ -15,7 +15,7 @@ import com.google.common.collect.TreeMultiset;
 
 import de.tilman_neumann.jml.factor.FactorAlgorithmBase;
 import de.tilman_neumann.util.SortedMultiset;
-import factoring.fermat.lehman.Lehman_TillSimple;
+import factoring.fermat.lehman.Lehman_Till;
 import factoring.fermat.lehman.Lehman_TillSimple3;
 import factoring.rho.PollardRhoBrentDouble52;
 import factoring.shift.ErrorShiftFact;
@@ -45,9 +45,9 @@ public class CorrectnessTest {
 		final int bits = 40;
 
 		long begin = (1L << bits) +1;
-		begin = 5640012124823l	; // * 23
+		begin = 32427229648727l	; // * 23
 		//		final FactorAlgorithm factorizer1 = new Lehman_TillSimple4();
-		final FactorAlgorithmBase factorizer1 = new Lehman_TillSimple(1);
+		final FactorAlgorithmBase factorizer1 = new Lehman_Till(1);
 
 		//		Factorizer factorizer1 = new Fermat24();
 		//		Factorizer factorizer1 = new LehmanBigFact(bitsMax, 1);

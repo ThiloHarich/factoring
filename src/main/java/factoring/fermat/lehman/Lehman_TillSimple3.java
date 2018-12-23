@@ -83,16 +83,17 @@ public class Lehman_TillSimple3 extends FactorAlgorithmBase {
 
 	public long findSingleFactor(long N) {
 		this.N = N;
-		final double cbrt = Math.ceil(Math.cbrt(N));
+		final int cbrt = (int) Math.cbrt(N);
 
 		long factor;
-		smallFact.setMaxFactor((int) cbrt);
+		smallFact.setMaxFactor(cbrt);
 		if (!factorSemiprimes && (factor = smallFact.findFactors(N, null)) != N)
 			return factor;
 
-		final int kLimit = ((int) cbrt  + 6) / 6 * 6;
+		// limit for must be 0 mod 6, since we also want to search above of it
+		final int kLimit = (cbrt + 6) / 6 * 6;
 		// For kLimit / 64 the range for a is at most 2, this is what we can ensure
-		int kTwoA = Math.max(((kLimit >> 6) - 1), 0) | 1;
+		int kTwoA = (cbrt >> 6);
 		// twoA = 0 mod 6
 		kTwoA = ((kTwoA + 6)/ 6) * 6;
 		fourN = N<<2;
@@ -166,7 +167,14 @@ public class Lehman_TillSimple3 extends FactorAlgorithmBase {
 		for (int k = kBegin; k <= kLimit; k += 6) {
 			long a = (long) (sqrt4N * sqrt[k] + ROUND_UP_DOUBLE);
 			// for k = 0 mod 6 a must be even and k + n + a = 0 mod 4
-			a += (k + N - a) & 3;
+			//			a += (k + N - a) & 3;
+			final long kPlusN = k + N;
+			if ((kPlusN & 3) == 0) {
+				a += ((kPlusN - a) & 7);
+			} else
+			{
+				a += ((kPlusN - a) & 3);
+			}
 			final long test = a*a - k * fourN;
 			{
 				final long b = (long) Math.sqrt(test);
