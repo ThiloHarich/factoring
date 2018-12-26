@@ -29,7 +29,7 @@ import de.tilman_neumann.jml.gcd.Gcd63;
  *
  * @author Tilman Neumann
  */
-public class Lehman_TillSuperSimple extends FactorAlgorithmBase {
+public class Lehman_TillSuperSimple2 extends FactorAlgorithmBase {
 	private static final Logger LOG = Logger.getLogger(Lehman_TillSimple.class);
 
 	/** This is a constant that is below 1 for rounding up double values to long. */
@@ -40,7 +40,13 @@ public class Lehman_TillSuperSimple extends FactorAlgorithmBase {
 
 	private double[] sqrt;
 
-	public Lehman_TillSuperSimple() {
+	private double sqrt4N;
+
+	private long fourN;
+
+	long N;
+
+	public Lehman_TillSuperSimple2() {
 		initSqrts();
 	}
 
@@ -68,10 +74,11 @@ public class Lehman_TillSuperSimple extends FactorAlgorithmBase {
 	}
 
 	public long findSingleFactor(long N) {
+		this.N = N;
 		final int kLimit = (int)  Math.ceil(Math.cbrt(N));;
 
-		final long fourN = N<<2;
-		final double sqrt4N = Math.sqrt(fourN);
+		fourN = N<<2;
+		sqrt4N = Math.sqrt(fourN);
 
 		long aForK1 = (long) (sqrt4N  + ROUND_UP_DOUBLE);
 		long aStep;
@@ -86,20 +93,34 @@ public class Lehman_TillSuperSimple extends FactorAlgorithmBase {
 
 
 		// we have to increase kLimit here, because for each k we only take one a
-		for (int k=2; k < 6*kLimit; k+=2) {
-			final long a = (long) (sqrt4N * sqrt[k] + ROUND_UP_DOUBLE) | 1;
-			long test = a*a - k * fourN;
-			long b = (long) Math.sqrt(test);
-			if (b*b == test) {
-				return gcdEngine.gcd(a+b, N);
-			}
+		for (int k=1; k < 8*kLimit; k++) {
+			long factor;
+
+			//			 0 mod 6 will be check double as often as the rest
+			if ((factor = lehmanEven(12 * k)) > 1 && factor < N)
+				return factor;
+
+			if ((factor = lehmanEven(12 * k + 6)) > 1 && factor < N)
+				return factor;
+
+			if ((factor = lehmanOdd(6 * k + 3)) > 1 && factor < N)
+				return factor;
+
+			//			if ((factor = lehmanEven(6 * k + 4)) > 1 && factor < N)
+			//				return factor;
+			//
+			//			if ((factor = lehmanEven(6 * k + 2)) > 1 && factor < N)
+			//				return factor;
+
+
 			// Here k is always 1 and we increase 'a' by aStep.
-			test = aForK1*aForK1 - fourN;
-			b = (long) Math.sqrt(test);
+			final long test = aForK1*aForK1 - fourN;
+			final long b = (long) Math.sqrt(test);
 			if (b*b == test) {
 				return gcdEngine.gcd(aForK1+b, N);
 			}
 			aForK1 += aStep;
+
 		}
 		//		 4. Check via trial division whether N has a nontrivial divisor d <= cbrt(N), and if so, return d.
 		final int tDivLimit = (int) (Math.cbrt(N));
@@ -109,4 +130,45 @@ public class Lehman_TillSuperSimple extends FactorAlgorithmBase {
 		}
 		return N;
 	}
+
+	/**
+	 * This method tries to choose an a such that n + k = a mod 4.
+	 * This can be applied for odd kBegin.
+	 * If a*a - 4 * k * N is a square it returns true.
+	 * @param kBegin
+	 * @param kLimit
+	 * @return
+	 */
+	long lehmanOdd(int k) {
+		long a = (long) (sqrt4N * sqrt[k] + ROUND_UP_DOUBLE);
+		// for k = 0 mod 6 a must be even and k + n + a = 0 mod 4
+		a += (k + N - a) & 3;
+		//			a = (a & 1) == 1 ? a+1 : a;
+		final long test = a*a - k * fourN;
+		{
+			final long b = (long) Math.sqrt(test);
+			if (b*b == test) {
+				return gcdEngine.gcd(a+b, N);
+			}
+		}
+		return -1;
+	}
+
+	/**
+	 * makes a odd can be applied to even kBegin.
+	 * @param kBegin
+	 * @param kEnd
+	 * @return
+	 */
+	long lehmanEven(int k) {
+		// for k = 0 mod 6 a must be odd
+		final long a = (long) (sqrt4N * sqrt[k] + ROUND_UP_DOUBLE) | 1;
+		final long test = a*a - k * fourN;
+		final long b = (long) Math.sqrt(test);
+		if (b*b == test) {
+			return gcdEngine.gcd(a+b, N);
+		}
+		return -1;
+	}
+
 }

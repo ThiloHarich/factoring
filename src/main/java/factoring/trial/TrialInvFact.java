@@ -26,6 +26,7 @@ public class TrialInvFact implements FactorizationOfLongs {
 	private static final int PRINT_NUM = 20000;
 	// for printing we need a value a little bit above 1
 	public static final double PRINT_CONST = 1.0000001;
+	private static final double DISCRIMINATOR = 0.0000001;
 	private int maxFactor = 65535;
 	double[] primesInv;
 	int[] primes;
@@ -116,7 +117,9 @@ public class TrialInvFact implements FactorizationOfLongs {
 			// TODO choose the precision factor with respect to the maxFactor!?
 			if (primes[primeIndex] == 0)
 				System.out.println();
-			while (Math.abs(Math.round(nDivPrime) - nDivPrime) < 0.01 && n > 1 && n % primes[primeIndex] == 0) {
+			while (((long)(nDivPrime+DISCRIMINATOR)) - ((long)(nDivPrime-DISCRIMINATOR)) == 1
+					//			while (Math.abs(((long)nDivPrime) - nDivPrime) < 0.01
+					&& n > 1 && n % primes[primeIndex] == 0) {
 				if (primeFactors == null)
 					return primes[primeIndex];
 				primeFactors.add((long) primes[primeIndex]);

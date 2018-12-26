@@ -90,7 +90,7 @@ public interface FactorizationOfLongs extends FactorFinder {
 	/**
 	 * This method returns a complete factorizationByFactors of n.
 	 * It uses the implementation returned by {@link #getImpl(long)} and calls
-	 * {@link SingleLongFactorFinder#findFactors(long, Collection)}. This will return a factor.
+	 * {@link SingleLongFactorFinder#findSmallFactors(long, Collection)}. This will return a factor.
 	 * This factor does not have to be a prime factor, and has to be factorized again by
 	 * findFactors().
 	 *

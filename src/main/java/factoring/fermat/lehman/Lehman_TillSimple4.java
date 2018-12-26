@@ -22,44 +22,44 @@ import de.tilman_neumann.jml.gcd.Gcd63;
 import factoring.trial.TrialInvFact;
 
 /**
- * Faster implementation of Lehmans factor algorithm following https://programmingpraxis.com/2017/08/22/lehmans-factoring-algorithm/.
- * Many improvements inspired by Thilo Harich (https://github.com/ThiloHarich/factoring.git).
+ * Faster implementation of Lehmans factor algorithm .
  * Works for N <= 45 bit.
  *
- * This version does trial division after the main loop.
+ * This version also might do trial division before or after (if factorSemiprimes == true) the main loop.
  *
- * @author Tilman Neumann
+ * @author Tilman Neumann + Thilo Harich
  */
 public class Lehman_TillSimple4 extends FactorAlgorithmBase {
-	private static final Logger LOG = Logger.getLogger(Lehman_TillSuperSimple.class);
+	private static final Logger LOG = Logger.getLogger(Lehman_TillSimple3.class);
 
 	/** This is a constant that is below 1 for rounding up double values to long. */
 	private static final double ROUND_UP_DOUBLE = 0.9999999665;
 
-	private static final boolean[] isSquareMod1024 = isSquareMod1024();
+	static TrialInvFact smallFact= new TrialInvFact((int) (1L << (48/3)));;
 
-	private static boolean[] isSquareMod1024() {
-		final boolean[] isSquareMod_1024 = new boolean[512];
-		for (int i = 0; i < 512; i++) {
-			isSquareMod_1024[(i * i) & 511] = true;
-		}
-		return isSquareMod_1024;
-	}
+	boolean factorSemiprimes;
+
 
 	private final Gcd63 gcdEngine = new Gcd63();
 
 	private double[] sqrt, sqrtInv;
+	long N;
+	long fourN;
+	double sqrt4N;
 
-	private final TrialInvFact smallFact;
-
-	public Lehman_TillSimple4() {
-		smallFact = new TrialInvFact((int) (1L << 48/3));
+	/**
+	 *
+	 * @param factorSemiprimes if the number to be factored might be a semiprimes were each factor is greater then n^1/3
+	 * then set this to true. The algorithm will always work. But this might have a very positive effect on the performance.
+	 */
+	public Lehman_TillSimple4(boolean factorSemiprimes) {
+		this.factorSemiprimes = factorSemiprimes;
 		initSqrts();
 	}
 
 	private void initSqrts() {
 		// precompute sqrts for all possible k. Requires ~ (tDivLimitMultiplier*2^15) entries.
-		final int kMax = (int) (Math.cbrt(1L<<45) + 1);
+		final int kMax = (int) (Math.cbrt(1L<<48) + 1);
 		//LOG.debug("kMax = " + kMax);
 
 		sqrt = new double[kMax + 1];
@@ -73,7 +73,7 @@ public class Lehman_TillSimple4 extends FactorAlgorithmBase {
 
 	@Override
 	public String getName() {
-		return "Lehman_TillSimple4()";
+		return "Lehman_TDivLast()";
 	}
 
 	@Override
@@ -82,32 +82,33 @@ public class Lehman_TillSimple4 extends FactorAlgorithmBase {
 	}
 
 	public long findSingleFactor(long N) {
-		final double cbrt = Math.ceil(Math.cbrt(N));
+		this.N = N;
+		final int cbrt = (int) Math.cbrt(N);
 
-		// 1. Main loop for small k, where we can have more than four a-value
+		long factor;
+		smallFact.setMaxFactor(cbrt);
+		if (!factorSemiprimes && (factor = smallFact.findFactors(N, null)) != N)
+			return factor;
 
-		final int kLimit = ((int) cbrt  + 6) / 6 * 6;
+		// limit for must be 0 mod 6, since we also want to search above of it
+		final int kLimit = (cbrt + 12) / 12 * 12;
 		// For kLimit / 64 the range for a is at most 2, this is what we can ensure
-		int kTwoA = Math.max(((kLimit >> 6) - 1), 0) | 1;
+		int kTwoA = (cbrt >> 6);
 		// twoA = 0 mod 6
-		kTwoA = ((kTwoA + 6)/ 6) * 6;
-		final long fourN = N<<2;
-		final double sqrt4N = Math.sqrt(fourN);
+		kTwoA = ((kTwoA + 12)/ 12) * 12;
+		fourN = N<<2;
+		sqrt4N = Math.sqrt(fourN);
 		final double sixthRootTerm = 0.25 * Math.pow(N, 1/6.0); // double precision is required for stability
 
-		// investigate in solutions a^2 - sqrt(k*n) = y^2 were we only have two possible 'a' values per k
-		// but do not go to far, since they might have a lower chance to produce a solution
+		// first investigate in solutions a^2 - sqrt(k*n) = y^2 were we only have two possible 'a' values per k
+		// but do not go to far, since there we have a lower chance to finda factor
 		// here we only inspect k = 6*i since they much more likely have a solution x^2 - sqrt(k*n) = y^2
-		for (int k = kTwoA ; k <= kLimit; k += 6) {
-			final long a = (long) (sqrt4N * sqrt[k] + ROUND_UP_DOUBLE) | 1;
-			final long test = a*a - k * fourN;
-			final long b = (long) Math.sqrt(test);
-			if (b*b == test) {
-				final long gcd = gcdEngine.gcd(a+b, N);
-				if (gcd != N)
-					return gcd;
-			}
-		}
+		// this is we use a multiplier of 6
+		factor = lehmanAOdd(kTwoA + 0, kLimit);
+		if (factor != N && factor > 1)
+			return factor;
+
+
 
 		// investigate in solution a^2 - sqrt(k*n) = y^2 were we might have more then two solutions 'a'
 		for (int k=1 ; k < kTwoA; k++) {
@@ -121,8 +122,6 @@ public class Lehman_TillSimple4 extends FactorAlgorithmBase {
 				aLimit |= 1l;
 				aStep = 2;
 			} else {
-				//				final long kn = kSmall*N;
-				// this extra case gives ~ 5 %
 				final long kPlusN = k + N;
 				if ((kPlusN & 3) == 0) {
 					aStep = 8;
@@ -144,11 +143,37 @@ public class Lehman_TillSimple4 extends FactorAlgorithmBase {
 			}
 		}
 
-		// additional loop for k = 3 mod 6 in the middle range
-		// this loop has fewer possible a's, and therefore gives less often factors
-		for (int k = kTwoA + 3; k <= kLimit; k += 6) {
+
+
+		// continue even loop, because we are looking at very high numbers this now done after the k = 3 mod 6 loop
+		if ((factor = lehmanAOdd(kLimit, kLimit << 1)) > 1)
+			return factor;
+
+		// next best candidates
+		if ((factor = lehmanAknMod4(kTwoA + 9, kLimit)) > 1 && factor != N)
+			return factor;
+		if ((factor = lehmanAknMod4(kTwoA + 3, kLimit)) > 1 && factor != N)
+			return factor;
+
+
+		// Check via trial division whether N has a nontrivial divisor d <= cbrt(N).
+		return smallFact.findFactors(N, null);
+	}
+
+	/**
+	 * This method tries to choose an a such that n + k = a mod 4.
+	 * This can be applied for odd kBegin.
+	 * If a*a - 4 * k * N is a square it returns true.
+	 * @param kBegin
+	 * @param kLimit
+	 * @return
+	 */
+	long lehmanAknMod4(int kBegin, final int kLimit) {
+		for (int k = kBegin; k <= kLimit; k += 12) {
 			long a = (long) (sqrt4N * sqrt[k] + ROUND_UP_DOUBLE);
+			// for k = 0 mod 6 a must be even and k + n + a = 0 mod 4
 			a += (k + N - a) & 3;
+			//			a = (a & 1) == 1 ? a+1 : a;
 			final long test = a*a - k * fourN;
 			{
 				final long b = (long) Math.sqrt(test);
@@ -157,9 +182,18 @@ public class Lehman_TillSimple4 extends FactorAlgorithmBase {
 				}
 			}
 		}
+		return -1;
+	}
 
-		// switch back to the main loop for bigger k
-		for (int k = kLimit ; k <= kLimit << 1; k += 6) {
+	/**
+	 * makes a odd can be applied to even kBegin.
+	 * @param kBegin
+	 * @param kEnd
+	 * @return
+	 */
+	long lehmanAOdd(int kBegin, final int kEnd) {
+		for (int k = kBegin ; k <= kEnd; k += 6) {
+			// for k = 0 mod 6 a must be odd
 			final long a = (long) (sqrt4N * sqrt[k] + ROUND_UP_DOUBLE) | 1;
 			final long test = a*a - k * fourN;
 			final long b = (long) Math.sqrt(test);
@@ -167,29 +201,6 @@ public class Lehman_TillSimple4 extends FactorAlgorithmBase {
 				return gcdEngine.gcd(a+b, N);
 			}
 		}
-
-		//	continue additional loop for larger k = 3 mod 6.
-		for (int k = kLimit + 3; k <= kLimit << 1; k += 6) {
-			long a = (long) (sqrt4N * sqrt[k] + ROUND_UP_DOUBLE);
-			a += (k + N - a) & 3;
-			final long test = a*a - k * fourN;
-			{
-				final long b = (long) Math.sqrt(test);
-				if (b*b == test) {
-					return gcdEngine.gcd(a+b, N);
-				}
-			}
-		}
-
-
-		// 4. Check via trial division whether N has a nontrivial divisor d <= cbrt(N), and if so, return d.
-		return smallFact.findFactors(N, null);
-		//		final int tDivLimit = (int) (tDivLimitMultiplier*cbrt);
-		//		int i=0, p;
-		//		while ((p = SMALL_PRIMES.getPrime(i++)) <= tDivLimit) {
-		//			if (N%p==0) {
-		//				return p;
-		//			}
-		//		}
+		return -1;
 	}
 }

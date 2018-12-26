@@ -60,7 +60,7 @@ public class Lehman_Till extends FactorAlgorithmBase {
 
 	private void initSqrts() {
 		// precompute sqrts for all possible k. Requires ~ (tDivLimitMultiplier*2^15) entries.
-		final int kMax = (int) (tDivLimitMultiplier*Math.cbrt(1L<<45) + 1);
+		final int kMax = (int) (tDivLimitMultiplier*Math.cbrt(1L<<50) + 1);
 		//LOG.debug("kMax = " + kMax);
 
 		sqrt = new double[kMax + 1];

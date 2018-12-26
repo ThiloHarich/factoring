@@ -88,7 +88,11 @@ public class TrialDoubleFact implements FactorizationOfLongs {
 			if (primes[primeIndex] == 0)
 				System.out.println();
 			// TODO choose the precision factor with respect to the maxFactor, if we are close to 52 bits
-			while (Math.abs(Math.round(nDivPrime) - nDivPrime) < 0.001 && nD > 1.0 && nD % primes[primeIndex] == 0) {
+			long nDivPrimeLong;
+			while (((nDivPrimeLong= (long)nDivPrime) - nDivPrime) >=  -0.001 &&
+					nDivPrime - nDivPrimeLong < 0.001 &&
+					nD > 1.0 &&
+					nD % primes[primeIndex] == 0) {
 				if (primeFactors == null)
 					return primes[primeIndex];
 				primeFactors.add((long) primes[primeIndex]);

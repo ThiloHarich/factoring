@@ -138,8 +138,8 @@ public class LehmanFactorFinder implements FactorizationOfLongs, FactorFinder {
 	 *                              In the last case {@link #findFactors(long, Collection)} might return a composite number
 	 */
 	public LehmanFactorFinder(int bits, float maxFactorMultiplierIn, boolean doTrialFirst) {
-		if (bits > 41)
-			throw new IllegalArgumentException("numbers above 41 bits can not be factorized");
+		//		if (bits > 41)
+		//			throw new IllegalArgumentException("numbers above 41 bits can not be factorized");
 		maxFactorMultiplier = maxFactorMultiplierIn < 1 ? 1 : maxFactorMultiplierIn;
 		maxTrialFactor = (int) Math.ceil(maxFactorMultiplier * Math.pow(1L << bits, ONE_THIRD));
 		maxFactorMultiplierCube = maxFactorMultiplier * maxFactorMultiplier * maxFactorMultiplier;
@@ -166,8 +166,8 @@ public class LehmanFactorFinder implements FactorizationOfLongs, FactorFinder {
 
 	@Override
 	public long findFactors(long n, Collection<Long> primeFactors) {
-		if (n > 1l << 41)
-			throw new IllegalArgumentException("numbers above 41 bits can not be factorized");
+		//		if (n > 1l << 41)
+		//			throw new IllegalArgumentException("numbers above 41 bits can not be factorized");
 		// with this implementation the lehman part is not slower then the trial division
 		// we only apply the multiplier if we want to cut down the numbers to be tested
 		maxTrialFactor = (int) Math.ceil(maxFactorMultiplier * Math.pow(n, ONE_THIRD));
@@ -264,7 +264,8 @@ public class LehmanFactorFinder implements FactorizationOfLongs, FactorFinder {
 			// using mod9_5_7_11 instead of hard 3465 coded number causes double run time
 			// the % is expensive, but saves ~ 10% of the time, since the sqrt takes even more time
 			// another mod filter gives not gain, in the YAFU impl it is used
-			if (isSquareMod_9_5_7_11[(int) (number % 3465)]) {
+			//			if (isSquareMod_9_5_7_11[(int) (number % 3465)])
+			{
 
 				final long y = (long) Math.sqrt(number);
 				return y * y == number;
