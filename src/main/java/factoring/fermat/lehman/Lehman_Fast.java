@@ -175,13 +175,13 @@ public class Lehman_Fast extends FactorAlgorithmBase {
 		// we now have loops for offset 0,3 -> missing 1,2,4,5
 		// this code will be executed very rarely, but to be sure we did not miss factors
 		// with the lehman argument we have to execute it.
-		if ((factor = lehmanOdd(kTwoA + 4, kLimit)) > 1)
+		if ((factor = lehmanOdd(kTwoA + 2, kLimit)) > 1)
 			return factor;
-		if ((factor = lehmanEven(kTwoA + 2, kLimit)) > 1)
+		if ((factor = lehmanEven(kTwoA + 4, kLimit)) > 1)
 			return factor;
-		if ((factor = lehmanEven(kTwoA + 5, kLimit)) > 1)
+		if ((factor = lehmanEven(kTwoA + 1, kLimit)) > 1)
 			return factor;
-		if ((factor = lehmanOdd(kTwoA + 1, kLimit)) > 1)
+		if ((factor = lehmanOdd(kTwoA + 5, kLimit)) > 1)
 			return factor;
 
 		// Check via trial division whether N has a nontrivial divisor d <= cbrt(N).
