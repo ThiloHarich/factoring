@@ -29,8 +29,8 @@ import de.tilman_neumann.util.ConfigUtil;
  *
  * @authors Tilman Neumann + Thilo Harich
  */
-public class Lehman_Fast extends FactorAlgorithmBase {
-	private static final Logger LOG = Logger.getLogger(Lehman_Fast.class);
+public class Lehman_Fast2 extends FactorAlgorithmBase {
+	private static final Logger LOG = Logger.getLogger(Lehman_Fast2.class);
 
 	/** This is a constant that is below 1 for rounding up double values to long. */
 	private static final double ROUND_UP_DOUBLE = 0.9999999665;
@@ -43,7 +43,8 @@ public class Lehman_Fast extends FactorAlgorithmBase {
 
 	static {
 		// Precompute sqrts for all possible k. 2^22 entries are enough for N~2^66.
-		int kMax = 1<<22;
+		final long start = System.currentTimeMillis();
+		final int kMax = 1<<22;
 		sqrt = new double[kMax + 1];
 		sqrtInv = new double[kMax + 1];
 		for (int i = 1; i < sqrt.length; i++) {
@@ -51,10 +52,12 @@ public class Lehman_Fast extends FactorAlgorithmBase {
 			sqrt[i] = sqrtI;
 			sqrtInv[i] = 1.0/sqrtI;
 		}
+		final long end = System.currentTimeMillis();
+		System.out.println("Time Init sqrt   : + " + (end - start));
 		// finds the prime factors up to kMax by the sieve of eratosthenes.
 		// Not optimized, since this is only called once when initializing.
 		// needs n * log(log(n)) time
-		kMax = 1 << 19;
+		//		kMax = 1 << 19;
 		final double logMaxFactor = Math.log(kMax);
 		final int maxPrimeIndex = (int) ((kMax) / (logMaxFactor - 1.1)) + 4;
 		primesInv = new double [maxPrimeIndex];
@@ -79,6 +82,8 @@ public class Lehman_Fast extends FactorAlgorithmBase {
 		for (int i=primeIndex; i < primes.length; i++) {
 			primes[i] = Integer.MAX_VALUE;
 		}
+		final long end2 = System.currentTimeMillis();
+		System.out.println("Time Init primes : + " + (end2 - end));
 	}
 
 	long N;
@@ -92,7 +97,7 @@ public class Lehman_Fast extends FactorAlgorithmBase {
 	 * @param factorSemiprimes if the number to be factored might be a semiprimes were each factor is greater then n^1/3
 	 * then set this to true. The algorithm will always work. But this might have a very positive effect on the performance.
 	 */
-	public Lehman_Fast(boolean factorSemiprimes) {
+	public Lehman_Fast2(boolean factorSemiprimes) {
 		this.factorSemiprimes = factorSemiprimes;
 	}
 
@@ -126,8 +131,8 @@ public class Lehman_Fast extends FactorAlgorithmBase {
 
 		// first investigate in solutions a^2 - sqrt(k*n) = y^2 were we only have two possible 'a' values per k
 		// but do not go to far, since there we have a lower chance to finda factor
-		// here we only inspect k = 6*i since they much more likely have a solution x^2 - sqrt(k*n) = y^2
-		// this is we use a multiplier of 6
+		// here we only inspect k = 6*i since they much more likely have a solution a^2 - sqrt(k*n) = y^2
+		// this is we use a multiplier of 6 and 'a' must be odd
 		factor = lehmanEven(kTwoA, kLimit);
 		if (factor>1 && factor != N) return factor;
 
@@ -163,34 +168,21 @@ public class Lehman_Fast extends FactorAlgorithmBase {
 			}
 		}
 
-		// additional loop for k = 3 mod 6 in the middle range
-		// this loop has fewer possible a's, then k = 0 mod 6 and therefore gives less often factors
+		// So far we have only odd solutions for 'a' now we try to get all the even solutions
 		if ((factor = lehmanOdd(kTwoA + 3, kLimit)) > 1)
 			return factor;
 
-		// continue even loop, because we are looking at very high numbers this now done after the k = 3 mod 6 loop
-		if ((factor = lehmanEven(kLimit, kLimit << 1)) > 1)
+		// continue even k loop. Theoretically we might have missed solutions for k = 1,2,4,5 mod 6.
+		// but when looking up to 6 * kLimit it seems to be we are not missing one of them.
+		// to be sure we might just increase the limit even further
+		if ((factor = lehmanEven(kLimit, kLimit * 6)) > 1)
 			return factor;
 
-		// we now have loops for offset 0,3 -> missing 1,2,4,5
-		// this code will be executed very rarely, but to be sure we did not miss factors
-		// with the lehman argument we have to execute it.
-		if ((factor = lehmanOdd(kTwoA + 4, kLimit)) > 1)
-			return factor;
-		if ((factor = lehmanEven(kTwoA + 2, kLimit)) > 1)
-			return factor;
-		if ((factor = lehmanEven(kTwoA + 5, kLimit)) > 1)
-			return factor;
-		if ((factor = lehmanOdd(kTwoA + 1, kLimit)) > 1)
-			return factor;
 
 		// Check via trial division whether N has a nontrivial divisor d <= cbrt(N).
 		//LOG.debug("entering tdiv...");
 		factor = findSmallFactors(N, cbrt);
-		if (factor>1 && factor<N) return factor;
 
-		// if sqrt(4kN) is an exact integer then the previous fast ceil operations may have failed.
-		// This can only happen for k%6=1 or k%6=5 and fixing one of both seems to be sufficient.
 		for (int k=kTwoA + 1; k <= kLimit; k++) {
 			final long fourKN = k*N<<2;
 			final long a = (long) (sqrt4N * sqrt[k] + ROUND_UP_DOUBLE) - 1;
@@ -210,7 +202,7 @@ public class Lehman_Fast extends FactorAlgorithmBase {
 	private long lehmanOdd(int kBegin, final int kLimit) {
 		for (int k = kBegin; k <= kLimit; k += 6) {
 			long a = (long) (sqrt4N * sqrt[k] + ROUND_UP_DOUBLE);
-			// for k = 0 mod 6 a must be even and k + n + a = 0 mod 4
+			// for k odd a must be even and k + n + a = 0 mod 4
 			final long kPlusN = k + N;
 			if ((kPlusN & 3) == 0) {
 				a += ((kPlusN - a) & 7);
@@ -224,12 +216,13 @@ public class Lehman_Fast extends FactorAlgorithmBase {
 				return gcdEngine.gcd(a+b, N);
 			}
 		}
+
 		return -1;
 	}
 
 	private long lehmanEven(int kBegin, final int kEnd) {
 		for (int k = kBegin ; k <= kEnd; k += 6) {
-			// for k = 0 mod 6 a must be odd
+			// for k even a must be odd
 			final long a = (long) (sqrt4N * sqrt[k] + ROUND_UP_DOUBLE) | 1;
 			final long test = a*a - k * fourN;
 			final long b = (long) Math.sqrt(test);
@@ -254,7 +247,9 @@ public class Lehman_Fast extends FactorAlgorithmBase {
 			// TODO choose the precision factor with respect to the maxFactor!?
 			if (primes[primeIndex] == 0)
 				System.out.println();
-			if (Math.abs(Math.round(nDivPrime) - nDivPrime) < 0.01 && n > 1 && n % primes[primeIndex] == 0) {
+			long nDivPrimeLong;
+			if (((nDivPrimeLong= (long)nDivPrime) - nDivPrime) >=  -0.001 &&
+					nDivPrime - nDivPrimeLong < 0.001  && n > 1 && n % primes[primeIndex] == 0) {
 				return primes[primeIndex];
 			}
 		}
@@ -309,7 +304,7 @@ public class Lehman_Fast extends FactorAlgorithmBase {
 				5682546780292609L,
 		};
 
-		final Lehman_Fast lehman = new Lehman_Fast(true);
+		final Lehman_Fast2 lehman = new Lehman_Fast2(true);
 		for (final long N : testNumbers) {
 			final long factor = lehman.findSingleFactor(N);
 			LOG.info("N=" + N + " has factor " + factor);

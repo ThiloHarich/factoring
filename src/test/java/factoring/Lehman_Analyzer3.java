@@ -55,7 +55,7 @@ public class Lehman_Analyzer3 extends FactorAlgorithmBase {
 	private final int[] numSol;
 	private final int[][] numSol2;
 
-	private static final int MOD = 12;
+	private static final int MOD = 6;
 
 	public Lehman_Analyzer3() {
 		aValues = new SortedSet[MOD][MOD];
@@ -82,20 +82,87 @@ public class Lehman_Analyzer3 extends FactorAlgorithmBase {
 	public long findSingleFactor(long N) {
 		final int cbrt = (int) Math.ceil(Math.cbrt(N));
 		final double sixthRoot = Math.pow(N, 1/6.0); // double precision is required for stability
-		for (int k=6; k <= cbrt; k+= 1) {
+
+		final int scm = 12;
+		//		final int kLimit = (cbrt + scm) / scm * scm;
+		// For kLimit / 64 the range for a is at most 2, this is what we can ensure
+		int kTwoA = (cbrt >> 6);
+		// twoA = 0 mod 6
+		kTwoA = ((kTwoA + scm)/ scm) * scm;
+
+		for (int k=1; k < kTwoA; k+= 1) {
 			final long fourKN = k*N<<2;
 			final double fourSqrtK = Math.sqrt(k<<4);
-			final int sqrt4kN = (int) Math.ceil(Math.sqrt(fourKN)); // ceil() is required for stability
+			final double sqrt4kN = Math.sqrt(fourKN);
+			final int sqrt4kNCeil = (int) Math.ceil(sqrt4kN); // ceil() is required for stability
 			final int limit = (int) (sqrt4kN + sixthRoot / fourSqrtK);
-			for (int a = sqrt4kN; a <= limit; a++) {
+			for (int a = sqrt4kNCeil; a <= limit; a++) {
+				final long test = a*(long)a - fourKN;
+				final long b = (long) Math.sqrt(test);
+				if (b*b == test) {
+					return gcdEngine.gcd(a+b, N);
+				}
+			}
+		}
+
+		for (int k = kTwoA; k <= 2*cbrt; k += 6) {
+			final long fourKN = k*N<<2;
+			final long a = ((long) Math.ceil(Math.sqrt(fourKN))) | 1; // ceil() is required for stability
+			// for k = 0 mod 6 a must be odd
+			final long test = a*a - fourKN;
+			final long b = (long) Math.sqrt(test);
+			if (b*b == test) {
+				//				System.out.print(k/6 & 3);
+				return gcdEngine.gcd(a+b, N);
+			}
+		}
+
+		//		for (int k = kTwoA; k <= cbrt << 2; k += 12) {
+		//			final long fourKN = k*N<<2;
+		//			final long a = ((long) Math.ceil(Math.sqrt(fourKN))) | 1; // ceil() is required for stability
+		//			// for k = 0 mod 6 a must be odd
+		//			final long test = a*a - fourKN;
+		//			final long b = (long) Math.sqrt(test);
+		//			if (b*b == test) {
+		//				//				System.out.print(k/6 & 3);
+		//				return gcdEngine.gcd(a+b, N);
+		//			}
+		//		}
+
+		for (int k = kTwoA + 3; k <= cbrt; k += 6) {
+			final long fourKN = k*N<<2;
+			long a = ((long) Math.ceil(Math.sqrt(fourKN))); // ceil() is required for stability
+			final long kPlusN = k + N;
+			if ((kPlusN & 3) == 0) {
+				a += ((kPlusN - a) & 7);
+			} else
+			{
+				a += ((kPlusN - a) & 3);
+			}
+			final long test = a*a - fourKN;
+			final long b = (long) Math.sqrt(test);
+			if (b*b == test) {
+				//				System.out.print(k/6 & 3);
+				return gcdEngine.gcd(a+b, N);
+			}
+		}
+
+		for (int k=kTwoA; k <= cbrt; k+= 1) {
+			final long fourKN = k*N<<2;
+			final double fourSqrtK = Math.sqrt(k<<4);
+			final double sqrt4kN = Math.sqrt(fourKN);
+			final int sqrt4kNCeil = (int) Math.ceil(sqrt4kN); // ceil() is required for stability
+			final double range = sixthRoot / fourSqrtK;
+			final int limit = (int) (sqrt4kN + range);
+			for (int a = sqrt4kNCeil; a <= limit; a++) {
 				final long test = a*(long)a - fourKN;
 				final long b = (long) Math.sqrt(test);
 				if (b*b == test) {
 					//					aValues[k%MOD][(int) ((4*N*k)%MOD)].add(a%MOD);
-					aValues[k%MOD][(int) ((N+k)%MOD)].add(a%MOD);
-					numSol[k%MOD]++;
+					aValues[(k)%MOD][(int) ((k*N)%MOD)].add(a%MOD);
+					numSol[(k)%MOD]++;
 					//					numSol2[k%MOD][(int) ((4*N*k)%MOD)]++;
-					numSol2[k%MOD][(int) ((N+k)%MOD)]++;
+					numSol2[k%MOD][(int) ((k*N)%MOD)]++;
 					return gcdEngine.gcd(a+b, N);
 				}
 			}
@@ -121,11 +188,11 @@ public class Lehman_Analyzer3 extends FactorAlgorithmBase {
 			for (int j=0; j<MOD; j++) {
 				if (aValues[i][j].size() > 0) {
 					//					LOG.info("Success a-values %" + MOD + " for k %" + MOD + "==" + i + ", (4nk)%" + MOD + "==" + j + " num all : " + numSol[i] + " num : " + numSol2[i][j] +  ", aval : "+ aValues[i][j]);
-					LOG.info("Success a-values % " + MOD + " for k %" + MOD + " =="  + i + ", (n + k)%" + MOD + " == " + j + " num all : " + numSol[i] + " num : " + numSol2[i][j] +  ", aval : "+ aValues[i][j]);
+					LOG.info("Success a-values % " + MOD + " for k %" + MOD + " =="  + i + ",  k*n %" + MOD + " == " + j + " num all : " + numSol[i] + " num : " + numSol2[i][j] +  ", aval : "+ aValues[i][j]);
 					logged = true;
 				}
 			}
-			if (logged) LOG.info("");
+			//			if (logged) LOG.info("");
 		}
 
 	}

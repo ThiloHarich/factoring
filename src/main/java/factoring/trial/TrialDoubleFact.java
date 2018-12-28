@@ -91,6 +91,7 @@ public class TrialDoubleFact implements FactorizationOfLongs {
 			long nDivPrimeLong;
 			while (((nDivPrimeLong= (long)nDivPrime) - nDivPrime) >=  -0.001 &&
 					nDivPrime - nDivPrimeLong < 0.001 &&
+					//			while (Math.abs(nDivPrime - (((long)nDivPrime))) <=  0.001 &&
 					nD > 1.0 &&
 					nD % primes[primeIndex] == 0) {
 				if (primeFactors == null)

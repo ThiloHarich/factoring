@@ -26,25 +26,25 @@ public class SqrtTest {
 		long start, end;
 
 		start = System.currentTimeMillis();
-		multiply(range);
+		sqrt(range);
 		end  = System.currentTimeMillis();
-		System.out.println(" time mult  : " + (end- start));
+		System.out.println(" time sqrt  : " + (end- start));
 
 		start = System.currentTimeMillis();
-		sqrt2(range);
+		div(range);
 		end  = System.currentTimeMillis();
-		System.out.println(" time sqrt2  : " + (end- start));
+		System.out.println(" time div  : " + (end- start));
 
-		start = System.currentTimeMillis();
-		array2(range);
-		end  = System.currentTimeMillis();
-		System.out.println(" time array2 : " + (end- start));
-
-		start = System.currentTimeMillis();
-		array(range);
-		end  = System.currentTimeMillis();
-		System.out.println(" time array  : " + (end- start));
-
+		//		start = System.currentTimeMillis();
+		//		array2(range);
+		//		end  = System.currentTimeMillis();
+		//		System.out.println(" time array2 : " + (end- start));
+		//
+		//		start = System.currentTimeMillis();
+		//		array(range);
+		//		end  = System.currentTimeMillis();
+		//		System.out.println(" time array  : " + (end- start));
+		//
 	}
 
 	private double array(long range) {
@@ -164,8 +164,20 @@ public class SqrtTest {
 		for (int j = 0; j <loops; j++) {
 			for (long i = 0; i < range; i++) {
 				final double sqrt = Math.sqrt(i*n);
-				final double sqrtInv = 1.0d/sqrt;
-				prod += sqrt  + sqrtInv;
+				prod += sqrt;
+			}
+		}
+		return prod;
+	}
+
+	private double div(long range) {
+		double prod = 1;
+		final long bigVal = 1l << 40 + 78931;
+		final long n = 1l << 21;
+		for (int j = 1; j <loops; j++) {
+			for (long i = 1; i < range; i++) {
+				final long sqrt = bigVal/(i*n);
+				prod += sqrt;
 			}
 
 		}

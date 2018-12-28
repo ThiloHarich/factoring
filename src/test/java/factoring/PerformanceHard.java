@@ -6,39 +6,47 @@ import java.util.Random;
 import org.junit.Test;
 
 import de.tilman_neumann.jml.factor.FactorAlgorithmBase;
-import factoring.trial.TrialDoubleFact;
-import factoring.trial.TrialInvFact;
+import factoring.fermat.lehman.Lehman_Fast;
+import factoring.fermat.lehman.Lehman_Fast6;
 
 //import de.tilman_neumann.math.factor.CombinedFactorAlgorithm;
 //import de.tilman_neumann.math.factor.FactorAlgorithm;
 
 public class PerformanceHard {
 
-	final static int bits = 30;
-	final static int numPrimes = 945;
-	final static int loop = 40;
+	final static int bits = 40;
+	final static int numPrimes = 13945;
+	final static int loop = 20;
 	final static int smallFactorBits = bits / 2;
 	static long[] semiprimes;
 
 	public static void main(String[] args) {
 		//		final FactorAlgorithmBase factorizer2 = new factoring.fermat.lehman.Lehman_Fast(false);
 		//		final FactorAlgorithmBase factorizer2 = new SquFoF31();
-		final FactorizationOfLongs factorizer1 = new TrialDoubleFact(1 << (bits/2));
+		//		final FactorizationOfLongs factorizer1 = new TrialDoubleFact(1 << (bits/2));
 		//		final FactorizationOfLongs factorizer1 = new LehmanFactorFinderMod12(bits, 2.f, false);
-		final FactorizationOfLongs factorizer2 = new TrialInvFact(1 << (bits/2));
+		//		final FactorAlgorithmBase factorizer2 = new Lehman_Fast24_4(true);
+		final Lehman_Fast6 factorizer1 = new Lehman_Fast6(true);
+		//		final FactorizationOfLongs factorizer2 = new TrialInvFact(1 << (bits/2));
 		//		final FactorizationOfLongs factorizer2 = new LehmanFactorFinder(bits, 2.f, false);
 		//		final FactorizationOfLongs factorizer1 = new LehmanFactorFinderRange(bits, 1.f, false);
-		//		final FactorAlgorithmBase factorizer1 = new Lehman_Fast(true);
+		final Lehman_Fast factorizer2 = new Lehman_Fast(true);
 		semiprimes = makeSemiPrimesList(bits, smallFactorBits, numPrimes);
 		test2(factorizer1);
+
+		//		System.out.println("loop 6k      first : " + factorizer1.loop_6_1);
+		//		System.out.println("loop 6      ground : " + factorizer1.loop_ground);
+		//		System.out.println("loop 6k     second : " + factorizer1.loop_6_2);
+		//		System.out.println("loop 6k + 3 ground : " + factorizer1.loop_3);
+
 		//		test2(factorizer1);
 		//		findFactors(factorizer1, semiprimes, loop);
 
 		test2(factorizer2);
-		//		System.out.println("count1 " + factorizer1.countLoop1);
-		//		System.out.println("count2 " + factorizer1.countLoop2);
-		//		System.out.println("count3 " + factorizer1.countLoop3);
-		//		System.out.println("count4 " + factorizer1.countLoop4);
+		//		System.out.println("loop 6k      first : " + factorizer2.loop_6_1);
+		//		System.out.println("loop 6      ground : " + factorizer2.loop_ground);
+		//		System.out.println("loop 6k     second : " + factorizer2.loop_6_2);
+		//		System.out.println("loop 6k + 3 ground : " + factorizer2.loop_3);
 	}
 
 	public static void test2(FactorAlgorithmBase factorizer) {
