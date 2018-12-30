@@ -29,8 +29,8 @@ import de.tilman_neumann.util.ConfigUtil;
  *
  * @authors Tilman Neumann + Thilo Harich
  */
-public class Lehman_Fast extends FactorAlgorithmBase {
-	private static final Logger LOG = Logger.getLogger(Lehman_Fast.class);
+public class Lehman_Fast5 extends FactorAlgorithmBase {
+	private static final Logger LOG = Logger.getLogger(Lehman_Fast5.class);
 
 	/** This is a constant that is below 1 for rounding up double values to long. */
 	private static final double ROUND_UP_DOUBLE = 0.9999999665;
@@ -92,7 +92,7 @@ public class Lehman_Fast extends FactorAlgorithmBase {
 	 * @param factorSemiprimes if the number to be factored might be a semiprimes were each factor is greater then n^1/3
 	 * then set this to true. The algorithm will always work. But this might have a very positive effect on the performance.
 	 */
-	public Lehman_Fast(boolean factorSemiprimes) {
+	public Lehman_Fast5(boolean factorSemiprimes) {
 		this.factorSemiprimes = factorSemiprimes;
 	}
 
@@ -128,7 +128,7 @@ public class Lehman_Fast extends FactorAlgorithmBase {
 		// but do not go to far, since there we have a lower chance to finda factor
 		// here we only inspect k = 6*i since they much more likely have a solution x^2 - sqrt(k*n) = y^2
 		// this is we use a multiplier of 6
-		factor = lehmanEven(kTwoA, kLimit);
+		factor = lehman(kTwoA, kLimit);
 		if (factor>1 && factor != N)
 			return factor;
 
@@ -164,26 +164,26 @@ public class Lehman_Fast extends FactorAlgorithmBase {
 			}
 		}
 
-		// additional loop for k = 3 mod 6 in the middle range
-		// this loop has fewer possible a's, then k = 0 mod 6 and therefore gives less often factors
-		if ((factor = lehmanOdd(kTwoA + 3, kLimit)) > 1)
-			return factor;
+		//		// additional loop for k = 3 mod 6 in the middle range
+		//		// this loop has fewer possible a's, then k = 0 mod 6 and therefore gives less often factors
+		//		if ((factor = lehmanOdd(kTwoA + 3, kLimit)) > 1)
+		//			return factor;
 
 		// continue even loop, because we are looking at very high numbers this now done after the k = 3 mod 6 loop
-		if ((factor = lehmanEven(kLimit, kLimit << 1)) > 1)
+		if ((factor = lehman(kLimit, kLimit*6)) > 1)
 			return factor;
 
 		// we now have loops for offset 0,3 -> missing 1,2,4,5
 		// this code will be executed very rarely, but to be sure we did not miss factors
 		// with the lehman argument we have to execute it.
-		if ((factor = lehmanOdd(kTwoA + 2, kLimit)) > 1)
-			return factor;
-		if ((factor = lehmanEven(kTwoA + 4, kLimit)) > 1)
-			return factor;
-		if ((factor = lehmanEven(kTwoA + 1, kLimit)) > 1)
-			return factor;
-		if ((factor = lehmanOdd(kTwoA + 5, kLimit)) > 1)
-			return factor;
+		//		if ((factor = lehmanOdd(kTwoA + 2, kLimit)) > 1)
+		//			return factor;
+		//		if ((factor = lehmanEven(kTwoA + 4, kLimit)) > 1)
+		//			return factor;
+		//		if ((factor = lehmanEven(kTwoA + 1, kLimit)) > 1)
+		//			return factor;
+		//		if ((factor = lehmanOdd(kTwoA + 5, kLimit)) > 1)
+		//			return factor;
 
 		// Check via trial division whether N has a nontrivial divisor d <= cbrt(N).
 		//LOG.debug("entering tdiv...");
@@ -234,6 +234,34 @@ public class Lehman_Fast extends FactorAlgorithmBase {
 			final long a = (long) (sqrt4N * sqrt[k] + ROUND_UP_DOUBLE) | 1;
 			final long test = a*a - k * fourN;
 			final long b = (long) Math.sqrt(test);
+			if (b*b == test) {
+				return gcdEngine.gcd(a+b, N);
+			}
+		}
+		return -1;
+	}
+
+	private long lehman(int kBegin, final int kLimit) {
+		for (int k = kBegin; k <= kLimit; k += 6) {
+			// for k = 0 mod 6 a must be odd
+			long a = (long) (sqrt4N * sqrt[k] + ROUND_UP_DOUBLE) | 1;
+			long test = a*a - k * fourN;
+			long b = (long) Math.sqrt(test);
+			if (b*b == test) {
+				return gcdEngine.gcd(a+b, N);
+			}
+			final int k3 = k + 3;
+			a = (long) (sqrt4N * sqrt[k3] + ROUND_UP_DOUBLE);
+			// for k = 3 mod 6 a must be even and k + n + a = 0 mod 4
+			final long kPlusN = k3 + N;
+			if ((kPlusN & 3) == 0) {
+				a += ((kPlusN - a) & 7);
+			} else
+			{
+				a += ((kPlusN - a) & 3);
+			}
+			test = a*a - k3 * fourN;
+			b = (long) Math.sqrt(test);
 			if (b*b == test) {
 				return gcdEngine.gcd(a+b, N);
 			}
@@ -310,7 +338,7 @@ public class Lehman_Fast extends FactorAlgorithmBase {
 				5682546780292609L,
 		};
 
-		final Lehman_Fast lehman = new Lehman_Fast(true);
+		final Lehman_Fast5 lehman = new Lehman_Fast5(true);
 		for (final long N : testNumbers) {
 			final long factor = lehman.findSingleFactor(N);
 			LOG.info("N=" + N + " has factor " + factor);

@@ -35,6 +35,9 @@ public class Lehman_Fast6 extends FactorAlgorithmBase {
 	/** This is a constant that is below 1 for rounding up double values to long. */
 	private static final double ROUND_UP_DOUBLE = 0.9999999665;
 
+	private static final int DISCRIMINATOR_BITS = 10; // experimental result
+	private static final double DISCRIMINATOR = 1.0/(1<<DISCRIMINATOR_BITS);
+
 	private static double[] sqrt, sqrtInv, sqrt6;
 
 	private static double[] primesInv;
@@ -190,6 +193,7 @@ public class Lehman_Fast6 extends FactorAlgorithmBase {
 		// Check via trial division whether N has a nontrivial divisor d <= cbrt(N).
 		//LOG.debug("entering tdiv...");
 		factor = findSmallFactors(N, cbrt);
+		if (factor>1 && factor<N) return factor;
 
 		for (int k=kTwoA6 + 1; k <= kLimit6; k++) {
 			final long fourKN = k*N<<2;
@@ -231,30 +235,34 @@ public class Lehman_Fast6 extends FactorAlgorithmBase {
 	private long lehmanEven(int kBeginIndex, final int kEnd) {
 		for (int k = kBeginIndex ; k <= kEnd; k+=4) {
 			// for k even a must be odd
-			final long a = (long) (sqrt4N * sqrt6[k] + ROUND_UP_DOUBLE) | 1;
-			final long a2 = (long) (sqrt4N * sqrt6[k+1] + ROUND_UP_DOUBLE) | 1;
-			final long a3 = (long) (sqrt4N * sqrt6[k+2] + ROUND_UP_DOUBLE) | 1;
-			final long a4 = (long) (sqrt4N * sqrt6[k+3] + ROUND_UP_DOUBLE) | 1;
+			// using Math.sqrt slows down by a factor of 4,5!!!
+			// using Math.ceil slows down by 50 %
+			final long a  = (long) (sqrt4N * sqrt6[k]   + ROUND_UP_DOUBLE) | 1;
 			long k24N = k*twentyfourN;
 			long test = a*a - k24N;
+			// for unknown reasons Math.sqrt performs fast here. Checking test mod 25025 to see if test might be a square
+			// slows down by 25%. Checking mod a power of 2 does not filter out numbers
 			long b = (long) Math.sqrt(test);
 			if (b*b == test) {
 				return gcdEngine.gcd(a+b, N);
 			}
 			// we unroll the loop
 			k24N += twentyfourN;
+			final long a2 = (long) (sqrt4N * sqrt6[k+1] + ROUND_UP_DOUBLE) | 1;
 			test = a2*a2 - k24N;
 			b = (long) Math.sqrt(test);
 			if (b*b == test) {
 				return gcdEngine.gcd(a2+b, N);
 			}
 			k24N += twentyfourN;
+			final long a3 = (long) (sqrt4N * sqrt6[k+2] + ROUND_UP_DOUBLE) | 1;
 			test = a3*a3 - k24N;
 			b = (long) Math.sqrt(test);
 			if (b*b == test) {
 				return gcdEngine.gcd(a3+b, N);
 			}
 			k24N += twentyfourN;
+			final long a4 = (long) (sqrt4N * sqrt6[k+3] + ROUND_UP_DOUBLE) | 1;
 			test = a4*a4 - k24N;
 			b = (long) Math.sqrt(test);
 			if (b*b == test) {
@@ -278,9 +286,10 @@ public class Lehman_Fast6 extends FactorAlgorithmBase {
 			// TODO choose the precision factor with respect to the maxFactor!?
 			if (primes[primeIndex] == 0)
 				System.out.println();
-			long nDivPrimeLong;
-			if (((nDivPrimeLong= (long)nDivPrime) - nDivPrime) >=  -0.001 &&
-					nDivPrime - nDivPrimeLong < 0.001  && n > 1 && n % primes[primeIndex] == 0) {
+			if (((long)(nDivPrime+DISCRIMINATOR)) - ((long)(nDivPrime-DISCRIMINATOR)) == 1 &&
+					//			if (((nDivPrimeLong= (long)nDivPrime) - nDivPrime) >=  -0.001 &&
+					//					nDivPrime - nDivPrimeLong < 0.001  &&
+					n > 1 && n % primes[primeIndex] == 0) {
 				return primes[primeIndex];
 			}
 		}
@@ -297,6 +306,7 @@ public class Lehman_Fast6 extends FactorAlgorithmBase {
 
 		// These test number were too hard for previous versions:
 		final long[] testNumbers = new long[] {
+				18019629551563L,
 				// stuff Lehman_TillSimple3 did not like
 				19699548984827L,
 				5640012124823L,

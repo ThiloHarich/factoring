@@ -223,8 +223,14 @@ public class Lehman_Fast2 extends FactorAlgorithmBase {
 	private long lehmanEven(int kBegin, final int kEnd) {
 		for (int k = kBegin ; k <= kEnd; k += 6) {
 			// for k even a must be odd
+			// using Math.sqrt slows down by a factor of 4,5
+			// using Math.ceil slows down by 50 %
 			final long a = (long) (sqrt4N * sqrt[k] + ROUND_UP_DOUBLE) | 1;
+			//			final long a = (long) Math.ceil(sqrt4N * sqrt[k]) | 1;
+			//			final long a = (long) (sqrt4N * Math.sqrt(k) + ROUND_UP_DOUBLE) | 1;
 			final long test = a*a - k * fourN;
+			// for unknown reasons here Math.sqrt performs fast. Using mod 25025 to see if test might be a square
+			// slows down by 25%. Checking mod a power of 2 does not filter out numbers
 			final long b = (long) Math.sqrt(test);
 			if (b*b == test) {
 				return gcdEngine.gcd(a+b, N);

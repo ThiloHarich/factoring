@@ -1132,10 +1132,10 @@ public class PrimeMath {
 		return params;
 	}
 
-	public static long mod(int number, double i, double iInv) {
-		// TODO Auto-generated method stub
-		return 0;
-	}
+	//	public static long mod(int number, double i, double iInv) {
+	//		// TODO Auto-generated method stub
+	//		return 0;
+	//	}
 
 
 }

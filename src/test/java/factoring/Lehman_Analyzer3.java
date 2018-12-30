@@ -55,7 +55,8 @@ public class Lehman_Analyzer3 extends FactorAlgorithmBase {
 	private final int[] numSol;
 	private final int[][] numSol2;
 
-	private static final int MOD = 6;
+	// 0, 6, 12, 18, 24
+	private static final int MOD = 10*6;
 
 	public Lehman_Analyzer3() {
 		aValues = new SortedSet[MOD][MOD];
@@ -83,7 +84,7 @@ public class Lehman_Analyzer3 extends FactorAlgorithmBase {
 		final int cbrt = (int) Math.ceil(Math.cbrt(N));
 		final double sixthRoot = Math.pow(N, 1/6.0); // double precision is required for stability
 
-		final int scm = 12;
+		final int scm = MOD;
 		//		final int kLimit = (cbrt + scm) / scm * scm;
 		// For kLimit / 64 the range for a is at most 2, this is what we can ensure
 		int kTwoA = (cbrt >> 6);
@@ -105,17 +106,17 @@ public class Lehman_Analyzer3 extends FactorAlgorithmBase {
 			}
 		}
 
-		for (int k = kTwoA; k <= 2*cbrt; k += 6) {
-			final long fourKN = k*N<<2;
-			final long a = ((long) Math.ceil(Math.sqrt(fourKN))) | 1; // ceil() is required for stability
-			// for k = 0 mod 6 a must be odd
-			final long test = a*a - fourKN;
-			final long b = (long) Math.sqrt(test);
-			if (b*b == test) {
-				//				System.out.print(k/6 & 3);
-				return gcdEngine.gcd(a+b, N);
-			}
-		}
+		//		for (int k = kTwoA; k <= 2*cbrt; k += 6) {
+		//			final long fourKN = k*N<<2;
+		//			final long a = ((long) Math.ceil(Math.sqrt(fourKN))) | 1; // ceil() is required for stability
+		//			// for k = 0 mod 6 a must be odd
+		//			final long test = a*a - fourKN;
+		//			final long b = (long) Math.sqrt(test);
+		//			if (b*b == test) {
+		//				//				System.out.print(k/6 & 3);
+		//				return gcdEngine.gcd(a+b, N);
+		//			}
+		//		}
 
 		//		for (int k = kTwoA; k <= cbrt << 2; k += 12) {
 		//			final long fourKN = k*N<<2;
@@ -129,23 +130,23 @@ public class Lehman_Analyzer3 extends FactorAlgorithmBase {
 		//			}
 		//		}
 
-		for (int k = kTwoA + 3; k <= cbrt; k += 6) {
-			final long fourKN = k*N<<2;
-			long a = ((long) Math.ceil(Math.sqrt(fourKN))); // ceil() is required for stability
-			final long kPlusN = k + N;
-			if ((kPlusN & 3) == 0) {
-				a += ((kPlusN - a) & 7);
-			} else
-			{
-				a += ((kPlusN - a) & 3);
-			}
-			final long test = a*a - fourKN;
-			final long b = (long) Math.sqrt(test);
-			if (b*b == test) {
-				//				System.out.print(k/6 & 3);
-				return gcdEngine.gcd(a+b, N);
-			}
-		}
+		//		for (int k = kTwoA + 3; k <= cbrt; k += 6) {
+		//			final long fourKN = k*N<<2;
+		//			long a = ((long) Math.ceil(Math.sqrt(fourKN))); // ceil() is required for stability
+		//			final long kPlusN = k + N;
+		//			if ((kPlusN & 3) == 0) {
+		//				a += ((kPlusN - a) & 7);
+		//			} else
+		//			{
+		//				a += ((kPlusN - a) & 3);
+		//			}
+		//			final long test = a*a - fourKN;
+		//			final long b = (long) Math.sqrt(test);
+		//			if (b*b == test) {
+		//				//				System.out.print(k/6 & 3);
+		//				return gcdEngine.gcd(a+b, N);
+		//			}
+		//		}
 
 		for (int k=kTwoA; k <= cbrt; k+= 1) {
 			final long fourKN = k*N<<2;
@@ -159,10 +160,12 @@ public class Lehman_Analyzer3 extends FactorAlgorithmBase {
 				final long b = (long) Math.sqrt(test);
 				if (b*b == test) {
 					//					aValues[k%MOD][(int) ((4*N*k)%MOD)].add(a%MOD);
-					aValues[(k)%MOD][(int) ((k*N)%MOD)].add(a%MOD);
+					//					aValues[(k)%MOD][(int) ((k*N)%MOD)].add(a%MOD);
+					aValues[(k)%MOD][0].add(a%MOD);
 					numSol[(k)%MOD]++;
 					//					numSol2[k%MOD][(int) ((4*N*k)%MOD)]++;
-					numSol2[k%MOD][(int) ((k*N)%MOD)]++;
+					numSol2[k%MOD][0]++;
+					//					numSol2[k%MOD][(int) ((k*N)%MOD)]++;
 					return gcdEngine.gcd(a+b, N);
 				}
 			}

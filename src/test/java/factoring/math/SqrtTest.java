@@ -26,6 +26,11 @@ public class SqrtTest {
 		long start, end;
 
 		start = System.currentTimeMillis();
+		mod(range);
+		end  = System.currentTimeMillis();
+		System.out.println(" time mod  : " + (end- start));
+
+		start = System.currentTimeMillis();
 		sqrt(range);
 		end  = System.currentTimeMillis();
 		System.out.println(" time sqrt  : " + (end- start));
@@ -34,6 +39,11 @@ public class SqrtTest {
 		div(range);
 		end  = System.currentTimeMillis();
 		System.out.println(" time div  : " + (end- start));
+
+		start = System.currentTimeMillis();
+		primemod(range);
+		end  = System.currentTimeMillis();
+		System.out.println(" time prime: " + (end- start));
 
 		//		start = System.currentTimeMillis();
 		//		array2(range);
@@ -163,8 +173,33 @@ public class SqrtTest {
 		final long n = 1l << 21;
 		for (int j = 0; j <loops; j++) {
 			for (long i = 0; i < range; i++) {
-				final double sqrt = Math.sqrt(i*n);
+				final long sqrt = (long) Math.sqrt(i*n);
 				prod += sqrt;
+			}
+		}
+		return prod;
+	}
+
+	private double primemod(long range) {
+		double prod = 1;
+		final double inv63 = 1.0 / 63;
+		final long n = 1l << 21;
+		for (int j = 0; j <loops; j++) {
+			for (long i = 0; i < range; i++) {
+				final long mod = PrimeMath.mod(i*n, 63, inv63 );
+				prod += mod;
+			}
+		}
+		return prod;
+	}
+
+	private double mod(long range) {
+		long prod = 1;
+		final long n = 1l << 21;
+		for (int j = 0; j <loops; j++) {
+			for (long i = 0; i < range; i++) {
+				final long mod = i*n % 8190;
+				prod += mod;
 			}
 		}
 		return prod;

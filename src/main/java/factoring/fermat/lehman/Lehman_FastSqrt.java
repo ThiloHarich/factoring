@@ -29,8 +29,8 @@ import de.tilman_neumann.util.ConfigUtil;
  *
  * @authors Tilman Neumann + Thilo Harich
  */
-public class Lehman_Fast extends FactorAlgorithmBase {
-	private static final Logger LOG = Logger.getLogger(Lehman_Fast.class);
+public class Lehman_FastSqrt extends FactorAlgorithmBase {
+	private static final Logger LOG = Logger.getLogger(Lehman_FastSqrt.class);
 
 	/** This is a constant that is below 1 for rounding up double values to long. */
 	private static final double ROUND_UP_DOUBLE = 0.9999999665;
@@ -40,8 +40,33 @@ public class Lehman_Fast extends FactorAlgorithmBase {
 	private static double[] primesInv;
 	private static int[] primes;
 
+	private static boolean[] isSquareMod;
+
+	//	 mos near a power of 2 :
+	//	255 = 3*5*7       , 513 = 3*3*3*19 , 1025 = 5*5*41
+	//	14175 = 3*3*5*5*7*9
+	//   6615 = 3, 3, 3, 5, 7, 7
+	//  1155 = 3*5*7*11
+	//  4095 = 3*3*5*7*13 <- 3. best performance
+	//  15015 = 3*5*7*11*13 <- 2. best performance
+	//  255255 = 3*5*7*11*13*17 <- best performance
+	//  85085 = 5*7*11*13*17 <- best performance
+	//  25025 = 5*5*7*11*13
+	//  125125 = 5*5*5*7*11*13
+
+	private static int mod = 25025;   // 3*3*7
+	private final double modulusInv = 1.0 / mod;
+
+	private final double modD = mod;
+
+
 
 	static {
+		isSquareMod = new boolean[mod];
+		for (long i = 0; i < isSquareMod.length; i++) {
+			isSquareMod[(int) ((i * i) % mod)] = true;
+		}
+
 		// Precompute sqrts for all possible k. 2^22 entries are enough for N~2^66.
 		int kMax = 1<<22;
 		sqrt = new double[kMax + 1];
@@ -92,7 +117,7 @@ public class Lehman_Fast extends FactorAlgorithmBase {
 	 * @param factorSemiprimes if the number to be factored might be a semiprimes were each factor is greater then n^1/3
 	 * then set this to true. The algorithm will always work. But this might have a very positive effect on the performance.
 	 */
-	public Lehman_Fast(boolean factorSemiprimes) {
+	public Lehman_FastSqrt(boolean factorSemiprimes) {
 		this.factorSemiprimes = factorSemiprimes;
 	}
 
@@ -129,8 +154,7 @@ public class Lehman_Fast extends FactorAlgorithmBase {
 		// here we only inspect k = 6*i since they much more likely have a solution x^2 - sqrt(k*n) = y^2
 		// this is we use a multiplier of 6
 		factor = lehmanEven(kTwoA, kLimit);
-		if (factor>1 && factor != N)
-			return factor;
+		if (factor>1 && factor != N) return factor;
 
 		// investigate in solution a^2 - sqrt(k*n) = y^2 were we might have more then two solutions 'a'
 		for (int k=1 ; k < kTwoA; k++) {
@@ -230,13 +254,27 @@ public class Lehman_Fast extends FactorAlgorithmBase {
 
 	private long lehmanEven(int kBegin, final int kEnd) {
 		for (int k = kBegin ; k <= kEnd; k += 6) {
-			// for k = 0 mod 6 a must be odd
+			//			final long sqrtkn = (long) Math.sqrt(k * N << 6);
+			//			// for k = 0 mod 6 a must be odd
+			//			final long a = ((sqrtkn + 7) >> 2) | 1;
+			//			final long a = (long) (sqrt4N * Math.sqrt(k) + ROUND_UP_DOUBLE) | 1;
 			final long a = (long) (sqrt4N * sqrt[k] + ROUND_UP_DOUBLE) | 1;
 			final long test = a*a - k * fourN;
-			final long b = (long) Math.sqrt(test);
-			if (b*b == test) {
-				return gcdEngine.gcd(a+b, N);
+			//			final short testMod = (short) test;
+			//			final int testMod = (int) (test % 25025);
+			final int testMod = (int) (test % 16);
+			//			if (testMod == (2*testMod) >> 1)
+			//			if (isSquareMod[testMod])
+			{
+				//				System.out.print(1);
+				final long b = (long) Math.sqrt(test);
+				if (b*b == test) {
+					return gcdEngine.gcd(a+b, N);
+				}
 			}
+			//			else
+			//				System.out.print(0);
+
 		}
 		return -1;
 	}
@@ -310,7 +348,7 @@ public class Lehman_Fast extends FactorAlgorithmBase {
 				5682546780292609L,
 		};
 
-		final Lehman_Fast lehman = new Lehman_Fast(true);
+		final Lehman_FastSqrt lehman = new Lehman_FastSqrt(true);
 		for (final long N : testNumbers) {
 			final long factor = lehman.findSingleFactor(N);
 			LOG.info("N=" + N + " has factor " + factor);
