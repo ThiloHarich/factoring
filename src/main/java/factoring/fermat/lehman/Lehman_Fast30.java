@@ -153,11 +153,13 @@ public class Lehman_Fast30 extends FactorAlgorithmBase {
 		// here we only inspect k = 30*i since they much more likely have a solution a^2 - sqrt(k*n) = y^2
 		// this is we use a multiplier of 30 and 'a' must be odd
 		factor = lehman30(kTwoA30, kLimit30);
-		if (factor>1 && factor != N) return factor;
+		if (factor>1 && factor != N)
+			return factor;
 
 		// inspect k = 6*i != 30*j
 		factor = lehman6(kTwoA+1, kLimit);
-		if (factor>1 && factor != N) return factor;
+		if (factor>1 && factor != N)
+			return factor;
 
 		// investigate in solution a^2 - sqrt(k*n) = y^2 were we might have more then two solutions 'a'
 		final int kTwoA6 = kTwoA*6;
@@ -334,6 +336,7 @@ public class Lehman_Fast30 extends FactorAlgorithmBase {
 
 		// These test number were too hard for previous versions:
 		final long[] testNumbers = new long[] {
+				646131439L,
 				18019629551563L,
 				// stuff Lehman_TillSimple3 did not like
 				19699548984827L,

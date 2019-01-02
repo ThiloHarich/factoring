@@ -45,7 +45,7 @@ public class CorrectnessTest {
 		final int bits = 50;
 
 		long begin = (1L << bits) +1;
-		begin = 1506L	;
+		begin = 9L	;
 		//		final LehmanFactorFinder factorizer1 = new LehmanFactorFinder(50, 1, false);
 		//		final FactorAlgorithm factorizer2 = new SquFoF31();
 		final FactorAlgorithmBase factorizer1 = new Lehman_Fast(true);

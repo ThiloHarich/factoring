@@ -128,7 +128,7 @@ public class Lehman_Fast6 extends FactorAlgorithmBase {
 			return factor;
 
 		// limit for must be 0 mod 6, since we also want to search above of it
-		final int step = 12;
+		final int step = 6;
 		final int kLimit = (cbrt + step) / step;
 		// For kLimit / 64 the range for a is at most 2, this is what we can ensure
 		int kTwoA = (cbrt >> 6);
@@ -302,6 +302,7 @@ public class Lehman_Fast6 extends FactorAlgorithmBase {
 
 		// These test number were too hard for previous versions:
 		final long[] testNumbers = new long[] {
+				646131439L,
 				18019629551563L,
 				// stuff Lehman_TillSimple3 did not like
 				19699548984827L,
