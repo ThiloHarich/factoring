@@ -42,7 +42,7 @@ public class Lehman_Analyzer3 extends FactorAlgorithmBase {
 	/** number of test numbers */
 	private static final int N_COUNT = 100000;
 	/** the bit size of N to start with */
-	private static final int START_BITS = 30;
+	private static final int START_BITS = 40;
 	/** the increment in bit size from test set to test set */
 	private static final int INCR_BITS = 1;
 	/** maximum number of bits to test (no maximum if null) */
@@ -56,7 +56,7 @@ public class Lehman_Analyzer3 extends FactorAlgorithmBase {
 	private final int[][] numSol2;
 
 	// 0, 6, 12, 18, 24
-	private static final int MOD = 10*6;
+	private static final int MOD = 30;
 
 	public Lehman_Analyzer3() {
 		aValues = new SortedSet[MOD][MOD];

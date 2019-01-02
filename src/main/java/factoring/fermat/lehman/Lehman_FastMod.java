@@ -41,12 +41,10 @@ public class Lehman_FastMod extends FactorAlgorithmBase {
 	private static double[] primesInv;
 	private static int[] primes;
 
-	private static final int mod = 60;
-	//	private static final int [] offsets = {0,6,12,18,24,10,15,20};
-	//	private static final int [] offsets = {0,6,12,18,24};
-	private static final int [] offsets = {30,0,6,10,18,54,42,50}; // 10
-	//	private static final int [] offsets = {18,6,12,0};// 10,22,14,9,20,21
-	//	private static final int [] offsets = {0,3};
+	private static final int mod = 6*5;
+	private static final int [] offsets = {0,6,12,18,24};  // best for 30
+	//	private static final int [] offsets = {0,6,12,18,24,36,42,48,54,60,72,78,84,90,96,102,108,114,120,126,132,138,144,150,
+	//			156,162,168,174,180,186,192,198,204};  // best for 24
 
 
 
@@ -56,7 +54,7 @@ public class Lehman_FastMod extends FactorAlgorithmBase {
 		sqrt = new double[kMax + 1];
 		sqrt6 = new double[offsets.length + 1][kMax/mod + 1];
 		sqrtInv = new double[kMax + 1];
-		for (int i = 1; i < sqrt.length; i++) {
+		for (int i = 0; i < sqrt.length; i++) {
 			final double sqrtI = Math.sqrt(i);
 			sqrt[i] = sqrtI;
 			if (i < kMax/mod) {
@@ -149,7 +147,13 @@ public class Lehman_FastMod extends FactorAlgorithmBase {
 
 
 		int offsetIndex = 0;
-		for (final int offset : offsets) {
+		//		for (int i = 0; i < 4; i++) {
+		//			final int offset = offsets[i];
+		//			factor = lehmanEven(kTwoA, kLimit, offset, offsetIndex++);
+		//			if (factor > 1 && factor < N)
+		//				return factor;
+		//		}
+		for (int offset = 0; offset < 24; offset += 6) {
 			factor = lehmanEven(kTwoA, kLimit, offset, offsetIndex++);
 			if (factor > 1 && factor < N)
 				return factor;
@@ -186,6 +190,10 @@ public class Lehman_FastMod extends FactorAlgorithmBase {
 				}
 			}
 		}
+		factor = lehmanEven(0, kLimit, 24, offsetIndex++);
+		if (factor > 1 && factor < N)
+			return factor;
+
 
 		// additional loop for k = 3 mod 6 in the middle range
 		// this loop has fewer possible a's, then k = 0 mod 6 and therefore gives less often factors
@@ -195,6 +203,7 @@ public class Lehman_FastMod extends FactorAlgorithmBase {
 		//		// continue even loop, because we are looking at very high numbers this now done after the k = 3 mod 6 loop
 		//		if ((factor = lehmanEven(kLimit, kLimit << 1)) > 1)
 		//			return factor;
+
 
 		offsetIndex = 0;
 		for (final int offset : offsets) {
@@ -248,8 +257,8 @@ public class Lehman_FastMod extends FactorAlgorithmBase {
 	}
 
 	private long lehmanEven(int kBegin, final int kEnd, int offset, int offsetIndex) {
-		int sqrtIndex = kBegin / mod;
-		for (int k = kBegin + offset; k <= kEnd; k += mod) {
+		int sqrtIndex = kBegin / 30;
+		for (int k = kBegin + offset; k <= kEnd; k += 30) {
 			// for k = 0 mod 6 a must be odd
 			final double sqrtI = sqrt6[offsetIndex][sqrtIndex];
 			//			final double sqrtK = sqrt[k];

@@ -32,8 +32,13 @@ import de.tilman_neumann.util.ConfigUtil;
 public class Lehman_Fast2 extends FactorAlgorithmBase {
 	private static final Logger LOG = Logger.getLogger(Lehman_Fast2.class);
 
+	private static final int DISCRIMINATOR_BITS = 10; // experimental result
+	private static final double DISCRIMINATOR = 1.0/(1<<DISCRIMINATOR_BITS);
+
 	/** This is a constant that is below 1 for rounding up double values to long. */
 	private static final double ROUND_UP_DOUBLE = 0.9999999665;
+
+	private static final double DISCRIMINATOR2 = .01;
 
 	private static double[] sqrt, sqrtInv;
 
@@ -88,6 +93,8 @@ public class Lehman_Fast2 extends FactorAlgorithmBase {
 
 	long N;
 	long fourN;
+	double fourND;
+	int kFourA;
 	double sqrt4N;
 	boolean factorSemiprimes;
 	private final Gcd63 gcdEngine = new Gcd63();
@@ -123,9 +130,11 @@ public class Lehman_Fast2 extends FactorAlgorithmBase {
 		final int kLimit = (cbrt + 6) / 6 * 6;
 		// For kLimit / 64 the range for a is at most 2, this is what we can ensure
 		int kTwoA = (cbrt >> 6);
+		kFourA = (cbrt >> 4);
 		// twoA = 0 mod 6
 		kTwoA = ((kTwoA + 6)/ 6) * 6;
 		fourN = N<<2;
+		fourND = fourN;
 		sqrt4N = Math.sqrt(fourN);
 		final double sixthRootTerm = 0.25 * Math.pow(N, 1/6.0); // double precision is required for stability
 
@@ -133,33 +142,32 @@ public class Lehman_Fast2 extends FactorAlgorithmBase {
 		// but do not go to far, since there we have a lower chance to finda factor
 		// here we only inspect k = 6*i since they much more likely have a solution a^2 - sqrt(k*n) = y^2
 		// this is we use a multiplier of 6 and 'a' must be odd
-		factor = lehmanEven(kTwoA, kLimit);
-		if (factor>1 && factor != N) return factor;
+		factor = lehmanEven(6, kLimit);
+		if (factor>1 && factor != N)
+			return factor;
 
 		// investigate in solution a^2 - sqrt(k*n) = y^2 were we might have more then two solutions 'a'
 		for (int k=1 ; k < kTwoA; k++) {
 			final double sqrt4kN = sqrt4N * sqrt[k];
 			// only use long values
-			final long aStart = (long) (sqrt4kN + ROUND_UP_DOUBLE); // much faster than ceil() !
-			long aLimit = (long) (sqrt4kN + sixthRootTerm * sqrtInv[k]);
+			long aStart = (long) (sqrt4kN + ROUND_UP_DOUBLE); // much faster than ceil() !
+			final long aLimit = (long) (sqrt4kN + sixthRootTerm * sqrtInv[k]);
 			long aStep;
 			if ((k & 1) == 0) {
 				// k even -> make sure aLimit is odd
-				aLimit |= 1l;
+				aStart |= 1l;
 				aStep = 2;
 			} else {
 				final long kPlusN = k + N;
 				if ((kPlusN & 3) == 0) {
 					aStep = 8;
-					aLimit += ((kPlusN - aLimit) & 7);
+					aStart += (kPlusN - aStart) & 7;
 				} else {
 					aStep = 4;
-					aLimit += ((kPlusN - aLimit) & 3);
+					aStart += ((kPlusN - aStart) & 3);
 				}
 			}
-
-			// processing the a-loop top-down is faster than bottom-up
-			for (long a=aLimit; a >= aStart; a-=aStep) {
+			for (long a=aStart; a <= aLimit + (aStep >> 1); a+=aStep) {
 				final long test = a*a - k * fourN;
 				final long b = (long) Math.sqrt(test);
 				if (b*b == test) {
@@ -182,6 +190,7 @@ public class Lehman_Fast2 extends FactorAlgorithmBase {
 		// Check via trial division whether N has a nontrivial divisor d <= cbrt(N).
 		//LOG.debug("entering tdiv...");
 		factor = findSmallFactors(N, cbrt);
+		if (factor>1 && factor<N) return factor;
 
 		for (int k=kTwoA + 1; k <= kLimit; k++) {
 			final long fourKN = k*N<<2;
@@ -204,12 +213,16 @@ public class Lehman_Fast2 extends FactorAlgorithmBase {
 			long a = (long) (sqrt4N * sqrt[k] + ROUND_UP_DOUBLE);
 			// for k odd a must be even and k + n + a = 0 mod 4
 			final long kPlusN = k + N;
+			long aDiff;
 			if ((kPlusN & 3) == 0) {
-				a += ((kPlusN - a) & 7);
+				aDiff = (kPlusN - a) & 7;
 			} else
 			{
-				a += ((kPlusN - a) & 3);
+				aDiff = ((kPlusN - a) & 3);
 			}
+			//			if (aDiff > 2)
+			//				return -1;
+			a += aDiff;
 			final long test = a*a - k * fourN;
 			final long b = (long) Math.sqrt(test);
 			if (b*b == test) {
@@ -222,18 +235,24 @@ public class Lehman_Fast2 extends FactorAlgorithmBase {
 
 	private long lehmanEven(int kBegin, final int kEnd) {
 		for (int k = kBegin ; k <= kEnd; k += 6) {
-			// for k even a must be odd
-			// using Math.sqrt slows down by a factor of 4,5
-			// using Math.ceil slows down by 50 %
-			final long a = (long) (sqrt4N * sqrt[k] + ROUND_UP_DOUBLE) | 1;
-			//			final long a = (long) Math.ceil(sqrt4N * sqrt[k]) | 1;
-			//			final long a = (long) (sqrt4N * Math.sqrt(k) + ROUND_UP_DOUBLE) | 1;
-			final long test = a*a - k * fourN;
-			// for unknown reasons here Math.sqrt performs fast. Using mod 25025 to see if test might be a square
-			// slows down by 25%. Checking mod a power of 2 does not filter out numbers
-			final long b = (long) Math.sqrt(test);
-			if (b*b == test) {
-				return gcdEngine.gcd(a+b, N);
+			final double sqrtKN = sqrt4N * sqrt[k];
+			// for k = 0 mod 6 a must be odd
+			long a = (long) (sqrtKN + ROUND_UP_DOUBLE);
+			//			final double aDiff = sqrtKN + 1 - a;
+			//			final double mult = 1/aDiff;
+			//			final int k2 = (int) (k * Math.round(mult));
+			//			a = (long) (sqrt4N * sqrt[k2] + ROUND_UP_DOUBLE);
+			a |= 1;
+			//			if ((a & 1) == 1)
+			{
+
+				final long test = a*a - k * fourN;
+				final long b = (long) Math.sqrt(test);
+				final long bSquare = b*b;
+				//			final long diff = test - bSquare;
+				if (bSquare == test) {
+					return gcdEngine.gcd(a+b, N);
+				}
 			}
 		}
 		return -1;
@@ -251,11 +270,8 @@ public class Lehman_Fast2 extends FactorAlgorithmBase {
 		for (int primeIndex = 1; primes[primeIndex] <= maxFactor; primeIndex++) {
 			final double nDivPrime = n * primesInv[primeIndex];
 			// TODO choose the precision factor with respect to the maxFactor!?
-			if (primes[primeIndex] == 0)
-				System.out.println();
-			long nDivPrimeLong;
-			if (((nDivPrimeLong= (long)nDivPrime) - nDivPrime) >=  -0.001 &&
-					nDivPrime - nDivPrimeLong < 0.001  && n > 1 && n % primes[primeIndex] == 0) {
+			if (((long)(nDivPrime+DISCRIMINATOR)) - ((long)(nDivPrime-DISCRIMINATOR)) == 1 &&
+					n > 1 && n % primes[primeIndex] == 0) {
 				return primes[primeIndex];
 			}
 		}

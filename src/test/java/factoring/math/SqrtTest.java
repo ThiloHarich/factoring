@@ -26,14 +26,14 @@ public class SqrtTest {
 		long start, end;
 
 		start = System.currentTimeMillis();
-		mod(range);
+		cast(range);
 		end  = System.currentTimeMillis();
-		System.out.println(" time mod  : " + (end- start));
+		System.out.println(" time cast  : " + (end- start));
 
 		start = System.currentTimeMillis();
-		sqrt(range);
+		floor(range);
 		end  = System.currentTimeMillis();
-		System.out.println(" time sqrt  : " + (end- start));
+		System.out.println(" time floor : " + (end- start));
 
 		start = System.currentTimeMillis();
 		div(range);
@@ -200,6 +200,27 @@ public class SqrtTest {
 			for (long i = 0; i < range; i++) {
 				final long mod = i*n % 8190;
 				prod += mod;
+			}
+		}
+		return prod;
+	}
+
+	private double cast(long range) {
+		final double prod = .001324;
+		final long n = 1l << 21;
+		for (int j = 0; j <loops; j++) {
+			for (long i = 0; i < range; i++) {
+				final long mod = (long) (i*j*prod);
+			}
+		}
+		return prod;
+	}
+	private double floor(long range) {
+		final double prod = .001324;
+		final long n = 1l << 21;
+		for (int j = 0; j <loops; j++) {
+			for (long i = 0; i < range; i++) {
+				final double mod = Math.floor(i*j*prod);
 			}
 		}
 		return prod;

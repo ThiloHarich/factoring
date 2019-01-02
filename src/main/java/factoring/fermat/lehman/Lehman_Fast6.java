@@ -128,11 +128,12 @@ public class Lehman_Fast6 extends FactorAlgorithmBase {
 			return factor;
 
 		// limit for must be 0 mod 6, since we also want to search above of it
-		final int kLimit = (cbrt + 6) / 6;
+		final int step = 12;
+		final int kLimit = (cbrt + step) / step;
 		// For kLimit / 64 the range for a is at most 2, this is what we can ensure
 		int kTwoA = (cbrt >> 6);
 		// twoA = 0 mod 6
-		kTwoA = ((kTwoA + 6)/ 6);
+		kTwoA = ((kTwoA + step)/ step);
 		fourN = N<<2;
 		twentyfourN = N* 24;
 		sqrt4N = Math.sqrt(fourN);
@@ -179,23 +180,23 @@ public class Lehman_Fast6 extends FactorAlgorithmBase {
 		}
 
 		// So far we have only odd solutions for 'a' now we try to get all the even solutions
-		final int kLimit6 = kLimit*6;
-		if ((factor = lehmanOdd(kTwoA6 + 3, kLimit6)) > 1)
+		factor = lehmanOdd(kTwoA6 + 3, 6 * kLimit);
+		if (factor > 1)
 			return factor;
 
 		// continue even k loop. Theoretically we might have missed solutions for k = 1,2,4,5 mod 6.
 		// but when looking up to 6 * kLimit it seems to be we are not missing one of them.
 		// to be sure we might just increase the limit even further
-		if ((factor = lehmanEven(kLimit, kLimit6)) > 1)
+		factor = lehmanEven(kLimit, 6 * kLimit);
+		if (factor > 1)
 			return factor;
-
 
 		// Check via trial division whether N has a nontrivial divisor d <= cbrt(N).
 		//LOG.debug("entering tdiv...");
 		factor = findSmallFactors(N, cbrt);
 		if (factor>1 && factor<N) return factor;
 
-		for (int k=kTwoA6 + 1; k <= kLimit6; k++) {
+		for (int k=kTwoA6 + 1; k <= 6 *kLimit; k++) {
 			final long fourKN = k*N<<2;
 			final long a = (long) (sqrt4N * sqrt[k] + ROUND_UP_DOUBLE) - 1;
 			final long test = a*a - fourKN;
@@ -233,12 +234,12 @@ public class Lehman_Fast6 extends FactorAlgorithmBase {
 	}
 
 	private long lehmanEven(int kBeginIndex, final int kEnd) {
-		for (int k = kBeginIndex ; k <= kEnd; k+=4) {
+		for (int k = kBeginIndex ; k <= kEnd;) {
 			// for k even a must be odd
 			// using Math.sqrt slows down by a factor of 4,5!!!
 			// using Math.ceil slows down by 50 %
-			final long a  = (long) (sqrt4N * sqrt6[k]   + ROUND_UP_DOUBLE) | 1;
-			long k24N = k*twentyfourN;
+			long a  = (long) (sqrt4N * sqrt6[k]   + ROUND_UP_DOUBLE) | 1;
+			long k24N = k++ * twentyfourN;
 			long test = a*a - k24N;
 			// for unknown reasons Math.sqrt performs fast here. Checking test mod 25025 to see if test might be a square
 			// slows down by 25%. Checking mod a power of 2 does not filter out numbers
@@ -246,27 +247,27 @@ public class Lehman_Fast6 extends FactorAlgorithmBase {
 			if (b*b == test) {
 				return gcdEngine.gcd(a+b, N);
 			}
-			// we unroll the loop
+			// we unroll the loop, just copy the code
 			k24N += twentyfourN;
-			final long a2 = (long) (sqrt4N * sqrt6[k+1] + ROUND_UP_DOUBLE) | 1;
-			test = a2*a2 - k24N;
+			a = (long) (sqrt4N * sqrt6[k++] + ROUND_UP_DOUBLE) | 1;
+			test = a*a - k24N;
 			b = (long) Math.sqrt(test);
 			if (b*b == test) {
-				return gcdEngine.gcd(a2+b, N);
+				return gcdEngine.gcd(a+b, N);
 			}
 			k24N += twentyfourN;
-			final long a3 = (long) (sqrt4N * sqrt6[k+2] + ROUND_UP_DOUBLE) | 1;
-			test = a3*a3 - k24N;
+			a = (long) (sqrt4N * sqrt6[k++] + ROUND_UP_DOUBLE) | 1;
+			test = a*a - k24N;
 			b = (long) Math.sqrt(test);
 			if (b*b == test) {
-				return gcdEngine.gcd(a3+b, N);
+				return gcdEngine.gcd(a+b, N);
 			}
 			k24N += twentyfourN;
-			final long a4 = (long) (sqrt4N * sqrt6[k+3] + ROUND_UP_DOUBLE) | 1;
-			test = a4*a4 - k24N;
+			a = (long) (sqrt4N * sqrt6[k++] + ROUND_UP_DOUBLE) | 1;
+			test = a*a - k24N;
 			b = (long) Math.sqrt(test);
 			if (b*b == test) {
-				return gcdEngine.gcd(a4+b, N);
+				return gcdEngine.gcd(a+b, N);
 			}
 		}
 		return -1;
@@ -283,12 +284,7 @@ public class Lehman_Fast6 extends FactorAlgorithmBase {
 	public long findSmallFactors(long n, int maxFactor) {
 		for (int primeIndex = 1; primes[primeIndex] <= maxFactor; primeIndex++) {
 			final double nDivPrime = n * primesInv[primeIndex];
-			// TODO choose the precision factor with respect to the maxFactor!?
-			if (primes[primeIndex] == 0)
-				System.out.println();
 			if (((long)(nDivPrime+DISCRIMINATOR)) - ((long)(nDivPrime-DISCRIMINATOR)) == 1 &&
-					//			if (((nDivPrimeLong= (long)nDivPrime) - nDivPrime) >=  -0.001 &&
-					//					nDivPrime - nDivPrimeLong < 0.001  &&
 					n > 1 && n % primes[primeIndex] == 0) {
 				return primes[primeIndex];
 			}
