@@ -130,14 +130,12 @@ public class Lehman_Fast2 extends FactorAlgorithmBase {
 
 		// limit for must be 0 mod 6, since we also want to search above of it
 		final int kLimit = (cbrt + 6) / 6 * 6;
-		as = new long[6*kLimit + 1];
 		// For kLimit / 64 the range for a is at most 2, this is what we can ensure
 		int kTwoA = (cbrt >> 6);
 		//		kFourA = (cbrt >> 4);
 		// twoA = 0 mod 6
 		kTwoA = ((kTwoA + 6)/ 6) * 6;
 		fourN = N<<2;
-		//		fourND = fourN;
 		sqrt4N = Math.sqrt(fourN);
 		final double sixthRootTerm = 0.25 * Math.pow(N, 1/6.0); // double precision is required for stability
 
@@ -146,10 +144,6 @@ public class Lehman_Fast2 extends FactorAlgorithmBase {
 		// here we only inspect k = 6*i since they much more likely have a solution a^2 - sqrt(k*n) = y^2
 		// this is we use a multiplier of 6 and 'a' must be odd
 		factor = lehmanEven(6, kLimit);
-		if (factor>1 && factor != N)
-			return factor;
-
-		factor = lehmanEven2(6, kLimit >> 2);
 		if (factor>1 && factor != N)
 			return factor;
 
@@ -220,16 +214,12 @@ public class Lehman_Fast2 extends FactorAlgorithmBase {
 			long a = (long) (sqrt4N * sqrt[k] + ROUND_UP_DOUBLE);
 			// for k odd a must be even and k + n + a = 0 mod 4
 			final long kPlusN = k + N;
-			long aDiff;
 			if ((kPlusN & 3) == 0) {
-				aDiff = (kPlusN - a) & 7;
+				a += ((kPlusN - a) & 7);
 			} else
 			{
-				aDiff = ((kPlusN - a) & 3);
+				a += ((kPlusN - a) & 3);
 			}
-			//			if (aDiff > 2)
-			//				return -1;
-			a += aDiff;
 			final long test = a*a - k * fourN;
 			final long b = (long) Math.sqrt(test);
 			if (b*b == test) {
@@ -242,36 +232,23 @@ public class Lehman_Fast2 extends FactorAlgorithmBase {
 
 	private long lehmanEven(int kBegin, final int kEnd) {
 		for (int k = kBegin ; k <= kEnd; k += 6) {
-			final double sqrtKN = sqrt4N * sqrt[k];
-			final long a = (long) (sqrtKN + ROUND_UP_DOUBLE) | 1;
-			as [k] = a;
-			final long test = a*a - k * fourN;
-			final long b = (long) Math.sqrt(test);
+			// for k = 0 mod 6 a must be odd
+			final long a1 = (long) (sqrt4N * sqrt[k] + ROUND_UP_DOUBLE);
+			long a = a1 | 1;
+			long test = a*a - k * fourN;
+			long b = (long) Math.sqrt(test);
 			if (b*b == test) {
 				return gcdEngine.gcd(a+b, N);
 			}
-		}
-		return -1;
-	}
-	private long lehmanEven2(int kBegin, final int kEnd) {
-		for (int k = kBegin ; k <= kEnd; k += 6) {
-			long a = as[k];
-			long test;
-			//				final double aDiff = sqrtKN + 1 - a;
-			//				final double mult = 1/aDiff;
-			//				final int k2 = (int) (k * Math.round(mult));
-			//				a = (long) (sqrtKN *2 + ROUND_UP_DOUBLE);
-			a = (a | 1) + 2;
-			//				test = a*a - (k << 2)* fourN;
-			//			}
-			//			else {
-			test = a*a - k * fourN;
-			final long b = (long) Math.sqrt(test);
-			//			final long diff = test - bSquare;
-			if (b*b == test) {
-				return gcdEngine.gcd(a+b, N);
+			//			if ((a1 | 1) == 0)
+			{
+				a = (a + 2);
+				test = a*a - k * fourN;
+				b = (long) Math.sqrt(test);
+				if (b*b == test) {
+					return gcdEngine.gcd(a+b, N);
+				}
 			}
-			//		}
 		}
 		return -1;
 	}

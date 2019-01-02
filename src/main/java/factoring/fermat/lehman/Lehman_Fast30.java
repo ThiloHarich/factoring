@@ -104,6 +104,11 @@ public class Lehman_Fast30 extends FactorAlgorithmBase {
 	private long twentyfourN;
 	private long N120;
 
+	//	private long a;
+	//	private long k24N;
+	//	private long test;
+	//	private long b = (long) Math.sqrt(test);
+
 	/**
 	 * Only constructor.
 	 * @param factorSemiprimes if the number to be factored might be a semiprimes were each factor is greater then n^1/3
@@ -132,7 +137,6 @@ public class Lehman_Fast30 extends FactorAlgorithmBase {
 			return factor;
 
 		// limit for must be 0 mod 6, since we also want to search above of it
-		final int smallStep = 6;
 		final int bigStep = 30;
 		final int offset = 5;
 		final int kLimit30 = (cbrt + bigStep) / bigStep;
@@ -152,7 +156,7 @@ public class Lehman_Fast30 extends FactorAlgorithmBase {
 		// but do not go to far, since there we have a lower chance to find a factor
 		// here we only inspect k = 30*i since they much more likely have a solution a^2 - sqrt(k*n) = y^2
 		// this is we use a multiplier of 30 and 'a' must be odd
-		factor = lehman30(kTwoA30, kLimit30);
+		factor = lehman30(kTwoA30, (3*kLimit30) >> 1 );
 		if (factor>1 && factor != N)
 			return factor;
 
@@ -193,7 +197,6 @@ public class Lehman_Fast30 extends FactorAlgorithmBase {
 				}
 			}
 		}
-
 		// So far we have only odd solutions for 'a' now we try to get all the even solutions
 		factor = lehmanOdd(kTwoA6 + 3, 6 * kLimit);
 		if (factor > 1)
@@ -202,8 +205,9 @@ public class Lehman_Fast30 extends FactorAlgorithmBase {
 		// continue even k loop. Theoretically we might have missed solutions for k = 1,2,4,5 mod 6.
 		// but when looking up to 6 * kLimit it seems to be we are not missing one of them.
 		// to be sure we might just increase the limit even further
-		factor = lehman30(kLimit30, 6*kLimit30);
-		if (factor>1 && factor != N) return factor;
+
+		factor = lehman30((3*kLimit30) >> 1, 6*kLimit30);
+		if (factor>1) return factor;
 
 		factor = lehman6(kLimit + 1, 6 * kLimit);
 		if (factor > 1)
@@ -253,14 +257,9 @@ public class Lehman_Fast30 extends FactorAlgorithmBase {
 
 	private long lehman6(int kBeginIndex, final int kEnd) {
 		for (int k = kBeginIndex ; k <= kEnd;) {
-			// for k even a must be odd
-			// using Math.sqrt slows down by a factor of 4,5!!!
-			// using Math.ceil slows down by 50 %
 			long a  = (long) (sqrt4N * sqrt6[k]   + ROUND_UP_DOUBLE) | 1;
 			long k24N = k++ * twentyfourN;
 			long test = a*a - k24N;
-			// for unknown reasons Math.sqrt performs fast here. Checking test mod 25025 to see if test might be a square
-			// slows down by 25%. Checking mod a power of 2 does not filter out numbers
 			long b = (long) Math.sqrt(test);
 			if (b*b == test) {
 				return gcdEngine.gcd(a+b, N);
@@ -295,10 +294,8 @@ public class Lehman_Fast30 extends FactorAlgorithmBase {
 
 	private long lehman30(int kBeginIndex, final int kEnd) {
 		for (int k = kBeginIndex ; k <= kEnd;) {
-			// TODO sqrt30
 			final long a  = (long) (sqrt4N * sqrt30[k]   + ROUND_UP_DOUBLE) | 1;
-			final long kn120 = k++ * N120;
-			final long test = a*a - kn120;
+			final long test = a*a - k++ * N120;
 			final long b = (long) Math.sqrt(test);
 			if (b*b == test) {
 				return gcdEngine.gcd(a+b, N);

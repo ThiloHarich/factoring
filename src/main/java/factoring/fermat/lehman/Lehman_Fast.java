@@ -121,6 +121,7 @@ public class Lehman_Fast extends FactorAlgorithmBase {
 		final int kLimit = (cbrt + 6) / 6 * 6;
 		// For kLimit / 64 the range for a is at most 2, this is what we can ensure
 		int kTwoA = (cbrt >> 6);
+		//		kFourA = (cbrt >> 4);
 		// twoA = 0 mod 6
 		kTwoA = ((kTwoA + 6)/ 6) * 6;
 		fourN = N<<2;
