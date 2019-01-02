@@ -159,9 +159,9 @@ public class Lehman_Analyzer3 extends FactorAlgorithmBase {
 				final long test = a*(long)a - fourKN;
 				final long b = (long) Math.sqrt(test);
 				if (b*b == test) {
-					//					aValues[k%MOD][(int) ((4*N*k)%MOD)].add(a%MOD);
+					aValues[k%MOD][(int) ((N+ k)%MOD)].add(a%MOD);
 					//					aValues[(k)%MOD][(int) ((k*N)%MOD)].add(a%MOD);
-					aValues[(k)%MOD][0].add(a%MOD);
+					//					aValues[(k)%MOD][0].add(a%MOD);
 					numSol[(k)%MOD]++;
 					//					numSol2[k%MOD][(int) ((4*N*k)%MOD)]++;
 					numSol2[k%MOD][0]++;
