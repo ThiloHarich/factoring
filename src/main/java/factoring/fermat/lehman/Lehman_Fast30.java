@@ -38,8 +38,6 @@ public class Lehman_Fast30 extends FactorAlgorithmBase {
 	private static final int DISCRIMINATOR_BITS = 10; // experimental result
 	private static final double DISCRIMINATOR = 1.0/(1<<DISCRIMINATOR_BITS);
 
-	//	private static long oneThird = 0x2AAAAAAAAAAAAA00L;// load magical number (2^32 + 2) / 3
-	private static long oneThird = 0x55555556L;
 	private static double[] sqrt, sqrtInv, sqrt6, sqrt30;
 
 	private static double[] primesInv;
