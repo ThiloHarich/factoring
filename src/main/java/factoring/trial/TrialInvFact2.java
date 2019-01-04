@@ -80,11 +80,11 @@ public class TrialInvFact2 implements FactorizationOfLongs {
 	public long findFactors(long n, Collection<Long> primeFactors) {
 		for (int primeIndex = 1; primes[primeIndex] <= maxFactor; primeIndex++) {
 			double nDivPrime = n*primesInv[primeIndex];
-			long nDivPrimeL = (long) (nDivPrime + ROUNDING_CORRECTION);
+			long nDivPrimeRounded = (long) (nDivPrime + ROUNDING_CORRECTION);
 			// TODO choose the precision factor with respect to the maxFactor!?
 			if (primes[primeIndex] == 0)
 				System.out.println();
-			while (nDivPrimeL * primes[primeIndex] == n
+			while (nDivPrimeRounded * primes[primeIndex] == n
 					&& n > 1) {
 				if (primeFactors == null)
 					return primes[primeIndex];
@@ -98,7 +98,7 @@ public class TrialInvFact2 implements FactorizationOfLongs {
 				//				}
 
 				nDivPrime = n*primesInv[primeIndex];
-				nDivPrimeL = (long) (nDivPrime + ROUNDING_CORRECTION);
+				nDivPrimeRounded = (long) (nDivPrime + ROUNDING_CORRECTION);
 			}
 		}
 		return n;
