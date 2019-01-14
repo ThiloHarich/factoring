@@ -30,7 +30,7 @@ import de.tilman_neumann.jml.gcd.Gcd63;
  * @author Tilman Neumann
  */
 public class Lehman_TillSimple extends FactorAlgorithmBase {
-	private static final Logger LOG = Logger.getLogger(Lehman_TillSuperSimple.class);
+	private static final Logger LOG = Logger.getLogger(LehmanSimple.class);
 
 	/** This is a constant that is below 1 for rounding up double values to long. */
 	private static final double ROUND_UP_DOUBLE = 0.9999999665;

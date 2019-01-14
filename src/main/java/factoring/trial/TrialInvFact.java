@@ -31,40 +31,6 @@ public class TrialInvFact implements FactorizationOfLongs {
 	double[] primesInv;
 	int[] primes;
 
-	//	void initPrimes()
-	//	{
-	//		final double logMaxFactor = Math.log(maxFactor);
-	//		final int maxPrimeIndex = (int) ((maxFactor) / (logMaxFactor - 1.1)) + 100;
-	//		primesInv = new double [maxPrimeIndex];
-	//		primes = new int [maxPrimeIndex];
-	//		primesInv[0]= 1.0 / 2.0;
-	//		primesInv[1]= 1.0 / 3.0;
-	//		primesInv[2]= 1.0 / 5.0;
-	//		primes[0]=2;
-	//		primes[1]=3;
-	//		primes[2]=5;
-	//		int k = 3;
-	//		for(int i=7; i<maxFactor; i+=2){
-	//			boolean isPime = true;
-	//			for(int j = 0; primes[j]* primes[j] <= i && isPime; j++){
-	//				final double nDivPrime = i*primesInv[j];
-	//				final long nDivPrimeLong = (long) (i*primesInv[j] + 0.0001);
-	//				//				if (Math.round(nDivPrime) == nDivPrime && i % primes[j]==0) {
-	//				if (Math.abs(nDivPrimeLong - nDivPrime) < 0.0001 && i % primes[j]==0) {
-	//					//					if (Math.abs(Math.round(nDivPrime)-nDivPrime) < 0.001 && i % primes[j]==0) {
-	//					isPime = false;
-	//				}
-	//			}
-	//			if (isPime) {
-	//				primesInv[k] = 1.0 / i;
-	//				primes[k] = i;
-	//				k++;
-	//			}
-	//		}
-	//		//		assert(k==6542);
-	//		//		primesInv[k] = 65535; //sentinel
-	//		System.out.printf("Prime           table[0..%d]", k);
-	//	}
 
 	/**
 	 * finds the prime factors up to maxFactor by the sieve of eratosthenes.

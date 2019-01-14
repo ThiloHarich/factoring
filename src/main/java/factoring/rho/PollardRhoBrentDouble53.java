@@ -91,7 +91,7 @@ public class PollardRhoBrentDouble53 implements FactorizationOfLongs, FactorFind
 						// we might exit early if xDiff == 0
 						final long xDiff = Math.abs(x - xFixed);
 						xProds = BigDouble.multiply(xProd, xDiff);
-						xProd  = BigDouble.mod(xProds, n, nInv);
+						xProd  = BigDouble.mod2(xProds, n, nInv);
 						numbersChecked++;
 						loops++;
 					}
@@ -139,8 +139,8 @@ public class PollardRhoBrentDouble53 implements FactorizationOfLongs, FactorFind
 	 * @return
 	 */
 	long g (long x, long c, long n, double nInv) {
-		final long[] gs = BigDouble.multiply(x, x);
-		long g = BigDouble.mod(gs, n, nInv);
+		final long[] gs = BigDouble.square(x);
+		long g = BigDouble.mod2(gs, n, nInv);
 		g += c;
 		if (g > n)
 			g -= n;

@@ -231,24 +231,36 @@ public class Lehman_Fast2 extends FactorAlgorithmBase {
 	}
 
 	private long lehmanEven(int kBegin, final int kEnd) {
-		for (int k = kBegin ; k <= kEnd; k += 6) {
+		for (int k = kBegin ; k <= kEnd;) {
 			// for k = 0 mod 6 a must be odd
-			final long a1 = (long) (sqrt4N * sqrt[k] + ROUND_UP_DOUBLE);
-			long a = a1 | 1;
+			long a = (long) (sqrt4N * sqrt[k] + ROUND_UP_DOUBLE) | 1;
 			long test = a*a - k * fourN;
 			long b = (long) Math.sqrt(test);
 			if (b*b == test) {
 				return gcdEngine.gcd(a+b, N);
 			}
-			//			if ((a1 | 1) == 0)
-			{
-				a = (a + 2);
-				test = a*a - k * fourN;
-				b = (long) Math.sqrt(test);
-				if (b*b == test) {
-					return gcdEngine.gcd(a+b, N);
-				}
+			k += 6;
+			a = (long) (sqrt4N * sqrt[k] + ROUND_UP_DOUBLE) | 1;
+			test = a*a - k * fourN;
+			b = (long) Math.sqrt(test);
+			if (b*b == test) {
+				return gcdEngine.gcd(a+b, N);
 			}
+			k += 6;
+			a = (long) (sqrt4N * sqrt[k] + ROUND_UP_DOUBLE) | 1;
+			test = a*a - k * fourN;
+			b = (long) Math.sqrt(test);
+			if (b*b == test) {
+				return gcdEngine.gcd(a+b, N);
+			}
+			k += 6;
+			a = (long) (sqrt4N * sqrt[k] + ROUND_UP_DOUBLE) | 1;
+			test = a*a - k * fourN;
+			b = (long) Math.sqrt(test);
+			if (b*b == test) {
+				return gcdEngine.gcd(a+b, N);
+			}
+			k += 6;
 		}
 		return -1;
 	}

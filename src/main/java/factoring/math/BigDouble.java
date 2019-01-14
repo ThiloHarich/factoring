@@ -5,6 +5,7 @@ import java.math.BigInteger;
 
 public class BigDouble {
 
+	private static final double twoPow51 = 1l << 52;
 	final static long maskLower  = (1l << 26) - 1;
 
 	/**
@@ -186,6 +187,17 @@ public class BigDouble {
 
 		final long xDivN = (long) (xDivN0 * (1l << 52) + xDivN1);
 		//		final long xDivN = (long) ((x[0] * (1l << 52) + x[1]) * modInverse);
+		final long [] xDiff = multiply(xDivN, mod);
+
+		// TODO theoretically xL must be 0 but is -1
+		final long xL = x[0] - xDiff[0];
+		final long xH = x[1] - xDiff[1];
+
+		return (xL << 52) +  xH;
+	}
+
+	public static long mod2(long[] x, long mod, double modInverse) {
+		final long xDivN = (long) ((x[0] * twoPow51 + x[1]) * modInverse);
 		final long [] xDiff = multiply(xDivN, mod);
 
 		// TODO theoretically xL must be 0 but is -1

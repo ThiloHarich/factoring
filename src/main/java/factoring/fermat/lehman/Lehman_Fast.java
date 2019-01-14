@@ -17,6 +17,9 @@ import java.math.BigInteger;
 
 import org.apache.log4j.Logger;
 
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Multimap;
+
 import de.tilman_neumann.jml.factor.FactorAlgorithmBase;
 import de.tilman_neumann.jml.gcd.Gcd63;
 import de.tilman_neumann.util.ConfigUtil;
@@ -89,6 +92,8 @@ public class Lehman_Fast extends FactorAlgorithmBase {
 	double sqrt4N;
 	boolean factorSemiprimes;
 	private final Gcd63 gcdEngine = new Gcd63();
+
+	public Multimap<Integer, Integer> remainders = ArrayListMultimap.create();
 
 	/**
 	 * Only constructor.
@@ -174,20 +179,20 @@ public class Lehman_Fast extends FactorAlgorithmBase {
 			return factor;
 
 		// continue even loop, because we are looking at very high numbers this now done after the k = 3 mod 6 loop
-		if ((factor = lehmanEven(kLimit, kLimit << 1)) > 1)
+		if ((factor = lehmanEven(kLimit, kLimit * 6)) > 1)
 			return factor;
 
 		// we now have loops for offset 0,3 -> missing 1,2,4,5
 		// this code will be executed very rarely, but to be sure we did not miss factors
 		// with the lehman argument we have to execute it.
-		if ((factor = lehmanOdd(kTwoA + 2, kLimit)) > 1)
-			return factor;
-		if ((factor = lehmanEven(kTwoA + 4, kLimit)) > 1)
-			return factor;
-		if ((factor = lehmanEven(kTwoA + 1, kLimit)) > 1)
-			return factor;
-		if ((factor = lehmanOdd(kTwoA + 5, kLimit)) > 1)
-			return factor;
+		//		if ((factor = lehmanOdd(kTwoA + 2, kLimit)) > 1)
+		//			return factor;
+		//		if ((factor = lehmanEven(kTwoA + 4, kLimit)) > 1)
+		//			return factor;
+		//		if ((factor = lehmanEven(kTwoA + 1, kLimit)) > 1)
+		//			return factor;
+		//		if ((factor = lehmanOdd(kTwoA + 5, kLimit)) > 1)
+		//			return factor;
 
 		// Check via trial division whether N has a nontrivial divisor d <= cbrt(N).
 		//LOG.debug("entering tdiv...");
@@ -233,12 +238,16 @@ public class Lehman_Fast extends FactorAlgorithmBase {
 	}
 
 	private long lehmanEven(int kBegin, final int kEnd) {
+		//		if (kBegin%6 != 0)
+		//			System.out.println();
 		for (int k = kBegin ; k <= kEnd; k += 6) {
 			// for k = 0 mod 6 a must be odd
 			final long a = (long) (sqrt4N * sqrt[k] + ROUND_UP_DOUBLE) | 1;
 			final long test = a*a - k * fourN;
 			final long b = (long) Math.sqrt(test);
 			if (b*b == test) {
+				//				remainders.put(k%30, 1);
+				//				assertEquals(b, SqrtInt.sqrt((int) test));
 				return gcdEngine.gcd(a+b, N);
 			}
 		}

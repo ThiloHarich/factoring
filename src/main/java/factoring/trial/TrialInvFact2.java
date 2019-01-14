@@ -11,7 +11,7 @@ import factoring.FactorizationOfLongs;
  * the number by the prime, we will multiply by the inverse, since this is faster.
  * Due to precision we have to check for a given range near an Integer.
  * And then do a Long division.
- * This implementation is around two times faster then a version  based on long numbers.
+ * This implementation is around two and a half times faster then a version  based on long numbers.
  * Since Double only has 52 bis for the remainder, this can only work for numbers below 2^52.
  * We can only factorize numbers up to maxFactor^2
  * When calling it with bigger numbers only prime factors below
@@ -79,6 +79,8 @@ public class TrialInvFact2 implements FactorizationOfLongs {
 	@Override
 	public long findFactors(long n, Collection<Long> primeFactors) {
 		for (int primeIndex = 1; primes[primeIndex] <= maxFactor; primeIndex++) {
+			// round the number. Casting to long is faster then rounding the double number itself, but we
+			// have to prevent some cases were the number is not correctly rounded by adding a small number
 			long nDivPrime = (long) (n*primesInv[primeIndex] + ROUNDING_CORRECTION);
 			while (nDivPrime * primes[primeIndex] == n && n > 1) {
 				if (primeFactors == null)

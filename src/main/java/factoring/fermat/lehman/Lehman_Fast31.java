@@ -32,11 +32,18 @@ import de.tilman_neumann.util.ConfigUtil;
 public class Lehman_Fast31 extends FactorAlgorithmBase {
 	private static final Logger LOG = Logger.getLogger(Lehman_Fast31.class);
 
+	private static final long bit61 = 1l<<61;
+	private static final long bit52 = 1l<<52;
+	//	private static final double ONE_HALF = 1.0 / 2;
+	private static final double BALANCE = 1.0 / 2.03;
+
 	/** This is a constant that is below 1 for rounding up double values to long. */
 	private static final double ROUND_UP_DOUBLE = 0.9999999665;
 
 	private static final int DISCRIMINATOR_BITS = 10; // experimental result
 	private static final double DISCRIMINATOR = 1.0/(1<<DISCRIMINATOR_BITS);
+
+	private static final double ONE_HALF = 1.0 / 2;
 
 	private static double[] sqrt, sqrtInv, sqrt6, sqrt30, qubicRoot;
 
@@ -192,7 +199,7 @@ public class Lehman_Fast31 extends FactorAlgorithmBase {
 			// processing the a-loop top-down is faster than bottom-up
 			for (long a=aLimit; a >= aStart; a-=aStep) {
 				final long test = a*a - k * fourN;
-				final long b = (long) Math.sqrt(test);
+				final long b = sqrt(test);
 				if (b*b == test) {
 					return gcdEngine.gcd(a+b, N);
 				}
@@ -225,7 +232,7 @@ public class Lehman_Fast31 extends FactorAlgorithmBase {
 			final long fourKN = k*N<<2;
 			final long a = (long) (sqrt4N * sqrt[k] + ROUND_UP_DOUBLE) - 1;
 			final long test = a*a - fourKN;
-			final long b = (long) Math.sqrt(test);
+			final long b = sqrt(test);
 			if (b*b == test) {
 				final long gcd = gcdEngine.gcd(a+b, N);
 				if (gcd>1 && gcd<N) {
@@ -251,7 +258,7 @@ public class Lehman_Fast31 extends FactorAlgorithmBase {
 			}
 			//			final double diffToSqrt = a - sqrt4kn;
 			final long test = a*a - k * fourN;
-			final long b = (long) Math.sqrt(test);
+			final long b = sqrt(test);
 			if (b*b == test) {
 				//				System.out.print("|" + diffToSqrt);
 				return gcdEngine.gcd(a+b, N);
@@ -266,28 +273,28 @@ public class Lehman_Fast31 extends FactorAlgorithmBase {
 			long a  = (long) (sqrt4N * sqrt6[k]   + ROUND_UP_DOUBLE) | 1;
 			long k24N = k++ * twentyfourN;
 			long test = a*a - k24N;
-			long b = (long) Math.sqrt(test);
+			long b = sqrt(test);
 			if (b*b == test) {
 				return gcdEngine.gcd(a+b, N);
 			}
 			k24N += twentyfourN;
 			a = (long) (sqrt4N * sqrt6[k++] + ROUND_UP_DOUBLE) | 1;
 			test = a*a - k24N;
-			b = (long) Math.sqrt(test);
+			b = sqrt(test);
 			if (b*b == test) {
 				return gcdEngine.gcd(a+b, N);
 			}
 			k24N += twentyfourN;
 			a = (long) (sqrt4N * sqrt6[k++] + ROUND_UP_DOUBLE) | 1;
 			test = a*a - k24N;
-			b = (long) Math.sqrt(test);
+			b = sqrt(test);
 			if (b*b == test) {
 				return gcdEngine.gcd(a+b, N);
 			}
 			k24N += twentyfourN;
 			a = (long) (sqrt4N * sqrt6[k] + ROUND_UP_DOUBLE) | 1;
 			test = a*a - k24N;
-			b = (long) Math.sqrt(test);
+			b = sqrt(test);
 			if (b*b == test) {
 				return gcdEngine.gcd(a+b, N);
 			}
@@ -298,13 +305,37 @@ public class Lehman_Fast31 extends FactorAlgorithmBase {
 	}
 
 	/**
-	 * a = ceil(sqrt(n)) + e
-	 * test = a*a - n = x^2
-	 * a*a - n = n + 2e*sqrt(n) + e^2 -n = 2e*sqrt(n) + e^2
-	 * 2e * n^1/2 + e^2 = x^2
-	 * sqrt(2e * n^1/2 + e^2) = ganzzahlig
-	 * sqrt(2e) * n^1/4 + 1/2*e^2*n^-1/4 = ganzzahlig
+	 * a = ceil(sqrt(4kn)) + e , 0 < e < 1
+	 * test = a*a - 4kn = x^2
+	 * test = 4kn + 2e*sqrt(4kn) + e^2 - 4kn = 2e*sqrt(4kn) + e^2 =
+	 * 2e * (4kn)^1/2 + e^2 = b^2
+	 * 2e * (4kn)^1/2  = b^2 - e^2
+	 * 2e * (4k(s/t))^1/2  = b^2 - e^2
+	 * (4kn)^1/2/e  = (b/e)^2 - 1
+	 * 1 = (b/e)^2 - (4kn)^1/2/e     , wir kennen b,e,n
+	 *
+	 * wähle k so dass (4kn)^1/2/e  = (b/e)^2 - 1
+	 *
+	 *
+	 * (2e * (4k(s/t))^1/2)^1/2  = (b^2 - e^2)^1/2
+	 * (2e * (4k(s/t))^1/2)^1/2  = (b^2 *(1 - (e/b)^2)^1/2
+	 * (2e * (4k(s/t))^1/2)^1/2  = b * (1 - (e/2b)^2)
+	 * (2e * (4k(s/t))^1/2)^1/2  = b  - (e/2)^2
+	 * (2e * (4k(s/t))^1/2)^1/2  = b  - 1/4
+	 * (2e)^1/2 * (4k(s/t))^1/4   = b  - (e/2)^2   | * (e/2)^2
+	 * e * (4k(s/t))^1/4*(e/2)^2   = b*(e/2)^2  - 1
+	 * 1 = e * ((4k(s/t))^1/4*-b) * (e/2)^2
+	 *
+	 * sqrt(2e * 2(kn)^1/2 + e^2) = ganzzahlig
+	 * 2*sqrt(e) * (kn)^1/4) + 1/2*e^2*(kn)^-1/4 = ganzzahlig
+	 * 2*sqrt(e) * (kn)^1/4)  ganzzahlig
 	 * also berechne sqrt(2e)
+	 * wir müssen sqrt(2e) nur auf die Länge von log(k*n)/4 genau berechnen.
+	 * k <= 6*n^1/3 -> log(k*n)/4 = log(6*n^4/3)/4 = log(6*n)/3 = log (n)/3 + 2
+	 *
+	 * n < = 2^s -> s/3 + 2 bits. Etwa N = 2^50 -> 19 Bit bzw. 6 Dezimalstellen
+	 *
+	 *
 	 * wenn wir eine Kettenbruchzerlegung von n^1/4 = (s/t)^2 haben können wir mögliche sqrt(2e) und damit e bestimmen
 	 *
 	 * gesucht a^2 - k*n  mit a = ceil((kn)^1/2) + e = ceil(k^1/2 * s/t) + e
@@ -314,27 +345,32 @@ public class Lehman_Fast31 extends FactorAlgorithmBase {
 	 */
 	private long lehman30(int kBeginIndex, final int kEnd) {
 		for (int k = kBeginIndex ; k <= kEnd; k++) {
-			final double sqrt120kn = sqrt4N * sqrt30[k];
-			//			long a  = (long) (sqrt4N * sqrt30[k] + ROUND_UP_DOUBLE);
-			final long a  = (long) (sqrt120kn + ROUND_UP_DOUBLE) | 1;
-			final double diffToSqrt = a - sqrt120kn;
-			//			final long b2 = (long) (Math.sqrt(2*diffToSqrt) * Math.sqrt(sqrt120kn));
-			//			final long b2 = (long) (Math.sqrt(diffToSqrt) * Math.sqrt(2*sqrt120kn));
-			// 1 sqrt, 2 mult , 3 add, 1 cast
-			final double qubicKN = qubicRoot[k] * qubicRootN;
-			final double sqrtError = Math.sqrt(diffToSqrt);
-			final double b2D = sqrtError * qubicKN;
-			final long b2 = (long) (b2D + ROUND_UP_DOUBLE);
+			//			final double sqrt120kn = sqrt4N * sqrt30[k];
+			final long a  = (long) (sqrt4N * sqrt30[k] + ROUND_UP_DOUBLE);
+			//			final long a  = (long) (sqrt120kn + ROUND_UP_DOUBLE) | 1;
+			//			final float diffToSqrt = (float) (a - sqrt120kn);
+			//			//			final long b2 = (long) (Math.sqrt(2*diffToSqrt) * Math.sqrt(sqrt120kn));
+			//			// 1 sqrt, 2 mult , 3 add, 1 cast
+			//			final float qubicKN = (float) (qubicRoot[k] * qubicRootN);
+			//			final float sqrtError = (float) Math.sqrt(diffToSqrt);
+			//			final float sqrtErrorF = sqrtFloat(sqrtError);
+			//			final double sqrtErrorD = sqrtDouble(sqrtError);
+			//			final double b2D = sqrtError * qubicKN;
+			//			final double b2D2 = sqrtErrorF * qubicKN;
+			//			final long b2 = (long) (b2D + ROUND_UP_DOUBLE);
 
-			if (b2 - b2D < 0.01) {
+			final long test = a*a - k * N120;
+			final long b = sqrt(test);
+			//			final double b2 = Math.sqrt(test);
+			//			final long bL = (long) b2;
+			//			if (b != bL)
+			//				System.out.println();
+			if (b * b == test) {
+				//				if (b2 - b2D < 0.01)
+				//				b = sqrt(test);
 				// 1 sqrt , 3 mult, 1, add, 1 cast
-				final long test = a*a - k * N120;
-				final double b = Math.sqrt(test);
-				final long bL = (long) b;
-				if (bL * bL == test) {
-					//					System.out.print("|" + diffToSqrt);
-					return gcdEngine.gcd(a+bL, N);
-				}
+				//					System.out.print("|" + diffToSqrt);
+				return gcdEngine.gcd(a+b, N);
 			}
 		}
 		return -1;
@@ -358,6 +394,43 @@ public class Lehman_Fast31 extends FactorAlgorithmBase {
 			}
 		}
 		return n;
+	}
+
+	public static float sqrtFloat(float f) {
+		float y = Float.intBitsToFloat(0x5f375a86 - (Float.floatToIntBits(f) >> 1)); // evil floating point bit level hacking -- Use 0x5f375a86 instead of 0x5f3759df, due to slight accuracy increase. (Credit to Chris Lomont)
+		y = y * (1.5F - (0.5F * f * y * y)); 	// Newton step, repeating increases accuracy
+		return f * y;
+	}
+
+	public static double sqrtDouble(double f) {
+		double y = Double.longBitsToDouble(0x5fe6ec85e7de30daL - (Double.doubleToLongBits(f) >> 1)); // evil floating point bit level hacking -- Use 0x5f375a86 instead of 0x5f3759df, due to slight accuracy increase. (Credit to Chris Lomont)
+		y = y * (1.5F - (0.5F * f * y * y)); 	// Newton step, repeating increases accuracy
+		return f * y;
+	}
+
+	public static double sqrt2(double f) {
+		final double y = Double.longBitsToDouble(0x5fe6ec85e7de30daL - (Double.doubleToLongBits(f) >> 1)); // evil floating point bit level hacking -- Use 0x5f375a86 instead of 0x5f3759df, due to slight accuracy increase. (Credit to Chris Lomont)
+		//		y = y * (1.5F - (0.5F * f * y * y)); 	// Newton step, repeating increases accuracy
+		return f * y;
+	}
+
+	/**
+	 * sqrt(x*2^k) = sqrt((1-a)*2^k) = sqrt((1-a))*2^(k/2) ~
+	 * 1-a/2 * 2^(k/2)
+	 * Bei x*2^k als long aufgefasst und durch 2 geteilt ist x/2 * 2^(k/2)
+	 * 1 - x*2^k als long aufgefasst ist (1-x/2) * 2^(k/2)
+	 * also finde die Long Darstellung von 1D
+	 *
+	 * @param x
+	 * @return
+	 */
+	public static long sqrt(long x) {
+		//		final double sqrt2 = Double.longBitsToDouble( ( ( Double.doubleToLongBits( x )- bit52 )>>1 ) + bit61 );
+		//		final double sqrt3 = (1.03D * x * 1/sqrt2 + sqrt2) * BALANCE;
+		//		final double sqrt4 = (1.03D * x * 1/sqrt3 + sqrt3) * BALANCE;
+		//		return sqrt4;
+		//		return SquareRoot.sqrt((int) x);
+		return (long) Math.sqrt(x);
 	}
 
 

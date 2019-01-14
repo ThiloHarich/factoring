@@ -29,30 +29,26 @@ import de.tilman_neumann.jml.gcd.Gcd63;
  *
  * @author Tilman Neumann
  */
-public class Lehman_TillSuperSimple extends FactorAlgorithmBase {
+public class LehmanSimple extends FactorAlgorithmBase {
 	private static final Logger LOG = Logger.getLogger(Lehman_TillSimple.class);
 
 	/** This is a constant that is below 1 for rounding up double values to long. */
 	private static final double ROUND_UP_DOUBLE = 0.9999999665;
 
-
 	private final Gcd63 gcdEngine = new Gcd63();
 
 	private double[] sqrt;
 
-	public Lehman_TillSuperSimple() {
+	public LehmanSimple() {
 		initSqrts();
 	}
 
 	private void initSqrts() {
 		// precompute sqrts for all possible k. Requires ~ (tDivLimitMultiplier*2^15) entries.
-		final int kMax = (int) (6*Math.cbrt(1L<<50) + 1);
-		//LOG.debug("kMax = " + kMax);
-
+		final int kMax = (int) (40*Math.cbrt(1L<<50) + 1);
 		sqrt = new double[kMax + 1];
 		for (int i = 1; i < sqrt.length; i++) {
-			final double sqrtI = Math.sqrt(i);
-			sqrt[i] = sqrtI;
+			sqrt[i] = Math.sqrt(i);
 		}
 	}
 
@@ -68,10 +64,12 @@ public class Lehman_TillSuperSimple extends FactorAlgorithmBase {
 	}
 
 	public long findSingleFactor(long N) {
-		final int kLimit = (int)  Math.ceil(Math.cbrt(N));;
-
+		final int kLimit = (int)  Math.ceil(Math.cbrt(N));
 		final long fourN = N<<2;
 		final double sqrt4N = Math.sqrt(fourN);
+		final long multiplier = 2*3*3*5*7; // = 630
+		final long MN = fourN * multiplier;
+		final double sqrtMN = Math.sqrt(MN);
 
 		long aForK1 = (long) (sqrt4N  + ROUND_UP_DOUBLE);
 		long aStep;
@@ -83,23 +81,49 @@ public class Lehman_TillSuperSimple extends FactorAlgorithmBase {
 			aStep = 4;
 			aForK1 += ((1 + N - aForK1) & 3);
 		}
-
-
-		// we have to increase kLimit here, because for each k we only take one a
-		for (int k=2; k < 6*kLimit; k+=2) {
-			final long a = (long) (sqrt4N * sqrt[k] + ROUND_UP_DOUBLE) | 1;
-			long test = a*a - k * fourN;
-			long b = (long) Math.sqrt(test);
-			if (b*b == test) {
-				return gcdEngine.gcd(a+b, N);
+		// we have to increase kLimit here, because we only take good but seldom k's
+		for (int k=1; k < 40*kLimit; aForK1 += aStep) {
+			long gcd = 1;
+			for (int i=0; i < 4; i++) {
+				// investigate in k = 0 mod multiplier only like the Hart variant does it
+				long  a, test, b;
+				// this is always the same code a loop/method (in java) is slower then copy the code here
+				a = (long) (sqrtMN * sqrt[k] + ROUND_UP_DOUBLE) | 1;
+				test = a*a - k++ * MN;
+				// This sqrt is fast, while the sqrt(k) of smaller size - but double precision? -  above is slow ???????
+				b = (long) Math.sqrt(test);
+				if (b*b == test) {
+					gcd = gcdEngine.gcd(a+b, N);
+				}
+				a = (long) (sqrtMN * sqrt[k] + ROUND_UP_DOUBLE) | 1;
+				test = a*a - k++ * MN;
+				b = (long) Math.sqrt(test);
+				if (b*b == test) {
+					gcd = gcdEngine.gcd(a+b, N);
+				}
+				a = (long) (sqrtMN * sqrt[k] + ROUND_UP_DOUBLE) | 1;
+				test = a*a - k++ * MN;
+				// This sqrt is fast, while the sqrt(k) of smaller size - but double precision? -  above is slow ???????
+				b = (long) Math.sqrt(test);
+				if (b*b == test) {
+					gcd = gcdEngine.gcd(a+b, N);
+				}
+				a = (long) (sqrtMN * sqrt[k] + ROUND_UP_DOUBLE) | 1;
+				test = a*a - k++ * MN;
+				b = (long) Math.sqrt(test);
+				if (b*b == test) {
+					gcd = gcdEngine.gcd(a+b, N);
+				}
+				if (gcd > 1 && gcd < N)
+					return gcd;
 			}
 			// Here k is always 1 and we increase 'a' by aStep.
-			test = aForK1*aForK1 - fourN;
-			b = (long) Math.sqrt(test);
+			// This phase should save us if the first phase does not find anything
+			final long test = aForK1*aForK1 - fourN;
+			final long b = (long) Math.sqrt(test);
 			if (b*b == test) {
 				return gcdEngine.gcd(aForK1+b, N);
 			}
-			aForK1 += aStep;
 		}
 		//		 4. Check via trial division whether N has a nontrivial divisor d <= cbrt(N), and if so, return d.
 		final int tDivLimit = (int) (Math.cbrt(N));

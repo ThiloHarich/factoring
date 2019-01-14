@@ -7,13 +7,18 @@ import org.junit.Test;
  */
 public class SqrtTest {
 
+	private static final long bit61 = 1l<<61;
+	private static final long bit52 = 1l<<52;
+	private static final double ONE_HALF = 1.0 / 2;
+	private static final double BALANCE = 1.0 / 2.03;
 	double [] sqrts;
 	double [] sqrtInvs;
-	int loops = 40000;
+	int loops = 6000;
+
 
 	@Test
-	public void testSqrtGen () {
-		final long range = 1l << (41/3);
+	public void testSqrt () {
+		final long range = 1l << 15;
 		//		sqrts = new double [range+1];
 
 		sqrts = new double[(int) range];
@@ -26,24 +31,34 @@ public class SqrtTest {
 		long start, end;
 
 		start = System.currentTimeMillis();
-		cast(range);
+		doSqrtTable(range);
 		end  = System.currentTimeMillis();
-		System.out.println(" time cast  : " + (end- start));
+		System.out.println(" time sqrt table: " + (end- start));
+		System.out.println(Math.sqrt(range));
 
 		start = System.currentTimeMillis();
-		floor(range);
+		doSqrt1(range);
 		end  = System.currentTimeMillis();
-		System.out.println(" time floor : " + (end- start));
+		System.out.println(" time   sqrt 1  : " + (end- start));
+		System.out.println(sqrt1(range));
 
 		start = System.currentTimeMillis();
-		div(range);
+		doSqrtDouble(range);
 		end  = System.currentTimeMillis();
-		System.out.println(" time div  : " + (end- start));
+		System.out.println(" time sqrt doub : " + (end- start));
+		System.out.println(sqrtDouble(range));
 
 		start = System.currentTimeMillis();
-		primemod(range);
+		doSqrt(range);
 		end  = System.currentTimeMillis();
-		System.out.println(" time prime: " + (end- start));
+		System.out.println(" time Math.sqrt : " + (end- start));
+		System.out.println(sqrtTable((int) range));
+
+		start = System.currentTimeMillis();
+		doSqrtMix(range);
+		end  = System.currentTimeMillis();
+		System.out.println(" time sqrt mix  : " + (end- start));
+		System.out.println(sqrtMix(range));
 
 		//		start = System.currentTimeMillis();
 		//		array2(range);
@@ -168,16 +183,104 @@ public class SqrtTest {
 
 	}
 
-	private double sqrt(long range) {
+	private double doSqrt(long range) {
 		double prod = 1;
-		final long n = 1l << 21;
-		for (int j = 0; j <loops; j++) {
+		for (int j = 0; j < loops; j++)
 			for (long i = 0; i < range; i++) {
-				final long sqrt = (long) Math.sqrt(i*n);
+				final long sqrt = (long) Math.sqrt(i);
 				prod += sqrt;
 			}
+		return prod;
+	}
+
+	private double doSqrt1(long range) {
+		double prod = 1;
+		for (int j = 0; j < loops; j++)
+			for (long i = 0; i < range; i++) {
+				final long sqrt = sqrt1(i);
+				prod += sqrt;
+			}
+		return prod;
+	}
+
+	private double doSqrtDouble(long range) {
+		double prod = 1;
+		for (int j = 0; j < loops; j++)
+			for (long i = 0; i < range; i++) {
+				final long sqrt = (long) sqrtDouble(i);
+				prod += sqrt;
+			}
+		return prod;
+	}
+
+	private double doSqrtTable(long range) {
+		double prod = 1;
+		for (int j = 0; j < loops; j++)
+			for (int i = 0; i < range; i++) {
+				final long sqrt = (long) sqrtTable(i);
+				prod += sqrt;
+			}
+		return prod;
+	}
+
+	private double doSqrtMix(long range) {
+		double prod = 1;
+		for (long i = 0; i < range; i++) {
+			final long sqrt = sqrtMix(i);
+			prod += sqrt;
 		}
 		return prod;
+	}
+
+	public static float sqrtTable(int x) {
+		return SquareRoot.sqrt(x);
+	}
+
+	public static double sqrtDouble(double f) {
+		final double y = Double.longBitsToDouble(0x5fe6ec85e7de30daL - (Double.doubleToLongBits(f) >> 1)); // evil floating point bit level hacking -- Use 0x5f375a86 instead of 0x5f3759df, due to slight accuracy increase. (Credit to Chris Lomont)
+		//		y = y * (1.5F - (0.5F * f * y * y)); 	// Newton step, repeating increases accuracy
+		return f * y;
+	}
+
+	public static double sqrt2(double f) {
+		final double y = Double.longBitsToDouble(0x5fe6ec85e7de30daL - (Double.doubleToLongBits(f) >> 1)); // evil floating point bit level hacking -- Use 0x5f375a86 instead of 0x5f3759df, due to slight accuracy increase. (Credit to Chris Lomont)
+		//		y = y * (1.5F - (0.5F * f * y * y)); 	// Newton step, repeating increases accuracy
+		return f * y;
+	}
+
+	/**
+	 * sqrt(x*2^k) = sqrt((1-a)*2^k) = sqrt((1-a))*2^(k/2) ~
+	 * 1-a/2 * 2^(k/2)
+	 * Bei x*2^k als long aufgefasst und durch 2 geteilt ist x/2 * 2^(k/2)
+	 * 1 - x*2^k als long aufgefasst ist (1-x/2) * 2^(k/2)
+	 * also finde die Long Darstellung von 1D
+	 *
+	 * @param x
+	 * @return
+	 */
+	public static long sqrt1(double x) {
+		//		final double sqrtReal = Math.sqrt(x);
+		//		final double sqrt2 = Double.longBitsToDouble(((Double.doubleToRawLongBits(x) >> 32) + 1072632448 ) << 31);
+		final double sqrt = Double.longBitsToDouble( ( ( Double.doubleToLongBits( x )- bit52 )>>1 ) + bit61 );
+		//		final double sqrt = (sqrt1 + sqrt2) * ONE_HALF;
+		//		final double sqrt3 = (1.03D * x * 1/sqrt2 + sqrt2) * BALANCE;
+		//		final double sqrt4 = (1.03D * x * 1/sqrt3 + sqrt3) * BALANCE;
+		final long sqrt3 = (long)(x/sqrt) + ((long)sqrt) >> 1 ;
+		//		final double sqrt4 = (x * 1/sqrt3 + sqrt3) * ONE_HALF;
+		return sqrt3;
+	}
+
+	/**
+	 * ((sqrt(x)+e)^2-x)/sqrt(x) = (2*e*sqrt(x)+e^2)/sqrt(x) =
+	 * 2e + e^2/sqrt(x)
+	 * @param x
+	 * @return
+	 */
+	public static long sqrtMix(double x) {
+		final double sqrt =  Double.longBitsToDouble(( ( Double.doubleToLongBits( x )- bit52 )>>1 ) + bit61);
+		final double correction = (x/sqrt-sqrt)/2;
+		final double sqrt2 = correction + sqrt;
+		return (long) sqrt2;
 	}
 
 	private double primemod(long range) {

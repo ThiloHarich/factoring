@@ -2,6 +2,7 @@ package factoring.math;
 
 import static org.junit.Assert.assertEquals;
 
+import java.math.BigInteger;
 import java.util.Random;
 
 import org.junit.Assert;
@@ -11,6 +12,12 @@ import org.junit.Test;
  * Created by Thilo Harich on 07.03.2018.
  */
 public class ModTest {
+
+	private static final int BITS = 32;
+
+	long n = BigInteger.valueOf(1l << 40).nextProbablePrime().longValue();
+
+	static long oneThird = (2^BITS + 2) / 3;
 
 
 	@Test
@@ -67,6 +74,73 @@ public class ModTest {
 
 
 	}
+
+	@Test
+	public void testMod3 ()
+	{
+		final Random rand = new Random();
+
+		final int range = 30000;
+
+		long start = System.currentTimeMillis();
+		mod3Fast(rand, range);
+		long end  = System.currentTimeMillis();
+		System.out.println(" time mod 3    : " + (end- start));
+
+		start = System.currentTimeMillis();
+		mod3(rand, range);
+		end  = System.currentTimeMillis();
+		System.out.println(" time mod fast : " + (end- start));
+
+		start = System.currentTimeMillis();
+		sqrt(rand, range);
+		end  = System.currentTimeMillis();
+		System.out.println(" sqrt          : " + (end- start));
+	}
+	private long mod3 (Random rand, int range) {
+		long prod = 1;
+		for (long i = 1; i < range; i++) {
+			long g = i;
+			final long sqrtN = (long) Math.sqrt(n);
+			for (long j = sqrtN; j < range + sqrtN; j++) {
+				g = j*j - n;
+				prod += g % 3;
+			}
+		}
+		return prod;
+	}
+
+	private long mod3Fast (Random rand, int range) {
+		long prod = 1;
+		for (long i = 1; i < range; i++) {
+			long g = i;
+			final long sqrtN = (long) Math.sqrt(n);
+			for (long j = sqrtN; j < range + sqrtN; j++) {
+				g = j*j - n;
+				prod += mod3(g);
+			}
+		}
+		return prod;
+	}
+
+	private long sqrt (Random rand, int range) {
+		long prod = 1;
+		for (long i = 1; i < range; i++) {
+			long g = i;
+			final long sqrtN = (long) Math.sqrt(n);
+			for (long j = sqrtN; j < range + sqrtN; j++) {
+				g = j*j - n;
+				prod += Math.sqrt(g);
+			}
+		}
+		return prod;
+	}
+
+	private long mod3(long x) {
+		final long q = (oneThird * x) >> BITS;
+			return x - q * 3;
+	}
+
 	private long doBrrett(Random rand, int range) {
 		long prod = 1;
 		for (long i = 1; i < range; i++) {

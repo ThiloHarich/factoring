@@ -22,11 +22,7 @@ import factoring.FactorizationOfLongs;
  */
 public class TrialFloatFact implements FactorizationOfLongs {
 
-	// The number of values to be printed
-	private static final int PRINT_NUM = 20000;
-	// for printing we need a value a little bit above 1
-	public static final double PRINT_CONST = 1.0000001;
-	private static final double ROUNDING_CORRECTION = 0.001;
+	private static final double ROUNDING_CORRECTION = 0.01;
 	private int maxFactor = 65535;
 	float[] primesInv;
 	int[] primes;
@@ -77,12 +73,11 @@ public class TrialFloatFact implements FactorizationOfLongs {
 
 
 	@Override
-	public long findFactors(long nL, Collection<Long> primeFactors) {
-		int n = (int) nL;
+	public long findFactors(long n, Collection<Long> primeFactors) {
 		for (int primeIndex = 1; primes[primeIndex] <= maxFactor; primeIndex++) {
 			// round the number. Casting to long is faster then rounding the double number itself, but we
 			// have to prevent some cases were the number is not correctly rounded by adding a small number
-			int nDivPrime = (int) (n*primesInv[primeIndex] + ROUNDING_CORRECTION);
+			long nDivPrime = (long) (n*primesInv[primeIndex] + ROUNDING_CORRECTION);
 			while (nDivPrime * primes[primeIndex] == n && n > 1) {
 				if (primeFactors == null)
 					return primes[primeIndex];

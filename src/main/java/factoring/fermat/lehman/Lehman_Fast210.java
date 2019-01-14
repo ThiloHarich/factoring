@@ -32,8 +32,8 @@ import de.tilman_neumann.util.ConfigUtil;
  *
  * @authors Tilman Neumann + Thilo Harich
  */
-public class Lehman_Fast30 extends FactorAlgorithmBase {
-	private static final Logger LOG = Logger.getLogger(Lehman_Fast30.class);
+public class Lehman_Fast210 extends FactorAlgorithmBase {
+	private static final Logger LOG = Logger.getLogger(Lehman_Fast210.class);
 
 	/** This is a constant that is below 1 for rounding up double values to long. */
 	private static final double ROUND_UP_DOUBLE = 0.9999999665;
@@ -41,7 +41,7 @@ public class Lehman_Fast30 extends FactorAlgorithmBase {
 	private static final int DISCRIMINATOR_BITS = 10; // experimental result
 	private static final double DISCRIMINATOR = 1.0/(1<<DISCRIMINATOR_BITS);
 
-	private static double[] sqrt, sqrtInv, sqrt6, sqrt30;
+	private static double[] sqrt, sqrtInv, sqrt6, sqrt30, sqrt210;
 
 	private static double[] primesInv;
 	private static int[] primes;
@@ -50,10 +50,11 @@ public class Lehman_Fast30 extends FactorAlgorithmBase {
 	static {
 		// Precompute sqrts for all possible k. 2^22 entries are enough for N~2^66.
 		final long start = System.currentTimeMillis();
-		final int kMax = 1<<25;
+		final int kMax = 1<<22;
 		sqrt = new double[kMax + 1];
 		sqrt6 = new double[kMax/6 + 1];
 		sqrt30 = new double[kMax/30 + 1];
+		sqrt210 = new double[kMax/30 + 1];
 		sqrtInv = new double[kMax + 1];
 		for (int i = 1; i < sqrt.length; i++) {
 			final double sqrtI = Math.sqrt(i);
@@ -62,6 +63,8 @@ public class Lehman_Fast30 extends FactorAlgorithmBase {
 				sqrt6[i] = Math.sqrt(6*i);
 			if (i < sqrt30.length)
 				sqrt30[i] = Math.sqrt(30*i);
+			if (i < sqrt210.length)
+				sqrt210[i] = Math.sqrt(210*i + 6*30);
 			sqrtInv[i] = 1.0/sqrtI;
 		}
 		final long end = System.currentTimeMillis();
@@ -106,6 +109,7 @@ public class Lehman_Fast30 extends FactorAlgorithmBase {
 
 	private long twentyfourN;
 	private long N120;
+	private long N840;
 
 	public Multimap<Integer, Integer> remainders = ArrayListMultimap.create();
 
@@ -114,7 +118,7 @@ public class Lehman_Fast30 extends FactorAlgorithmBase {
 	 * @param factorSemiprimes if the number to be factored might be a semiprimes were each factor is greater then n^1/3
 	 * then set this to true. The algorithm will always work. But this might have a very positive effect on the performance.
 	 */
-	public Lehman_Fast30(boolean factorSemiprimes) {
+	public Lehman_Fast210(boolean factorSemiprimes) {
 		this.factorSemiprimes = factorSemiprimes;
 	}
 
@@ -137,17 +141,20 @@ public class Lehman_Fast30 extends FactorAlgorithmBase {
 			return factor;
 
 		// limit for must be 0 mod 6, since we also want to search above of it
-		final int bigStep = 30;
-		final int kLimitDiv30 = (cbrt + bigStep) / bigStep;
+		final int bigStep = 210;
+		final int kLimitDiv210 = (cbrt + bigStep) / bigStep;
+		final int kLimitDiv30 = kLimitDiv210 * 7;
 		final int kLimitDiv6 = kLimitDiv30 * 5;
 		// For kLimit / 64 the range for a is at most 2, this is what we can ensure
 		int kTwoADiv6 = (cbrt >> 6);
 		// twoA = 0 mod 5 -> twoA*6 = 0 mod 30
-		final int kTwoADiv30 = (kTwoADiv6 + bigStep)/ bigStep;
+		final int kTwoADiv210 = (kTwoADiv6 + bigStep)/ bigStep;
+		final int kTwoADiv30 = kTwoADiv210 * 9;
 		kTwoADiv6 = kTwoADiv30 * 5;
 		fourN = N<<2;
 		twentyfourN = N* 24;
 		N120 = N * 120;
+		N840 = N * 840;
 		sqrt4N = Math.sqrt(fourN);
 		final double sixthRootTerm = 0.25 * Math.pow(N, 1/6.0); // double precision is required for stability
 
@@ -157,6 +164,24 @@ public class Lehman_Fast30 extends FactorAlgorithmBase {
 		// this is we use a multiplier of 30 for odd 'a' we have much higher chances to find solutions
 
 		factor = lehman30(kTwoADiv30, kLimitDiv30);
+		if (factor>1 && factor != N)
+			return factor;
+		factor = lehman30(kTwoADiv30+1, kLimitDiv30);
+		if (factor>1 && factor != N)
+			return factor;
+		factor = lehman30(kTwoADiv30+2, kLimitDiv30);
+		if (factor>1 && factor != N)
+			return factor;
+		factor = lehman30(kTwoADiv30+3, kLimitDiv30);
+		if (factor>1 && factor != N)
+			return factor;
+		factor = lehman30(kTwoADiv30+4, kLimitDiv30);
+		if (factor>1 && factor != N)
+			return factor;
+		factor = lehman30(kTwoADiv30+5, kLimitDiv30);
+		if (factor>1 && factor != N)
+			return factor;
+		factor = lehman30(kTwoADiv30+6, kLimitDiv30);
 		if (factor>1 && factor != N)
 			return factor;
 
@@ -197,7 +222,6 @@ public class Lehman_Fast30 extends FactorAlgorithmBase {
 				}
 			}
 		}
-
 		// So far we have only odd solutions for 'a' now we try to get all the even solutions
 		factor = lehmanOdd(kTwoA + 3, 6 * kLimitDiv6);
 		if (factor > 1)
@@ -211,8 +235,25 @@ public class Lehman_Fast30 extends FactorAlgorithmBase {
 		if (factor > 1)
 			return factor;
 
-		// seems like we do not need this
 		factor = lehman30(kLimitDiv30, kLimitDiv30 * 6);
+		if (factor>1 && factor != N)
+			return factor;
+		factor = lehman30(kLimitDiv30+1, kLimitDiv30 * 6);
+		if (factor>1 && factor != N)
+			return factor;
+		factor = lehman30(kLimitDiv30+2, kLimitDiv30 * 6);
+		if (factor>1 && factor != N)
+			return factor;
+		factor = lehman30(kLimitDiv30+3, kLimitDiv30 * 6);
+		if (factor>1 && factor != N)
+			return factor;
+		factor = lehman30(kLimitDiv30+4, kLimitDiv30 * 6);
+		if (factor>1 && factor != N)
+			return factor;
+		factor = lehman30(kLimitDiv30+5, kLimitDiv30 * 6);
+		if (factor>1 && factor != N)
+			return factor;
+		factor = lehman30(kLimitDiv30+6, kLimitDiv30 * 6);
 		if (factor>1 && factor != N)
 			return factor;
 
@@ -289,25 +330,26 @@ public class Lehman_Fast30 extends FactorAlgorithmBase {
 			if (b*b == test) {
 				return gcdEngine.gcd(a+b, N);
 			}
-			// jump over k = 0 mod 5
+			// jump over k = 0 mod 5 / 30
 			k += 2;
 		}
 		return -1;
 	}
 
 	private long lehman30(int kBeginIndex, final int kEnd) {
-		for (int k = kBeginIndex ; k <= kEnd; k++) {
-			//			System.out.print("," + k);
+		for (int k = kBeginIndex ; k <= kEnd; k += 7) {
 			final long a  = (long) (sqrt4N * sqrt30[k] + ROUND_UP_DOUBLE) | 1;
 			final long test = a*a - k * N120;
 			final long b = (long) Math.sqrt(test);
 			if (b*b == test) {
+				remainders.put(0, 1);
 				return gcdEngine.gcd(a+b, N);
 			}
 		}
 		//		System.out.println();
 		return -1;
 	}
+
 
 
 	/**
@@ -379,7 +421,7 @@ public class Lehman_Fast30 extends FactorAlgorithmBase {
 				5682546780292609L,
 		};
 
-		final Lehman_Fast30 lehman = new Lehman_Fast30(true);
+		final Lehman_Fast210 lehman = new Lehman_Fast210(true);
 		for (final long N : testNumbers) {
 			final long factor = lehman.findSingleFactor(N);
 			LOG.info("N=" + N + " has factor " + factor);

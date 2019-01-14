@@ -7,6 +7,7 @@ import org.junit.Test;
 
 import de.tilman_neumann.jml.factor.FactorAlgorithmBase;
 import de.tilman_neumann.jml.factor.lehman.Lehman_Fast;
+import factoring.fermat.lehman.LehmanSimple;
 import factoring.fermat.lehman.Lehman_Fast30;
 
 //import de.tilman_neumann.math.factor.CombinedFactorAlgorithm;
@@ -14,32 +15,28 @@ import factoring.fermat.lehman.Lehman_Fast30;
 
 public class PerformanceHard {
 
-	final static int bits = 50;
-	final static int numPrimes = 1845;
-	final static int loop = 20;
+	final static int bits = 45;
+	final static int numPrimes = 8840;
+	final static int loop = 18;
 	final static int smallFactorBits = bits / 2;
 	static long[] semiprimes;
 
 	public static void main(String[] args) {
 		//		final FactorAlgorithmBase factorizer2 = new factoring.fermat.lehman.Lehman_Fast(false);
 		//		final FactorAlgorithmBase factorizer2 = new SquFoF31();
-		//		final FactorizationOfLongs factorizer1 = new TrialDoubleFact(1 << (bits/2));
+		//		final FactorizationOfLongs factorizer2 = new TrialInvFact2(1 << (bits/2));
+		final FactorAlgorithmBase factorizer1 = new LehmanSimple();
 		//		final FactorAlgorithmBase factorizer1 = new PollardRhoBrentMontgomery63();
 		//		final FactorAlgorithmBase factorizer2 = new Lehman_Fast24_4(true);
 		//		final FactorizationOfLongs factorizer1 = new PollardRhoBrentDouble53();
-		final FactorAlgorithmBase factorizer2 = new Lehman_Fast(true);
-		//		final FactorAlgorithmBase factorizer1 = new Lehman_Fast6(true);
-		//		final FactorizationOfLongs factorizer2 = new TrialInvFact(1 << (bits/2));
+		//		final FactorAlgorithmBase factorizer2 = new Lehman_Fast(true);
+		//				final FactorAlgorithmBase factorizer1 = new Lehman_Fast6(true);
+		//		final FactorizationOfLongs factorizer1 = new TrialInvFact2(1 << (bits/2));
 		//		final FactorizationOfLongs factorizer2 = new LehmanFactorFinder(bits, 2.f, false);
 		//		final FactorizationOfLongs factorizer2 = new PollardRhoBrentDouble52();
-		final FactorAlgorithmBase factorizer1 = new Lehman_Fast30(true);
+		final FactorAlgorithmBase factorizer2 = new Lehman_Fast(true);
 		semiprimes = makeSemiPrimesList(bits, smallFactorBits, numPrimes);
 		test2(factorizer1);
-
-		//		System.out.println("loop 6k      first : " + factorizer1.loop_6_1);
-		//		System.out.println("loop 6      ground : " + factorizer1.loop_ground);
-		//		System.out.println("loop 6k     second : " + factorizer1.loop_6_2);
-		//		System.out.println("loop 6k + 3 ground : " + factorizer1.loop_3);
 
 		//		test2(factorizer1);
 		//		findFactors(factorizer1, semiprimes, loop);
@@ -57,6 +54,10 @@ public class PerformanceHard {
 		System.out.println("time for setup : " + (end - start));
 
 		findFactors(factorizer, semiprimes, loop);
+		if (factorizer instanceof Lehman_Fast30) {
+			final Lehman_Fast30 fact = (Lehman_Fast30) factorizer;
+			fact.remainders.asMap().entrySet().stream().forEach(e -> System.out.println(e.getKey()+ " : "+ e.getValue().stream().count()));
+		}
 		findFactors(factorizer, semiprimes, loop);
 		findFactors(factorizer, semiprimes, loop);
 		findFactors(factorizer, semiprimes, loop);
