@@ -21,7 +21,7 @@ import de.tilman_neumann.jml.gcd.Gcd63;
 import factoring.FactorFinder;
 import factoring.FactorizationOfLongs;
 import factoring.math.PrimeMath;
-import factoring.trial.TrialInvFact2;
+import factoring.trial.TrialInvFact;
 
 /**
  *
@@ -31,7 +31,7 @@ import factoring.trial.TrialInvFact2;
  *
  * @author Tilman Neumann + Thilo Harich
  */
-public class LehmanSimple implements FactorizationOfLongs, FactorFinder {
+public class LehmanSimple2 implements FactorizationOfLongs, FactorFinder {
 	private static final Logger LOG = Logger.getLogger(Lehman_TillSimple.class);
 
 	/** This is a constant that is below 1 for rounding up double values to long. */
@@ -43,11 +43,11 @@ public class LehmanSimple implements FactorizationOfLongs, FactorFinder {
 
 	private double[] sqrt;
 
-	public LehmanSimple(boolean hardNumbers) {
+	public LehmanSimple2(boolean hardNumbers) {
 		this.hardNumbers = hardNumbers;
 		final int cubicRoot = (int) Math.cbrt(1L<<50);
 		initSqrts(cubicRoot);
-		smallFactoriser = new TrialInvFact2(cubicRoot);
+		smallFactoriser = new TrialInvFact(cubicRoot);
 	}
 
 	private void initSqrts(int cubicRoot) {
@@ -71,7 +71,8 @@ public class LehmanSimple implements FactorizationOfLongs, FactorFinder {
 		kLimit = (int)  Math.ceil(Math.cbrt(n));
 		final long fourN = n<<2;
 		final double sqrt4N = Math.sqrt(fourN);
-		final long MN = fourN * 2*3*3*5*7;// = 630
+		//		final long MN = fourN * 2*3*3*5*7;// = 630
+		final long MN = fourN * 3*3*5*7;// = 315
 		final double sqrtMN = Math.sqrt(MN);
 
 		long aForK1 = (long) (sqrt4N  + ROUND_UP_DOUBLE);
@@ -91,21 +92,17 @@ public class LehmanSimple implements FactorizationOfLongs, FactorFinder {
 			for (int i=0; i < 8; i++) {
 				// investigate in k = 0 mod multiplier only like the Hart variant does it
 				long  a, test, b;
-				// this is always the same code a loop/method (in java) is slower then copy the code here
-				a = (long) (sqrtMN * sqrt[k] + ROUND_UP_DOUBLE) | 1;
-				test = a*a - k++ * MN;
-				// This sqrt is fast, while the sqrt(k) of smaller size - but double precision? -  above is slow ???????
-				b = (long) Math.sqrt(test);
-				if (b*b == test) {
-					gcd = PrimeMath.gcd(a+b, n);
+				// first check odd values of k
+				a = (long) (sqrtMN * sqrt[k] + ROUND_UP_DOUBLE);
+				final long kPlusN = k + n;
+				if ((kPlusN*3 & 3) == 0) // 315 == 3 mod 8
+				{
+					a += ((kPlusN - a) & 7);
+				} else
+				{
+					a += ((kPlusN - a) & 3);
 				}
-				a = (long) (sqrtMN * sqrt[k] + ROUND_UP_DOUBLE) | 1;
-				test = a*a - k++ * MN;
-				b = (long) Math.sqrt(test);
-				if (b*b == test) {
-					gcd = PrimeMath.gcd(a+b, n);
-				}
-				a = (long) (sqrtMN * sqrt[k] + ROUND_UP_DOUBLE) | 1;
+				// even values of k
 				test = a*a - k++ * MN;
 				b = (long) Math.sqrt(test);
 				if (b*b == test) {
@@ -117,30 +114,16 @@ public class LehmanSimple implements FactorizationOfLongs, FactorFinder {
 				if (b*b == test) {
 					gcd = PrimeMath.gcd(a+b, n);
 				}
-			}
-			if (gcd > 1 && gcd < n) {
-				if (findsPrimesOnly()) {
-					primeFactors.add(gcd);
-					primeFactors.add(n / gcd);
-					return 1;
-				}
-				return gcd;
 			}
 			// Here k is always 1 and we increase 'a' by aStep.
 			// This phase should save us if the first phase does not find anything
-			final long test = aForK1*aForK1 - fourN;
-			final long b = (long) Math.sqrt(test);
-			if (b*b == test) {
-				gcd = PrimeMath.gcd(aForK1+b, n);
-			}
-			if (gcd > 1 && gcd < n) {
-				if (findsPrimesOnly()) {
-					primeFactors.add(gcd);
-					primeFactors.add(n / gcd);
-					return 1;
-				}
-				return gcd;
-			}
+			//			final long test = aForK1*aForK1 - fourN;
+			//			final long b = (long) Math.sqrt(test);
+			//			if (b*b == test) {
+			//				gcd= gcdEngine.gcd(aForK1+b, n);
+			//			}
+			//			if (gcd > 1 && gcd < n)
+			//				return gcd;
 		}
 
 		smallFactoriser.setMaxFactor(kLimit);
@@ -148,25 +131,16 @@ public class LehmanSimple implements FactorizationOfLongs, FactorFinder {
 		if (factor == 1)
 			return factor;
 
-		//		// If sqrt(4kN) is very near to an exact integer then the fast ceil() in the 'aStart'-computation
-		//		// may have failed. Then we need a "correction loop":
-		//		for (int k=1; k <= kLimit; k++) {
-		//			final long a = (long) (sqrt4N * sqrt[k] + ROUND_UP_DOUBLE) - 1;
-		//			final long test = a*a - k*fourN;
-		//			final long b = (long) Math.sqrt(test);
-		//			if (b*b == test) {
-		//				gcd = gcdEngine.gcd(a+b, n);
-		//				primeFactors.add(gcd);
-		//				primeFactors.add(n / gcd);
-		//				return 1;
-		//
-		//			}
-		//		}
-		return n;
-	}
-
-	@Override
-	public boolean findsPrimesOnly() {
-		return !hardNumbers;
+		// If sqrt(4kN) is very near to an exact integer then the fast ceil() in the 'aStart'-computation
+		// may have failed. Then we need a "correction loop":
+		for (int k=1; k <= kLimit; k++) {
+			final long a = (long) (sqrt4N * sqrt[k] + ROUND_UP_DOUBLE) - 1;
+			final long test = a*a - k*fourN;
+			final long b = (long) Math.sqrt(test);
+			if (b*b == test) {
+				return gcdEngine.gcd(a+b, n);
+			}
+		}
+		return -1;
 	}
 }

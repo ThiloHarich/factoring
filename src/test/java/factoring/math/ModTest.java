@@ -18,6 +18,7 @@ public class ModTest {
 	long n = BigInteger.valueOf(1l << 40).nextProbablePrime().longValue();
 
 	static long oneThird = (2^BITS + 2) / 3;
+	static long inv255 = (2^BITS + 254) / 255;
 
 
 	@Test
@@ -97,6 +98,69 @@ public class ModTest {
 		end  = System.currentTimeMillis();
 		System.out.println(" sqrt          : " + (end- start));
 	}
+	@Test
+	public void testMod255 ()
+	{
+		final Random rand = new Random();
+
+		final int range = 30000;
+
+		long start = System.currentTimeMillis();
+		mod255(rand, range);
+		long end  = System.currentTimeMillis();
+		System.out.println(" time mod 255      : " + (end- start));
+
+		start = System.currentTimeMillis();
+		mod255MultInt(rand, range);
+		end  = System.currentTimeMillis();
+		System.out.println(" time mod 255 inv  : " + (end- start));
+
+		start = System.currentTimeMillis();
+		mod255Jones (rand, range);
+		end  = System.currentTimeMillis();
+		System.out.println(" time mod 255 jones: " + (end- start));
+	}
+	private long mod255 (Random rand, int range) {
+		long prod = 1;
+		for (long i = 1; i < range; i++) {
+			final long g = i;
+			final long sqrtN = (long) Math.sqrt(n);
+			for (long j = sqrtN; j < range + sqrtN; j++) {
+				prod += j % 255;
+			}
+		}
+		return prod;
+	}
+	private long mod255MultInt (Random rand, int range) {
+		long prod = 1;
+		for (long i = 1; i < range; i++) {
+			final long g = i;
+			final long sqrtN = (long) Math.sqrt(n);
+			for (long j = sqrtN; j < range + sqrtN; j++) {
+				prod += mod255MultInt(j);
+			}
+		}
+		return prod;
+	}
+	private long mod255Jones (Random rand, int range) {
+		long prod = 1;
+		for (long i = 1; i < range; i++) {
+			final long g = i;
+			final long sqrtN = (long) Math.sqrt(n);
+			for (long j = sqrtN; j < range + sqrtN; j++) {
+				prod += mod255Jones(j);
+			}
+		}
+		return prod;
+	}
+	private long mod255Jones(long a) {
+		a = (a >> 16) + (a & 0xFFFF); /* sum base 2**16 digits */
+		a = (a >>  8) + (a & 0xFF);   /* sum base 2**8 digits */
+		if (a < 255) return a;
+		if (a < (2 * 255)) return a - 255;
+		return a - (2 * 255);
+	}
+
 	private long mod3 (Random rand, int range) {
 		long prod = 1;
 		for (long i = 1; i < range; i++) {
@@ -138,6 +202,11 @@ public class ModTest {
 
 	private long mod3(long x) {
 		final long q = (oneThird * x) >> BITS;
+			return x - q * 3;
+	}
+
+	private long mod255MultInt(long x) {
+		final long q = (inv255 * x) >> BITS;
 			return x - q * 3;
 	}
 

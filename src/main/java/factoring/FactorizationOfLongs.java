@@ -8,6 +8,8 @@ import com.google.common.collect.ImmutableMultiset;
 import com.google.common.collect.Multiset;
 import com.google.common.collect.TreeMultiset;
 
+import factoring.math.PrimeMath;
+
 /**
  * This is an Interface which gives an {@link #factorization(long)} of a long number.
  * It has a default implementation for {@link #factorization(long)}, which calculates the
@@ -109,48 +111,57 @@ public interface FactorizationOfLongs extends FactorFinder {
 		if (compositeFactor == n){
 			return ImmutableMultiset.of(compositeFactor);
 		}
+		// if the factor is a prime we just add it.
 		long compositeFactor2 = n/compositeFactor;
+		// remove the already found primes from the remaining factor
 		for (final long prime : primes)
 		{
 			// TODO multiply instead of division?
 			compositeFactor2 /= prime;
 		}
-		primes.addAll(factorizationByFactors(compositeFactor));
-		if (compositeFactor2 != 1)
-			primes.addAll(factorizationByFactors(compositeFactor2));
+		addFactors(primes, compositeFactor, compositeFactor2);
 
 		return primes;
 	}
 
+
 	default Collection<Long> factorizationByCompositesOnly(long n){
-		final TreeMultiset<Long> factorsEven = TreeMultiset.create();
+		final TreeMultiset<Long> primes = TreeMultiset.create();
 		// find one factor and decomposite this factor and n/factor
-		final long factor1 = getImpl(n).findFactors(n, null);
+		final long compositeFactor = getImpl(n).findFactors(n, null);
 		// if we do not find a divisor it must be a prime factor just return it
-		if (factor1 == n){
-			return ImmutableMultiset.of(factor1);
+		if (compositeFactor == n){
+			return ImmutableMultiset.of(compositeFactor);
 		}
-		//		factorsEven.add(factor1);
-		// also divide out the prime factorsEven
-		final long factor2 = n/factor1;
-		final Collection<Long> subFactors1 = factorizationByCompositesOnly(factor1);
-		final Collection<Long> subFactors2 = factorizationByCompositesOnly(factor2);
-		factorsEven.addAll(subFactors1);
-		factorsEven.addAll(subFactors2);
-		return factorsEven;
+		final long compositeFactor2 = n/compositeFactor;
+		addFactors(primes, compositeFactor, compositeFactor2);
+
+		return primes;
 
 	}
 
-	default TreeMultiset<Long> factorizationBySinglePrime(long n, TreeMultiset<Long> primeFactors) {
-		while(true) {
-			final long primeFactor = getImpl(n).findFactors(n, null);
-			primeFactors.add(primeFactor);
-			if (primeFactor == n) {
-				return primeFactors;
-			}
-			n = n/primeFactor;
-		}
+	default void addFactors(final TreeMultiset<Long> primes, final long compositeFactor, long compositeFactor2) {
+		if (PrimeMath.isPrime(compositeFactor))
+			primes.add(compositeFactor);
+		else
+			primes.addAll(factorizationByFactors(compositeFactor));
+
+		if (PrimeMath.isPrime(compositeFactor2))
+			primes.add(compositeFactor2);
+		else
+			primes.addAll(factorizationByFactors(compositeFactor2));
 	}
+
+	//	default TreeMultiset<Long> factorizationBySinglePrime(long n, TreeMultiset<Long> primeFactors) {
+	//		while(true) {
+	//			final long primeFactor = getImpl(n).findFactors(n, null);
+	//			primeFactors.add(primeFactor);
+	//			if (primeFactor == n) {
+	//				return primeFactors;
+	//			}
+	//			n = n/primeFactor;
+	//		}
+	//	}
 
 	default long addEvenPrimes(long n, TreeMultiset<Long> primeFactors) {
 		while ((n & 1) == 0)

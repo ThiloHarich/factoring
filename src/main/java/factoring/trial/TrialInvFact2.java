@@ -83,10 +83,15 @@ public class TrialInvFact2 implements FactorizationOfLongs {
 			// have to prevent some cases were the number is not correctly rounded by adding a small number
 			long nDivPrime = (long) (n*primesInv[primeIndex] + ROUNDING_CORRECTION);
 			while (nDivPrime * primes[primeIndex] == n && n > 1) {
-				if (primeFactors == null)
+				if (primeFactors == null || primeFactors == null)
 					return primes[primeIndex];
 				primeFactors.add((long) primes[primeIndex]);
 				n = nDivPrime;
+				// if the remaining number is lower then the maximal factor we look for it must be a prime
+				if (n < maxFactor) {
+					primeFactors.add(n);
+					return 1;
+				}
 				nDivPrime = (long) (n*primesInv[primeIndex] + ROUNDING_CORRECTION);
 			}
 		}

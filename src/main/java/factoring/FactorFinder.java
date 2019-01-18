@@ -31,6 +31,16 @@ public interface FactorFinder {
 	//	}
 
 	/**
+	 * retuns a factor of n, if there is any. If n is a prime n will be returned.
+	 * Only if {@link #findsPrimesOnly()} is true this factors needs to be a prime.
+	 * @param n
+	 * @return
+	 */
+	default long findFactor (long n) {
+		return findFactors (n, null);
+	}
+
+	/**
 	 * Gives back at least one factor of the number n, if there is any.
 	 * If {@link #setMaxFactor(int) maxFactor} is called, it will only check for numbers below maxFactor.
 	 * If {@link #returnsCompositeOnly()} is true, the factor will be returned by the return of the function. In this case the prime factors
@@ -39,7 +49,9 @@ public interface FactorFinder {
 	 * If {@link #setMaxFactor(int)} is called,
 	 *
 	 * @param n the number to be factorized.
-	 * @param primeFactors Holds the prime factors below maxFactor,
+	 * @param primeFactors A container for storing (prime) factors. If this parameter is not given, the algorithm has to return a (composite)
+	 * factor as return value, since it can not store other factors. If the caller provides a non null Collection possible primes might be stored
+	 * in the collection. If {@link #setMaxFactor(int)} was called only prime factors below maxFactor will be returned.
 	 * Only If {@link #returnsCompositeOnly()} is true the prime factors collection will not be used. In this case factors can be null.
 	 * It will not necessary add all prime factors in this collection.
 	 * @return a factor of the number n.

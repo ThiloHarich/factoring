@@ -19,8 +19,6 @@ import org.apache.log4j.Logger;
 
 import de.tilman_neumann.jml.factor.FactorAlgorithmBase;
 import de.tilman_neumann.jml.gcd.Gcd63;
-import factoring.math.BigDouble;
-import factoring.math.PrimeMath;
 import factoring.trial.TrialInvFact;
 
 /**
@@ -179,8 +177,8 @@ public class Lehman52Bit extends FactorAlgorithmBase {
 			// for k = 0 mod 6 a must be even and k + n + a = 0 mod 4
 			a += (k + N - a) & 3;
 			//			long[] aSquare = BigDouble.square(a);
-			aBig = BigInteger.valueOf(	)
-					final long test = a*a - k * fourN;
+			//			aBig = BigInteger.valueOf(	)
+			final long test = a*a - k * fourN;
 			{
 				final long b = (long) Math.sqrt(test);
 				if (b*b == test) {

@@ -10,10 +10,9 @@ import de.tilman_neumann.jml.factor.FactorAlgorithmBase;
 import de.tilman_neumann.jml.factor.squfof.SquFoF63;
 import factoring.fermat.lehman.LehmanFactorFinder;
 import factoring.fermat.lehman.LehmanFactorFinderRange;
-import factoring.fermat.lehman.LehmanFactorization;
+import factoring.fermat.lehman.LehmanSimple;
+import factoring.fermat.lehman.Lehman_Fast;
 import factoring.rho.PollardRhoBrentDouble52;
-import factoring.rho.variants.PollardRhoBrentDouble;
-import factoring.rho.variants.PollardRhoBrentProd;
 import factoring.trial.TrialDoubleFact;
 
 //import de.tilman_neumann.math.factor.CombinedFactorAlgorithm;
@@ -238,37 +237,37 @@ public class PerformanceTest {
 		//				final FactorizationOfLongs factorizer2 = new TrialInvFact(1 << bits/2);
 		//		Factorizer factorizer2 = new FermatFact();
 		//		final SingleFactorFinder factorizer1 = new LehmanFactorization(bits, 1f);
-		final FactorizationOfLongs factorizer1 = new LehmanFactorization(bits, 0f);
+		final FactorizationOfLongs factorizer1 = new LehmanSimple(false);
 		//		final FactorizationOfLongs factorizer2 = new LehmanPowFactorization(bits, 0f);
 		//		final Factorizer factorizer2 = new TrialWithPrimesFact();
 		//		final FactorAlgorithm factorizer2 = new CombinedFactorAlgorithm(1, false);
 		//		final FactorizationOfLongs factorizer3 = new PollardRhoBrentMultiGcd();
-		final FactorizationOfLongs factorizer2 = new PollardRhoBrentProd();
-		final FactorizationOfLongs factorizer3 = new PollardRhoBrentDouble();
+		final FactorAlgorithmBase factorizer2 = new Lehman_Fast(false);
+		//		final FactorizationOfLongs factorizer3 = new PollardRhoBrentDouble();
 
 		//		((TrialFactMod)factorizer1).setLimit(1 << 16);
 
 		final long time1 = getFactors(factorizer1, bits, range, 1l);
 		getFactors(factorizer2, bits, range, time1);
-		getFactors(factorizer3, bits, range, time1);
+		//		getFactors(factorizer3, bits, range, time1);
 
 		//		assertEquals(factors, factors2);
 
 		final long time2 = getFactors(factorizer1, bits,range, time1);
 		getFactors(factorizer2, bits, range, time2);
-		getFactors(factorizer3, bits, range, time2);
+		//		getFactors(factorizer3, bits, range, time2);
 
 		//		assertEquals(factors3, factors4);
 
 
 		final long time3 = getFactors(factorizer1, bits,range, time1);
 		getFactors(factorizer2, bits, range, time3);
-		getFactors(factorizer3, bits, range, time3);
+		//		getFactors(factorizer3, bits, range, time3);
 
 
 		final long time4 = getFactors(factorizer1, bits,range, time1);
 		getFactors(factorizer2, bits, range, time4);
-		getFactors(factorizer3, bits, range, time4);
+		//		getFactors(factorizer3, bits, range, time4);
 
 		//		assertEquals(factors5, factors6);
 	}

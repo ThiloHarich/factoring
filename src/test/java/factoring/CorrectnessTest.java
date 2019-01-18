@@ -15,8 +15,8 @@ import com.google.common.collect.TreeMultiset;
 
 import de.tilman_neumann.jml.factor.FactorAlgorithm;
 import de.tilman_neumann.util.SortedMultiset;
-import factoring.fermat.lehman.Lehman_Fast;
 import factoring.fermat.lehman.LehmanSimple;
+import factoring.fermat.lehman.Lehman_Fast;
 import factoring.rho.PollardRhoBrentDouble52;
 import factoring.shift.ErrorShiftFact;
 import factoring.trial.variant.TrialFact;
@@ -45,7 +45,7 @@ public class CorrectnessTest {
 		final int bits = 40;
 
 		long begin = (1L << bits) +1;
-		//		begin = 1048662l	;
+		begin = 21l	;
 		//		final LehmanFactorFinder factorizer1 = new LehmanFactorFinder(50, 1, false);
 		//		final FactorAlgorithm factorizer2 = new SquFoF31();
 		final FactorAlgorithm factorizer1 = new Lehman_Fast(true);
@@ -54,7 +54,7 @@ public class CorrectnessTest {
 		//		Factorizer factorizer1 = new LehmanBigFact(bitsMax, 1);
 		//		final Factorizer factorizer2 = new LehmanMod16Fact(bitsMax);
 		//		final FactorizationOfLongs factorizer2 = new PollardRhoBrentDouble53();
-		final FactorAlgorithm factorizer2 = new LehmanSimple();
+		final FactorizationOfLongs factorizer2 = new LehmanSimple(true);
 		//		final FactorizationOfLongs factorizer1 = new LehmanFactorFinderRange(bits, 2f, true);
 		//		final FactorizationOfLongs factorizer2 = new TrialDoubleFact(1 << (bits/2));
 		//		final FactorizationOfLongs factorizer2 = new TrialInvFact(1 << (bits/2));
@@ -74,16 +74,16 @@ public class CorrectnessTest {
 				final SortedMultiset<BigInteger> factors = factorizer1.factor(BigInteger.valueOf(i));
 				System.out.println(i + ": " + factors);
 				//				final Collection<Long> factors = factorizer1.factorization(i);
-				//				final Collection<Long> factors2 = factorizer2.factorization(i);
-				//				System.out.println(i + ": " + factorizer2.printFactorization(i));
-				final SortedMultiset<BigInteger> factors2 = factorizer2.factor(BigInteger.valueOf(i));
+				final Collection<Long> factors2 = factorizer2.factorization(i);
+				System.out.println(i + ": " + factorizer2.printFactorization(i));
+				//				final SortedMultiset<BigInteger> factors2 = factorizer2.factor(BigInteger.valueOf(i));
 				//																final SortedMultiset<BigInteger> factors2 = factorizer2.findAllPrimeFactors(i);
 				//				System.out.println(i + ": " + factorizer1.printFactorization(i));
-				System.out.println(i + ": " + factors2);
+				//				System.out.println(i + ": " + factors2);
 				//
 				//				if (factors.size()!=factors2.size())
 				//					System.out.println();
-				assertEquals("Test failed for " + i, factors.size(), factors2.size());
+				assertEquals("Test failed for " + i, factors.totalCount(), factors2.size());
 				//				assertEquals("Test failed for " + i, factors.totalCount(), factors2.totalCount());
 				//				final Multiset<Long> factorsSet = TreeMultiset.create();
 				//								factorsSet.addAll(factors2);

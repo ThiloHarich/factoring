@@ -1,5 +1,6 @@
 package factoring.math;
 import java.math.BigInteger;
+import java.util.Arrays;
 import java.util.BitSet;
 
 public class PrimeMath {
@@ -88,17 +89,30 @@ public class PrimeMath {
 		return t.equals(nMinusOne);
 	}
 
-
 	/**
-	 * This a deterministic variant of the Rabin Miller test for up to 32 Bits.
-	 * It is sufficient to call the rabin miller test with a = 2, 7, 61
+	 * deterministic check if a long number is a prime.
+	 * Is based on https://en.wikipedia.org/wiki/Miller–Rabin_primality_test
 	 * @param n
 	 * @return
 	 */
-	public static boolean isPrime32 (int n) {
-		if (n <= 3 || n %2 == 0)
-			return n <= 3;
-		final int [] as = {2, 7, 61};
+	public static boolean isPrime(long n) {
+		if (n < Integer.MAX_VALUE) {
+			final long[] primes61 = {2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61};
+			return Arrays.binarySearch(primes61, n) > 0 || isPrime((int) n, new int [] {2, 7, 61});
+		}
+		if (n < 2152302898747l) {
+			final long [] as = {2, 3, 5, 7, 11};
+			return Arrays.binarySearch(as, n) > 0 || isPrime(n, as);
+		}
+		if (n < 341550071728321l){
+			final long [] as = {2, 3, 5, 7, 11, 13, 17};
+			return Arrays.binarySearch(as, n) > 0 || isPrime(n, as);
+		}
+		final long [] as = {2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37};
+		return Arrays.binarySearch(as, n) > 0 || isPrime(n, as);
+	}
+
+	private static boolean isPrime(int n, final int[] as) {
 		final long nMin1 = n - 1;
 		for (int i = 0; i < as.length && as[i] < nMin1; i++) {
 			final boolean probablePrime = isProbablePrime(n, as[i]);
@@ -108,25 +122,72 @@ public class PrimeMath {
 		return true;
 	}
 
-	/**
-	 * This a deterministic variant of the Rabin Miller test for up to 41 Bits.
-	 * It is sufficient to call the rabin miller test with a = 2, 3, 5, 7, 11
-	 * @param n
-	 * @return
-	 */
-	public static boolean isPrime41Bit (long n) {
-		if (n <= 3 || n %2 == 0)
-			return n <= 3;
-		final int [] as = {2, 3, 5, 7, 11};
+	public static boolean isPrime (long n, long [] as) {
 		final long nMin1 = n - 1;
 		for (int i = 0; i < as.length && as[i] < nMin1; i++) {
 			final boolean probablePrime = isProbablePrime(BigInteger.valueOf(n), as[i]);
-			//			final boolean probablePrime = isProbablePrime((int) n, as[i]);
 			if (!probablePrime)
 				return false;
 		}
 		return true;
 	}
+
+	/**
+	 * This a deterministic variant of the Rabin Miller test for up to 32 Bits.
+	 * It is sufficient to call the Rabin miller test with a = 2, 7, 61
+	 * @param n
+	 * @return
+	 */
+	public static boolean isPrime32 (int n) {
+		if (n <= 3 || n %2 == 0)
+			return n <= 3;
+		final int [] as = {2, 7, 61};
+		return isPrime(n, as);
+	}
+
+
+	//	/**
+	//	 * This a deterministic variant of the Rabin Miller test for up to 41 Bits.
+	//	 * It is sufficient to call the rabin miller test with a = 2, 3, 5, 7, 11
+	//	 * @param n
+	//	 * @return
+	//	 */
+	//	public static boolean isPrime41Bit (long n) {
+	//		if (n <= 3 || n %2 == 0)
+	//			return n <= 3;
+	//		final int [] as = {2, 3, 5, 7, 11};
+	//		final long nMin1 = n - 1;
+	//		for (int i = 0; i < as.length && as[i] < nMin1; i++) {
+	//			final boolean probablePrime = isProbablePrime(BigInteger.valueOf(n), as[i]);
+	//			//			final boolean probablePrime = isProbablePrime((int) n, as[i]);
+	//			if (!probablePrime)
+	//				return false;
+	//		}
+	//		return true;
+	//	}
+	//
+	//	/**
+	//	 * This a deterministic variant of the Rabin Miller test for up to 61 Bits.
+	//	 * It is sufficient to call the rabin miller test with a = 2, 3, 5, 7, 11, 13, 17, 19, 23
+	//	 * @param n
+	//	 * @return
+	//	 */
+	//	public static boolean isPrime61Bit (long n) {
+	//		final int [] as = {2, 3, 5, 7, 11, 13, 17, 19, 23};
+	//		if (n <= 26) {
+	//			for(final int a : as)
+	//				if (n == a)
+	//					return true;
+	//			return false;
+	//		}
+	//		final long nMin1 = n - 1;
+	//		for (int i = 0; i < as.length && as[i] < nMin1; i++) {
+	//			final boolean probablePrime = isProbablePrime(BigInteger.valueOf(n), as[i]);
+	//			if (!probablePrime)
+	//				return false;
+	//		}
+	//		return true;
+	//	}
 
 
 	public static int log2(long value) {
@@ -490,7 +551,6 @@ public class PrimeMath {
 		if (a == 0)
 			return b;
 
-
 		// Right shift a & b till their last bits equal to 1.
 		final int aZeros = Long.numberOfTrailingZeros(a);
 		final int bZeros = Long.numberOfTrailingZeros(b);
@@ -507,16 +567,6 @@ public class PrimeMath {
 				b -= a;
 				b >>>= Long.numberOfTrailingZeros(b);
 			}
-			//			final int hash = (int)(a ^ b ^ (a >>> 32) ^(a >>> 32)) & GCD_MASK;
-			//
-			//			if (gcdTable[4*hash] != 0 && gcdTable[4*hash] == a && gcdTable[4*hash+1] == b)
-			//				return gcdTable[4*hash+2];
-			//
-			//			final long gcd = gcdBinary(a, b);
-			//
-			//			gcdTable[4*hash] = a;
-			//			gcdTable[4*hash+1] = b;
-			//			gcdTable[4*hash+2] = gcd;
 		}
 		return a<<t;
 	}
@@ -1131,6 +1181,7 @@ public class PrimeMath {
 
 		return params;
 	}
+
 
 	//	public static long mod(int number, double i, double iInv) {
 	//		// TODO Auto-generated method stub
