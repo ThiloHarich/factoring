@@ -1,16 +1,4 @@
-/*
- * java-math-library is a Java library focused on number theory, but not necessarily limited to it. It is based on the PSIQS 4.0 factoring project.
- * Copyright (C) 2018 Tilman Neumann (www.tilman-neumann.de)
- *
- * This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 3 of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along with this program;
- * if not, see <http://www.gnu.org/licenses/>.
- */
+
 package factoring.fermat.lehman;
 
 import java.math.BigInteger;
@@ -19,15 +7,17 @@ import org.apache.log4j.Logger;
 
 import de.tilman_neumann.jml.factor.FactorAlgorithmBase;
 import de.tilman_neumann.jml.gcd.Gcd63;
+import factoring.trial.TrialInvFact;
 
 /**
- * Faster implementation of Lehmans factor algorithm following https://programmingpraxis.com/2017/08/22/lehmans-factoring-algorithm/.
- * Many improvements inspired by Thilo Harich (https://github.com/ThiloHarich/factoring.git).
- * Works for N <= 45 bit.
- *
- * This version does trial division after the main loop.
- *
- * @author Tilman Neumann
+ * This Algorithm is based on the lehman algorithm and the Hart variant of it.
+ * It somehow tries to combine both algorithms.
+ * First it tries to find solution with a k = 2*3*3*5*7*k' = 630 * k'.
+ * This ensures that the created a = ceil (sqrt (k*n)) | 1 produces numbers a^2 - kn which
+ * are squares mod 2,9,5 and 7. This is there is a high chance that this numbers are squares and the
+ * algorithm finds a factor.
+ * If this part of the algorithm does not find a factor we investigate in numbers for an odd k.
+ * Here we choose k=1. in each step we look into numbers of both kinds.
  */
 public class LehmanSimple extends FactorAlgorithmBase {
 	private static final Logger LOG = Logger.getLogger(Lehman_TillSimple.class);
@@ -36,6 +26,8 @@ public class LehmanSimple extends FactorAlgorithmBase {
 	private static final double ROUND_UP_DOUBLE = 0.9999999665;
 
 	private final Gcd63 gcdEngine = new Gcd63();
+
+	static TrialInvFact smallFact= new TrialInvFact((int) (1L << (48/3)));;
 
 	private double[] sqrt;
 
@@ -89,11 +81,11 @@ public class LehmanSimple extends FactorAlgorithmBase {
 				// this is always the same code a loop/method (in java) is slower then copy the code here
 				a = (long) (sqrtMN * sqrt[k] + ROUND_UP_DOUBLE) | 1;
 				test = a*a - k++ * MN;
-				// This sqrt is fast, while the sqrt(k) of smaller size - but double precision? -  above is slow ???????
 				b = (long) Math.sqrt(test);
 				if (b*b == test) {
 					gcd = gcdEngine.gcd(a+b, N);
 				}
+				//---- optinally remove this code an increase the limit of the i.loop by a factor of 4
 				a = (long) (sqrtMN * sqrt[k] + ROUND_UP_DOUBLE) | 1;
 				test = a*a - k++ * MN;
 				b = (long) Math.sqrt(test);
@@ -113,6 +105,7 @@ public class LehmanSimple extends FactorAlgorithmBase {
 				if (b*b == test) {
 					gcd = gcdEngine.gcd(a+b, N);
 				}
+				// --- end remove code
 			}
 			// Here k is always 1 and we increase 'a' by aStep.
 			// This phase should save us if the first phase does not find anything
@@ -124,12 +117,8 @@ public class LehmanSimple extends FactorAlgorithmBase {
 			if (gcd > 1 && gcd < N)
 				return gcd;
 		}
-		//		 4. Check via trial division whether N has a nontrivial divisor d <= cbrt(N), and if so, return d.
-		final int tDivLimit = (int) (Math.cbrt(N));
-		int i=0, p;
-		while ((p = SMALL_PRIMES.getPrime(i++)) <= tDivLimit) {
-			if (N%p==0) return p;
-		}
-		return N;
+		//
+		// Check via trial division whether N has a nontrivial divisor d <= cbrt(N).
+		return smallFact.findFactors(N, null);
 	}
 }
