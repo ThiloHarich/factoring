@@ -72,7 +72,7 @@ public class QuadraticDiophantineModBit {
 	 * @return
 	 */
 	public static int [] getResidueClasses(long searchInterval) {
-		int [] residues = new int [residuesArray.length+1];
+		final int [] residues = new int [residuesArray.length+1];
 		int mod = 64; // sieving is appreciated, the highest prime factor will we represented by 2^i*3^j
 		for (int i = 0; i < residuesArray.length && mod * residuesArray[i] * residuesArray[i] <= searchInterval; i++)
 		{
@@ -92,8 +92,8 @@ public class QuadraticDiophantineModBit {
 		{
 			mod *= residues[i];
 		}
-		long loop = searchInterval / mod;
-//		System.out.println(loop);
+		final long loop = searchInterval / mod;
+		//		System.out.println(loop);
 
 		return residues;
 	}
@@ -112,7 +112,7 @@ public class QuadraticDiophantineModBit {
 	 * These numbers must be in the set of the squares.
 	 * We use the fact (xArray+1)^2 -n - xArray^2 - n = 2x+1 -> in each interation we add j=2x.
 	 * using the fact that (Mod-xArray)^2 = xArray^2 modolus mod2Pow we can stop the loop at (mod2Pow+1)/2.
-	 * This means j=2x <= mod2Pow so we cam subtract mod2Pow instead of using expensive % operations
+	 * This means j=2x <= mod2Pow so we can subtract mod2Pow instead of using expensive % operations
 	 * for reducing the numbers modulus mod2Pow.
 	 * @param n
 	 * @return
@@ -120,7 +120,7 @@ public class QuadraticDiophantineModBit {
 	public int [] xArray(int n)
 	{
 		x = new int[mod + 1];
-		int nMod = PrimeMath.mod(n, mod);
+		final int nMod = PrimeMath.mod(n, mod);
 
 		resIndex= 0;
 		int squarePlusN = nMod;
@@ -129,7 +129,7 @@ public class QuadraticDiophantineModBit {
 		}
 		squarePlusN += 1;
 		squarePlusN -= squarePlusN >= mod ?  mod : 0;
-//		for (int j = 3; j < 2*mod2Pow+1; j += 2) {
+		//		for (int j = 3; j < 2*mod2Pow+1; j += 2) {
 		for (int j = 3; j < mod+1; j += 2) {
 			if (((1L << squarePlusN) & squares) != 0) {
 				x[resIndex++] = j/2;
@@ -153,12 +153,12 @@ public class QuadraticDiophantineModBit {
 	 */
 	public int [] xArray4ModMultiplyer(int n,int modMultiplier)
 	{
-//		int nMod = PrimeMath.mod2Pow(n, mod2Pow*modMultiplier);
-		int[]  newX = new int [x.length*modMultiplier];
+		//		int nMod = PrimeMath.mod2Pow(n, mod2Pow*modMultiplier);
+		final int[]  newX = new int [x.length*modMultiplier];
 		for (int k=0; x[k] >= 0; k++ ) {
 			for (int i = 0; i < modMultiplier; i++) {
-				int x2 = x[k]+i*mod;
-//				if (x2*x2-n )
+				final int x2 = x[k]+i*mod;
+				//				if (x2*x2-n )
 			}
 		}
 		return  newX;
@@ -174,14 +174,14 @@ public class QuadraticDiophantineModBit {
 	{
 		xMask = 0;
 		resIndex= 0;
-		int nMod = PrimeMath.mod(n, mod);
+		final int nMod = PrimeMath.mod(n, mod);
 		int squarePlusN = nMod;
 		if (((1L << squarePlusN) & squares) != 0) {
 			xMask |= 1L;
 		}
 		squarePlusN += 1;
 		squarePlusN -= squarePlusN >= mod ?  mod : 0;
-//			for (int j = 1; j < 2*mod2Pow+1; j += 2) {
+		//			for (int j = 1; j < 2*mod2Pow+1; j += 2) {
 		for (int j = 3; j < mod+1; j += 2) {
 			if (((1L << squarePlusN) & squares) != 0) {
 				xMask |= (1L << j/2);
@@ -204,19 +204,19 @@ public class QuadraticDiophantineModBit {
 	 * @return
 	 */
 	public int[] x4ResidueClasses(int n) {
-		int modProd = residueClasses[0];
+		final int modProd = residueClasses[0];
 		mod = residueClasses[0];
 		QuadraticDiophantineModBit squareMods1 = new QuadraticDiophantineModBit(residueClasses[0]);
 		int nMod = PrimeMath.mod(n, residueClasses[0]);
 		int [] x1 = squareMods1.xArray(nMod);
 		for (int i = 1; i < residueClasses.length && residueClasses[i] > 1; i++) {
-			QuadraticDiophantineModBit squareMods2 = new QuadraticDiophantineModBit(residueClasses[i]);
+			final QuadraticDiophantineModBit squareMods2 = new QuadraticDiophantineModBit(residueClasses[i]);
 			nMod = PrimeMath.mod(n, residueClasses[i]);
 			squareMods2.xMask(nMod);
-//			int [] x2 = squareMods2.merge(x1, squareMods1.xLength(), modProd);
-			int [] x2 = squareMods2.merge(x1, squareMods1.xLength(), mod);
+			//			int [] x2 = squareMods2.merge(x1, squareMods1.xLength(), modProd);
+			final int [] x2 = squareMods2.merge(x1, squareMods1.xLength(), mod);
 			squareMods1 = squareMods2;
-//			modProd *= residueClasses[i];
+			//			modProd *= residueClasses[i];
 			mod *= residueClasses[i];
 			x1 = x2;
 		}

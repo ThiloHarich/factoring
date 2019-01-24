@@ -11,7 +11,7 @@ import de.tilman_neumann.jml.factor.squfof.SquFoF63;
 import factoring.fermat.lehman.LehmanFactorFinder;
 import factoring.fermat.lehman.LehmanFactorFinderRange;
 import factoring.fermat.lehman.LehmanSimple;
-import factoring.fermat.lehman.Lehman_Fast;
+import factoring.fermat.lehman.Lehman_FastOrig;
 import factoring.rho.PollardRhoBrentDouble52;
 import factoring.trial.TrialDoubleFact;
 
@@ -242,7 +242,7 @@ public class PerformanceTest {
 		//		final Factorizer factorizer2 = new TrialWithPrimesFact();
 		//		final FactorAlgorithm factorizer2 = new CombinedFactorAlgorithm(1, false);
 		//		final FactorizationOfLongs factorizer3 = new PollardRhoBrentMultiGcd();
-		final FactorAlgorithmBase factorizer2 = new Lehman_Fast(false);
+		final FactorAlgorithmBase factorizer2 = new Lehman_FastOrig(false);
 		//		final FactorizationOfLongs factorizer3 = new PollardRhoBrentDouble();
 
 		//		((TrialFactMod)factorizer1).setLimit(1 << 16);

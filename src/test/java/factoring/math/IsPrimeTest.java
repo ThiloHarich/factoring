@@ -8,7 +8,7 @@ import org.junit.Test;
 
 import de.tilman_neumann.jml.factor.FactorAlgorithmBase;
 import factoring.FactorFinder;
-import factoring.fermat.lehman.Lehman_Fast;
+import factoring.fermat.lehman.Lehman_FastOrig;
 import factoring.trial.TrialInvFact2;
 
 public class IsPrimeTest {
@@ -34,7 +34,7 @@ public class IsPrimeTest {
 		for (long n = 341550071728327l; n< 341550071728321l + range ; n+= 2)
 		{
 			final boolean isPrime = PrimeMath.isPrime(n);
-			final FactorAlgorithmBase trial = new Lehman_Fast(true);
+			final FactorAlgorithmBase trial = new Lehman_FastOrig(true);
 			final BigInteger factor = trial.findSingleFactor(BigInteger.valueOf(n));
 			assertEquals("" + n, factor.longValue() == n || factor.longValue() < 2, isPrime);
 		}

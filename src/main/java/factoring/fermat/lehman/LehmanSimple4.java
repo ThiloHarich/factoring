@@ -7,7 +7,7 @@ import org.apache.log4j.Logger;
 
 import de.tilman_neumann.jml.factor.FactorAlgorithmBase;
 import de.tilman_neumann.jml.gcd.Gcd63;
-import factoring.trial.TrialInvFact2;
+import factoring.trial.TrialInvFact;
 
 /**
  * This Algorithm is based on the lehman algorithm and the Hart variant of it.
@@ -21,7 +21,7 @@ import factoring.trial.TrialInvFact2;
  *
  * We can not ensure that this algorithm always finds a factor.
  */
-public class LehmanSimple extends FactorAlgorithmBase {
+public class LehmanSimple4 extends FactorAlgorithmBase {
 	private static final Logger LOG = Logger.getLogger(Lehman_TillSimple.class);
 
 	/** This is a constant that is below 1 for rounding up double values to long. */
@@ -29,11 +29,11 @@ public class LehmanSimple extends FactorAlgorithmBase {
 
 	private final Gcd63 gcdEngine = new Gcd63();
 
-	static TrialInvFact2 smallFact= new TrialInvFact2((int) (1L << (48/3)));;
+	static TrialInvFact smallFact= new TrialInvFact((int) (1L << (48/3)));;
 
 	private double[] sqrt;
 
-	public LehmanSimple() {
+	public LehmanSimple4() {
 		initSqrts();
 	}
 
@@ -60,23 +60,28 @@ public class LehmanSimple extends FactorAlgorithmBase {
 	public long findSingleFactor(long N) {
 		final int kLimit = (int)  Math.ceil(Math.cbrt(N));
 		final long fourN = N<<2;
+		final long four3N =3*fourN;
 		final double sqrt4N = Math.sqrt(fourN);
-		final long MN = fourN * 2*3*5*7*3;// = 630
+		final long MN = fourN * 2*3*3*5*7;// = 630
 		final double sqrtMN = Math.sqrt(MN);
 
 		long aForK1 = (long) (sqrt4N  + ROUND_UP_DOUBLE);
+		long aForK3 = (long) (Math.sqrt(four3N)  + ROUND_UP_DOUBLE);
 		long aStep;
 		// n % 4 == 3
 		if ((N & 3) == 3) {
 			aStep = 8;
 			aForK1 += ((7 - N - aForK1) & 7);
+			aForK3 += ((1 + N - aForK1) & 3);
 		} else
 		{
 			aStep = 4;
 			aForK1 += ((1 + N - aForK1) & 3);
+			aForK3 += ((7 - N - aForK1) & 7);
 		}
+		final long aStepForK3 = 8 - aStep;
 		// we have to increase kLimit here, because we only take good but seldom k's
-		for (int k=1; k < 40*kLimit; aForK1 += aStep) {
+		for (int k=1; k < 40*kLimit; aForK1 += aStep, aForK3 += aStepForK3) {
 			long gcd = 1;
 			for (int i=0; i < 8; i++) {
 				// investigate in k = 0 mod multiplier only like the Hart variant does it
@@ -88,7 +93,7 @@ public class LehmanSimple extends FactorAlgorithmBase {
 				if (b*b == test) {
 					gcd = gcdEngine.gcd(a+b, N);
 				}
-				//---- optionally remove this code and increase the limit of the i-loop by a factor of 4
+				//---- optinally remove this code an increase the limit of the i.loop by a factor of 4
 				a = (long) (sqrtMN * sqrt[k] + ROUND_UP_DOUBLE) | 1;
 				test = a*a - k++ * MN;
 				b = (long) Math.sqrt(test);
@@ -97,6 +102,7 @@ public class LehmanSimple extends FactorAlgorithmBase {
 				}
 				a = (long) (sqrtMN * sqrt[k] + ROUND_UP_DOUBLE) | 1;
 				test = a*a - k++ * MN;
+				// This sqrt is fast, while the sqrt(k) of smaller size - but double precision? -  above is slow ???????
 				b = (long) Math.sqrt(test);
 				if (b*b == test) {
 					gcd = gcdEngine.gcd(a+b, N);
@@ -109,10 +115,15 @@ public class LehmanSimple extends FactorAlgorithmBase {
 				}
 				// --- end remove code
 			}
-			// Here k is always 1 and we increase 'a' by aStep.
+			// Here k is 1 or 3 depending on N and we increase 'a' by aStep.
 			// This phase should save us if the first phase does not find anything
-			final long test = aForK1*aForK1 - fourN;
-			final long b = (long) Math.sqrt(test);
+			long test = aForK1*aForK1 - fourN;
+			long b = (long) Math.sqrt(test);
+			if (b*b == test) {
+				gcd= gcdEngine.gcd(aForK1+b, N);
+			}
+			test = aForK3*aForK3 - four3N;
+			b = (long) Math.sqrt(test);
 			if (b*b == test) {
 				gcd= gcdEngine.gcd(aForK1+b, N);
 			}
@@ -121,22 +132,6 @@ public class LehmanSimple extends FactorAlgorithmBase {
 		}
 		//
 		// Check via trial division whether N has a nontrivial divisor d <= cbrt(N).
-		final long factor = smallFact.findFactors(N, null);
-		if (factor>1 && factor<N)
-			return factor;
-
-		for (int k= 1; k <= kLimit; k++) {
-			final long fourKN = k*N<<2;
-			final long a = (long) (sqrt4N * sqrt[k] + ROUND_UP_DOUBLE) - 1;
-			final long test = a*a - fourKN;
-			final long b = (long) Math.sqrt(test);
-			if (b*b == test) {
-				final long gcd = gcdEngine.gcd(a+b, N);
-				if (gcd>1 && gcd<N) {
-					return gcd;
-				}
-			}
-		}
-		return -1;
+		return smallFact.findFactors(N, null);
 	}
 }

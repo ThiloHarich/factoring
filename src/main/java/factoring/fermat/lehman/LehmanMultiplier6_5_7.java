@@ -13,6 +13,8 @@
  */
 package factoring.fermat.lehman;
 
+import static org.junit.Assert.assertEquals;
+
 import java.math.BigInteger;
 
 import org.apache.log4j.Logger;
@@ -33,8 +35,8 @@ import factoring.trial.TrialInvFact2;
  *
  * @authors Tilman Neumann + Thilo Harich
  */
-public class Lehman_Fast33 extends FactorAlgorithmBase {
-	private static final Logger LOG = Logger.getLogger(Lehman_Fast33.class);
+public class LehmanMultiplier6_5_7 extends FactorAlgorithmBase {
+	private static final Logger LOG = Logger.getLogger(LehmanMultiplier6_5_7.class);
 
 	/** This is a constant that is below 1 for rounding up double values to long. */
 	private static final double ROUND_UP_DOUBLE = 0.9999999665;
@@ -58,16 +60,19 @@ public class Lehman_Fast33 extends FactorAlgorithmBase {
 		System.out.println("Time Init sqrt   : + " + (end - start));
 	}
 
-	long N;
-	long fourN;
-	double sqrt4N;
-	double sqrt24N;
-	double sqrt120N;
+	private long N;
+	private long fourN;
+	private double sqrt4N;
+	private double sqrtNSmall;
+	private long nSmall;
+	private double sqrtNMid;
+	private long nMid;
+	private double sqrtNBig;
+	private long nBig;
+
 	boolean factorSemiprimes;
 	private final Gcd63 gcdEngine = new Gcd63();
 
-	private long n24;
-	private long N120;
 
 	public Multimap<Integer, Integer> remainders = ArrayListMultimap.create();
 
@@ -76,7 +81,7 @@ public class Lehman_Fast33 extends FactorAlgorithmBase {
 	 * @param factorSemiprimes if the number to be factored might be a semiprimes were each factor is greater then n^1/3
 	 * then set this to true. The algorithm will always work. But this might have a very positive effect on the performance.
 	 */
-	public Lehman_Fast33(boolean factorSemiprimes) {
+	public LehmanMultiplier6_5_7(boolean factorSemiprimes) {
 		this.factorSemiprimes = factorSemiprimes;
 	}
 
@@ -95,24 +100,30 @@ public class Lehman_Fast33 extends FactorAlgorithmBase {
 		final int cbrt = (int) Math.cbrt(N);
 
 		long factor;
-		//		if (!factorSemiprimes && (factor = smallFact.findFactors(N, cbrt)) != N)
+		//		if (!factorSemiprimes && (factor = findSmallFactors(N, cbrt)) != N)
 		//			return factor;
+		//
+		final int lastMultiplier = 7;
+		final int midMultiplier = 5;
+		final int smallMultiplier = 2 * 3;
 
-		// limit for must be 0 mod 6, since we also want to search above of it
-		final int bigStep = 30;
-		final int kLimitDiv30 = (cbrt + bigStep) / bigStep;
-		final int kLimitDiv6 = kLimitDiv30 * 5;
-		// For kLimit / 64 the range for a is at most 2, this is what we can ensure
-		int kTwoADiv6 = (cbrt >> 6);
-		// twoA = 0 mod 5 -> twoA*6 = 0 mod 30
-		final int kTwoADiv30 = (kTwoADiv6 + bigStep)/ bigStep;
-		kTwoADiv6 = kTwoADiv30 * 5;
+		final int multiplier = smallMultiplier * midMultiplier * lastMultiplier;
+		final int kLimitDivBigMult = (cbrt + multiplier) / multiplier;
+		final int kLimitDivMidMult = kLimitDivBigMult * lastMultiplier;
+		final int kLimitDiv6 = kLimitDivMidMult * midMultiplier;
+
 		fourN = N<<2;
-		n24 = N* 24;
-		N120 = N * 4*2*3*5;
 		sqrt4N = Math.sqrt(fourN);
-		sqrt24N = Math.sqrt(n24);
-		sqrt120N = Math.sqrt(N120);
+
+		nBig = N * 4 * multiplier;  // N * bigStep
+		sqrtNBig = Math.sqrt(nBig);
+
+		nMid= N * 4 * smallMultiplier * midMultiplier;  // N * bigStep
+		sqrtNMid = Math.sqrt(nMid);
+
+		nSmall   = N * 4 * smallMultiplier;
+		sqrtNSmall = Math.sqrt(nSmall);
+
 		final double sixthRootTerm = 0.25 * Math.pow(N, 1/6.0); // double precision is required for stability
 
 		// first investigate in solutions a^2 - sqrt(k*n) = y^2 were we only have two possible 'a' values per k
@@ -120,16 +131,20 @@ public class Lehman_Fast33 extends FactorAlgorithmBase {
 		// here we only inspect k = 30*i since they much more likely have a solution a^2 - sqrt(k*n) = y^2
 		// this is we use a multiplier of 30 for odd 'a' we have much higher chances to find solutions
 
-		factor = lehman30(1, kLimitDiv30 << 1);
+		factor = lehmanBigStep(1, kLimitDivBigMult << 3);
+		if (factor>1 && factor != N)
+			return factor;
+
+		factor = lehmanMidStep(1, kLimitDivMidMult << 2);
 		if (factor>1 && factor != N)
 			return factor;
 
 		// inspect k = 6*i != 30*j
-		factor = lehman6(1, kLimitDiv6);
+		factor = lehman6(1, kLimitDiv6 << 1);
 		if (factor>1 && factor != N)
 			return factor;
 
-		final int kTwoA = kTwoADiv6*6;
+		final int kTwoA = (cbrt >> 6);
 		// investigate in solution a^2 - sqrt(k*n) = y^2 were we might have more then two solutions 'a'
 		for (int k=1 ; k < kTwoA; k++) {
 			final double sqrt4kN = sqrt4N * sqrt[k];
@@ -163,8 +178,9 @@ public class Lehman_Fast33 extends FactorAlgorithmBase {
 		}
 
 		// So far we have only odd solutions for 'a' now we try to get all the even solutions
-		factor = lehmanOdd(kTwoA + 3, 6 * kLimitDiv6);
-		if (factor > 1)
+		// FIXME replace this it by some other
+		factor = lehmanOdd(3, cbrt);
+		if (factor>1 && factor != N)
 			return factor;
 
 		// continue even k loop. Theoretically we might have missed solutions for k = 1,2,4,5 mod 6.
@@ -176,7 +192,7 @@ public class Lehman_Fast33 extends FactorAlgorithmBase {
 			return factor;
 
 		// seems like we do not need this
-		factor = lehman30(kLimitDiv30, kLimitDiv30 * 6);
+		factor = lehmanBigStep(kLimitDivBigMult, kLimitDivBigMult * 6);
 		if (factor>1 && factor != N)
 			return factor;
 
@@ -184,9 +200,10 @@ public class Lehman_Fast33 extends FactorAlgorithmBase {
 		// Check via trial division whether N has a nontrivial divisor d <= cbrt(N).
 		//LOG.debug("entering tdiv...");
 		factor = smallFact.findFactors(N, null);
-		if (factor>1 && factor<N) return factor;
+		if (factor>1 && factor<N)
+			return factor;
 
-		for (int k=kTwoA + 1; k <= 6 *kLimitDiv6; k++) {
+		for (int k= 1; k <= cbrt; k++) {
 			final long fourKN = k*N<<2;
 			final long a = (long) (sqrt4N * sqrt[k] + ROUND_UP_DOUBLE) - 1;
 			final long test = a*a - fourKN;
@@ -198,8 +215,7 @@ public class Lehman_Fast33 extends FactorAlgorithmBase {
 				}
 			}
 		}
-
-		return 0; // fail
+		return -1;
 	}
 
 	private long lehmanOdd(int kBegin, final int kLimit) {
@@ -223,47 +239,98 @@ public class Lehman_Fast33 extends FactorAlgorithmBase {
 		return -1;
 	}
 
-	private long lehman6(int kBeginIndex, final int kEnd) {
+	private long lehmanMidStep(int kBeginIndex, final int kEnd) {
+		long gcd = 1;
 		for (int k = kBeginIndex ; k <= kEnd;) {
-			long a  = (long) (sqrt24N * sqrt[k]   + ROUND_UP_DOUBLE) | 1;
-			long k24N = k++ * n24;
-			long test = a*a - k24N;
+			long a  = (long) (sqrtNMid * sqrt[k]   + ROUND_UP_DOUBLE) | 1;
+			long test = a*a - k++ * nMid;
 			long b = (long) Math.sqrt(test);
-			if (b*b == test) {
-				return gcdEngine.gcd(a+b, N);
+			if (b*b == test && (gcd = gcdEngine.gcd(a+b, N)) > 1 && gcd < N) {
+				return gcd;
 			}
-			k24N += n24;
-			a = (long) (sqrt24N * sqrt[k++] + ROUND_UP_DOUBLE) | 1;
-			test = a*a - k24N;
+
+			a  = (long) (sqrtNMid * sqrt[k]   + ROUND_UP_DOUBLE) | 1;
+			test = a*a - k++ * nMid;
 			b = (long) Math.sqrt(test);
-			if (b*b == test) {
-				return gcdEngine.gcd(a+b, N);
+			if (b*b == test && (gcd = gcdEngine.gcd(a+b, N)) > 1 && gcd < N) {
+				return gcd;
 			}
-			k24N += n24;
-			a = (long) (sqrt24N * sqrt[k++] + ROUND_UP_DOUBLE) | 1;
-			test = a*a - k24N;
+
+			a  = (long) (sqrtNMid * sqrt[k]   + ROUND_UP_DOUBLE) | 1;
+			test = a*a - k++ * nMid;
 			b = (long) Math.sqrt(test);
-			if (b*b == test) {
-				return gcdEngine.gcd(a+b, N);
+			if (b*b == test && (gcd = gcdEngine.gcd(a+b, N)) > 1 && gcd < N) {
+				return gcd;
 			}
-			k24N += n24;
-			a = (long) (sqrt24N * sqrt[k] + ROUND_UP_DOUBLE) | 1;
-			test = a*a - k24N;
+
+			a  = (long) (sqrtNMid * sqrt[k]   + ROUND_UP_DOUBLE) | 1;
+			test = a*a - k++ * nMid;
 			b = (long) Math.sqrt(test);
-			if (b*b == test) {
-				return gcdEngine.gcd(a+b, N);
+			if (b*b == test && (gcd = gcdEngine.gcd(a+b, N)) > 1 && gcd < N) {
+				return gcd;
+			}
+
+			a  = (long) (sqrtNMid * sqrt[k]   + ROUND_UP_DOUBLE) | 1;
+			test = a*a - k++ * nMid;
+			b = (long) Math.sqrt(test);
+			if (b*b == test && (gcd = gcdEngine.gcd(a+b, N)) > 1 && gcd < N) {
+				return gcd;
+			}
+
+			a  = (long) (sqrtNMid * sqrt[k]   + ROUND_UP_DOUBLE) | 1;
+			test = a*a - k++ * nMid;
+			b = (long) Math.sqrt(test);
+			if (b*b == test && (gcd = gcdEngine.gcd(a+b, N)) > 1 && gcd < N) {
+				return gcd;
 			}
 			// jump over k = 0 mod 5
-			k += 2;
+			k++;
+		}
+		return -1;
+	}
+	private long lehman6(int kBeginIndex, final int kEnd) {
+		long gcd = 1;
+		final int kMod5 = kBeginIndex % 5;
+		assertEquals(1, kMod5);
+		// we do not need multilpes of 5 and 7 here
+		for (int k = kBeginIndex ; k <= kEnd;) {
+			long a  = (long) (sqrtNSmall * sqrt[k]   + ROUND_UP_DOUBLE) | 1;
+			long test = a*a - k++ * nSmall;
+			long b = (long) Math.sqrt(test);
+			if (b*b == test && (gcd = gcdEngine.gcd(a+b, N)) > 1 && gcd < N) {
+				return gcd;
+			}
+
+			a = (long) (sqrtNSmall * sqrt[k] + ROUND_UP_DOUBLE) | 1;
+			test = a*a - k++ * nSmall;
+			b = (long) Math.sqrt(test);
+			if (b*b == test && (gcd = gcdEngine.gcd(a+b, N)) > 1 && gcd < N) {
+				return gcd;
+			}
+
+			a = (long) (sqrtNSmall * sqrt[k] + ROUND_UP_DOUBLE) | 1;
+			test = a*a - k++ * nSmall;
+			b = (long) Math.sqrt(test);
+			if (b*b == test && (gcd = gcdEngine.gcd(a+b, N)) > 1 && gcd < N) {
+				return gcd;
+			}
+
+			a = (long) (sqrtNSmall * sqrt[k] + ROUND_UP_DOUBLE) | 1;
+			test = a*a - k++ * nSmall;
+			b = (long) Math.sqrt(test);
+			if (b*b == test && (gcd = gcdEngine.gcd(a+b, N)) > 1 && gcd < N) {
+				return gcd;
+			}
+			k++;
 		}
 		return -1;
 	}
 
-	private long lehman30(int kBeginIndex, final int kEnd) {
+	private long lehmanBigStep(int kBeginIndex, final int kEnd) {
 		for (int k = kBeginIndex ; k <= kEnd; k++) {
 			//			System.out.print("," + k);
-			final long a  = (long) (sqrt120N * sqrt[k] + ROUND_UP_DOUBLE) | 1;
-			final long test = a*a - k * N120;
+			final long a  = (long) (sqrtNBig * sqrt[k] + ROUND_UP_DOUBLE) | 1;
+			final long test = a*a - k * nBig;
 			final long b = (long) Math.sqrt(test);
 			if (b*b == test) {
 				return gcdEngine.gcd(a+b, N);
@@ -325,7 +392,7 @@ public class Lehman_Fast33 extends FactorAlgorithmBase {
 				5682546780292609L,
 		};
 
-		final Lehman_Fast33 lehman = new Lehman_Fast33(true);
+		final LehmanMultiplier6_5_7 lehman = new LehmanMultiplier6_5_7(true);
 		for (final long N : testNumbers) {
 			final long factor = lehman.findSingleFactor(N);
 			LOG.info("N=" + N + " has factor " + factor);
