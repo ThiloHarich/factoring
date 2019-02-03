@@ -9,7 +9,7 @@ import org.junit.Test;
 import de.tilman_neumann.jml.factor.FactorAlgorithmBase;
 import factoring.FactorFinder;
 import factoring.fermat.lehman.Lehman_FastOrig;
-import factoring.trial.TrialInvFact2;
+import factoring.trial.TrialMultiply;
 
 public class IsPrimeTest {
 
@@ -18,7 +18,7 @@ public class IsPrimeTest {
 	{
 		final int range = 1000000;
 		final int begin = 364289;
-		final FactorFinder trial = new  TrialInvFact2(range);
+		final FactorFinder trial = new  TrialMultiply(range);
 		for (int n = begin; n < begin + range ; n+= 2)
 		{
 			final boolean isPrime = PrimeMath.isPrime(n);

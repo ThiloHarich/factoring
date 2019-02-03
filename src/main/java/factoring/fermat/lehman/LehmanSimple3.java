@@ -21,7 +21,7 @@ import de.tilman_neumann.jml.gcd.Gcd63;
 import factoring.FactorFinder;
 import factoring.FactorizationOfLongs;
 import factoring.math.PrimeMath;
-import factoring.trial.TrialInvFact2;
+import factoring.trial.TrialMultiply;
 
 /**
  *
@@ -47,7 +47,7 @@ public class LehmanSimple3 implements FactorizationOfLongs, FactorFinder {
 		this.hardNumbers = hardNumbers;
 		final int cubicRoot = (int) Math.cbrt(1L<<50);
 		initSqrts(cubicRoot);
-		smallFactoriser = new TrialInvFact2(cubicRoot);
+		smallFactoriser = new TrialMultiply(cubicRoot);
 	}
 
 	private void initSqrts(int cubicRoot) {

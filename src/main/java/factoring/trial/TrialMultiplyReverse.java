@@ -1,8 +1,10 @@
 package factoring.trial;
 
+import java.util.Arrays;
 import java.util.Collection;
 
 import factoring.FactorizationOfLongs;
+import factoring.primes.Primes;
 
 /**
  * This implementation is generating a list of all primes up to a limit.
@@ -20,70 +22,44 @@ import factoring.FactorizationOfLongs;
  *
  * Created by Thilo Harich on 02.03.2017.
  */
-public class TrialInvFact2 implements FactorizationOfLongs {
+public class TrialMultiplyReverse implements FactorizationOfLongs {
 
-	// The number of values to be printed
-	private static final int PRINT_NUM = 20000;
-	// for printing we need a value a little bit above 1
-	public static final double PRINT_CONST = 1.0000001;
+	// Size of number is ~ 2^52
 	private static final double ROUNDING_CORRECTION = 0.0000001;
+	private static final int DISCRIMINATOR_BITS = 10; // experimental result
+	private static final double DISCRIMINATOR = 1.0/(1<<DISCRIMINATOR_BITS);
 	private int maxFactor = 65535;
 	double[] primesInv;
 	int[] primes;
 
 
-	/**
-	 * finds the prime factors up to maxFactor by the sieve of eratosthenes.
-	 * Not optimized, since this is only called once when initializing.
-	 */
-	void initPrimesEratosthenes()
-	{
-		final double logMaxFactor = Math.log(maxFactor);
-		final int maxPrimeIndex = (int) ((maxFactor) / (logMaxFactor - 1.1)) + 4;
-		primesInv = new double [maxPrimeIndex]; //the 6542 primesInv up to 65536=2^16, then sentinel 65535 at end
-		primes = new int [maxPrimeIndex]; //the 6542 primesInv up to 65536=2^16, then sentinel 65535 at end
-		int primeIndex = 0;
-		final boolean [] noPrimes = new boolean [maxFactor];
-		for (int i = 2; i <= Math.sqrt(maxFactor); i++) {
-			if (!noPrimes[i]) {
-				primes[primeIndex] = i;
-				primesInv[primeIndex++] = 1.0 / i;
-			}
-			for (int j = i * i; j < maxFactor; j += i) {
-				noPrimes[j] = true;
-			}
-		}
-		for (int i = (int) (Math.sqrt(maxFactor)+1); i < maxFactor; i++) {
-			if (!noPrimes[i]) {
-				primes[primeIndex] = i;
-				primesInv[primeIndex++] = 1.0 / i;
-			}
-		}
-		for (int i=primeIndex; i < primes.length; i++) {
-			primes[i] = Integer.MAX_VALUE;
-		}
-
-		System.out.println("Prime table built max factor '" + maxFactor + "'       bytes used : " + primeIndex * 12);
-	}
-
-
-	public TrialInvFact2(int maxFactor) {
+	public TrialMultiplyReverse(int maxFactor) {
 		//        if (maxFactor > 65535)
 		//            throw new IllegalArgumentException("the maximal factor has to be lower then 65536");
 		this.maxFactor = maxFactor;
-		//		initPrimes();
-		initPrimesEratosthenes();
+		final Primes primesGen = Primes.initPrimesEratosthenes(maxFactor);
+		primes = primesGen.primes;
+		primesInv = primesGen.primesInv;
+
+
 	}
 
 
 	@Override
 	public long findFactors(long n, Collection<Long> primeFactors) {
-		for (int primeIndex = 1; primes[primeIndex] <= maxFactor; primeIndex++) {
+		final int Nbits = 64-Long.numberOfLeadingZeros(n);
+		final int pMinBits = Nbits - 53 + DISCRIMINATOR_BITS;
+		final int multiplicationWorks = pMinBits > 0 ? 1<<pMinBits : 1;
+
+		final int primeLimit = (int) Math.min(Math.sqrt(n), maxFactor);
+		final int maxPrimeIndex = Math.abs(Arrays.binarySearch(primes, primeLimit));
+		int primeIndex = maxPrimeIndex;
+		for (; primeIndex > multiplicationWorks; primeIndex--) {
 			// round the number. Casting to long is faster then rounding the double number itself, but we
 			// have to prevent some cases were the number is not correctly rounded by adding a small number
-			long nDivPrime = (long) (n*primesInv[primeIndex] + ROUNDING_CORRECTION);
+			long nDivPrime = (long) (n*primesInv[primeIndex] + DISCRIMINATOR);
 			while (nDivPrime * primes[primeIndex] == n && n > 1) {
-				if (primeFactors == null || primeFactors == null)
+				if (primeFactors == null)
 					return primes[primeIndex];
 				primeFactors.add((long) primes[primeIndex]);
 				n = nDivPrime;
@@ -92,9 +68,16 @@ public class TrialInvFact2 implements FactorizationOfLongs {
 					primeFactors.add(n);
 					return 1;
 				}
-				nDivPrime = (long) (n*primesInv[primeIndex] + ROUNDING_CORRECTION);
+				nDivPrime = (long) (n*primesInv[primeIndex] + DISCRIMINATOR);
 			}
 		}
+		// for the smallest primes we must do standard trial division
+		for (; primeIndex >= 1; primeIndex--) {
+			if (n%primes[primeIndex]==0) {
+				return primes[primeIndex];
+			}
+		}
+
 		return n;
 	}
 

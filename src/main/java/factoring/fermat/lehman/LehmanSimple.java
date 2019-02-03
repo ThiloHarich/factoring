@@ -7,7 +7,7 @@ import org.apache.log4j.Logger;
 
 import de.tilman_neumann.jml.factor.FactorAlgorithmBase;
 import de.tilman_neumann.jml.gcd.Gcd63;
-import factoring.trial.TrialInvFact2;
+import factoring.trial.TrialMultiply;
 
 /**
  * This Algorithm is based on the lehman algorithm and the Hart variant of it.
@@ -29,7 +29,7 @@ public class LehmanSimple extends FactorAlgorithmBase {
 
 	private final Gcd63 gcdEngine = new Gcd63();
 
-	static TrialInvFact2 smallFact= new TrialInvFact2((int) (1L << (48/3)));;
+	static TrialMultiply smallFact= new TrialMultiply((int) (1L << (48/3)));;
 
 	private double[] sqrt;
 

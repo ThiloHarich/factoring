@@ -15,7 +15,7 @@ public class PerformanceHard2 extends PerformanceHard{
 		//		final FactorizationOfLongs factorizer1 = new LehmanFactorFinder(bits, 2.f, false);
 		final FactorAlgorithmBase factorizer3 = new Lehman_TillSimple(1);
 		//		final FactorizationOfLongs factorizer1 = new LehmanFactorFinder(bits, 2f, false);
-		semiprimes = makeSemiPrimesList(bits, smallFactorBits, numPrimes);
+		semiprimes = makeSemiPrimesList(bits, numPrimes);
 		test2(factorizer3);
 		//		test2(factorizer1);
 		//		findFactors(factorizer1, semiprimes, 1);

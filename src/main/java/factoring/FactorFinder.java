@@ -15,7 +15,7 @@ import java.util.Collection;
 public interface FactorFinder {
 
 	/**
-	 * Sets the maximalfactor the FactorFinder should look for factors.
+	 * Sets the maximal factor the FactorFinder should look for factors.
 	 * @param maximalFactor
 	 */
 	default void setMaxFactor(int maximalFactor)

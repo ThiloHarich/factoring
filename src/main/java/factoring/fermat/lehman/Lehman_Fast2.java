@@ -34,7 +34,7 @@ import de.tilman_neumann.util.ConfigUtil;
  *
  * @authors Tilman Neumann + Thilo Harich
  */
-public class Lehman_Fast extends FactorAlgorithmBase {
+public class Lehman_Fast2 extends FactorAlgorithmBase {
 	private static final Logger LOG = Logger.getLogger(Lehman_FastOrig.class);
 
 	/** This is a constant that is below 1 for rounding up double values to long. */
@@ -67,7 +67,7 @@ public class Lehman_Fast extends FactorAlgorithmBase {
 	 * @param doTDivFirst If true then trial division is done before the Lehman loop.
 	 * This is recommended if arguments N are known to have factors < cbrt(N) frequently.
 	 */
-	public Lehman_Fast(boolean doTDivFirst) {
+	public Lehman_Fast2(boolean doTDivFirst) {
 		this.doTDivFirst = doTDivFirst;
 	}
 
@@ -102,9 +102,6 @@ public class Lehman_Fast extends FactorAlgorithmBase {
 	 * <li> iterate over k != 0 and k != 3 mod 6 in the mid range theoretically needed, but it seems like we can skip it
 	 * <li> use a trial division to find the small factors, if there are still any
 	 * <li> find factors for numbers were the rounding performance improvement has failed
-	 *
-	 * The complicated numbers are the once in the upper middle range.
-	 *
 	 *
 	 * @param N
 	 * @return
@@ -298,7 +295,7 @@ public class Lehman_Fast extends FactorAlgorithmBase {
 				5682546780292609L,
 		};
 
-		final Lehman_Fast lehman = new Lehman_Fast(true);
+		final Lehman_Fast2 lehman = new Lehman_Fast2(true);
 		for (final long N : testNumbers) {
 			final long factor = lehman.findSingleFactor(N);
 			LOG.info("N=" + N + " has factor " + factor);

@@ -23,7 +23,7 @@ import com.google.common.collect.Multimap;
 import de.tilman_neumann.jml.factor.FactorAlgorithmBase;
 import de.tilman_neumann.jml.gcd.Gcd63;
 import de.tilman_neumann.util.ConfigUtil;
-import factoring.trial.TrialInvFact2;
+import factoring.trial.TrialMultiply;
 
 /**
  * Faster implementation of Lehman's factor algorithm.
@@ -41,7 +41,7 @@ public class LehmanMultiplier extends FactorAlgorithmBase {
 
 	private static double[] sqrt, sqrtInv;
 
-	static TrialInvFact2 smallFact= new TrialInvFact2((int) (1L << (48/3)));;
+	static TrialMultiply smallFact= new TrialMultiply((int) (1L << (48/3)));;
 
 	static {
 		// Precompute sqrts for all possible k. 2^22 entries are enough for N~2^66.
