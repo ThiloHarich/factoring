@@ -5,7 +5,7 @@ import java.util.Random;
 
 import de.tilman_neumann.jml.factor.FactorAlgorithmBase;
 import de.tilman_neumann.jml.factor.lehman.Lehman_Fast;
-import factoring.fermat.lehman.LehmanHart;
+import factoring.fermat.lehman.LehmanMidRange7;
 import factoring.fermat.lehman.LehmanSimple;
 import factoring.fermat.lehman.Lehman_Fast30;
 import factoring.fermat.lehman.Lehman_FastOrig;
@@ -15,9 +15,9 @@ import factoring.fermat.lehman.Lehman_FastOrig;
 
 public class PerformanceHard {
 
-	final static int bits = 40;
-	final static int numPrimes = 1520;
-	final static int loop = 180;
+	final static int bits = 45;
+	final static int numPrimes = 1350;
+	final static int loop = 80;
 	static long[] semiprimes;
 
 	public static void main(String[] args) {
@@ -41,9 +41,10 @@ public class PerformanceHard {
 		//		final FactorAlgorithmBase factorizer1 = new LehmanMultiplier6_5_7_11(true);
 		//		final FactorAlgorithmBase factorizer2 = new de.tilman_neumann.jml.factor.lehman.Lehman_Fast(false);
 		//				final FactorAlgorithmBase factorizer2 = new LehmanMidRange(false, 1.);
-		//		final FactorAlgorithmBase factorizer2 = new LehmanMidRange7(2);
+		//		final FactorAlgorithmBase factorizer2= new LehmanMidRange5(2);
+		final FactorAlgorithmBase factorizer1 = new LehmanMidRange7(1);
 		//				final FactorAlgorithmBase factorizer2 = new Hart_Fast();
-		final FactorAlgorithmBase factorizer1 = new LehmanHart(1);
+		//		final FactorAlgorithmBase factorizer1 = new LehmanHart(1);
 		//		final FactorAlgorithmBase factorizer1 = new Lehman_Fast_Test(false, 2.7);
 		final FactorAlgorithmBase factorizer2 = new Lehman_Fast(false);
 		//		final FactorAlgorithmBase factorizer1 = new LehmanMidRange2(false, 1.4);
@@ -187,8 +188,8 @@ public class PerformanceHard {
 		for (int i=0; i< numPrimes; i++)
 		{
 			final Random rnd = new Random();
-			//			final int smallFactorBits = rnd.nextInt((bits) / 3 ) + 2;
-			final int smallFactorBits = (bits / 2 );
+			final int smallFactorBits = (bits / 2 ) /*- rnd.nextInt(bits / 3 ) */;
+			//			final int smallFactorBits = (bits / 2 );
 			//			final int smallFactorBits = (bits / 3) - 2;
 
 			final BigInteger fact1 = BigInteger.probablePrime(smallFactorBits, rnd);
