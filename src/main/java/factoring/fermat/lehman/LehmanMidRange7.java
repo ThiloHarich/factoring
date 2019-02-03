@@ -52,6 +52,7 @@ public class LehmanMidRange7 extends FactorAlgorithmBase {
 	private static final double sqrt5005  = Math.sqrt(5 * 7 * 11 * 13);
 	// 5 * 7 * 11 * 13 * 17 = 5005
 	private static final double sqrt85085 = Math.sqrt(5 * 7 * 11 * 13 * 17);
+	private static final double sqrt95095 = Math.sqrt(5 * 7 * 11 * 13 * 19);
 
 
 	static {
@@ -159,7 +160,7 @@ public class LehmanMidRange7 extends FactorAlgorithmBase {
 		// which have the highest chance to find a factor. For factors around n^1/2 ~ 90% of the cases.
 		// Then we investigate in k = 3 mod 6. Then there are only very few cases open for big factors.
 		//		for small N gcd might return N
-		if ((factor = lehmanKEven (kTwoA, kLimit)) > 1 && factor < N)
+		if ((factor = lehmanKEven (kTwoA, kLimit, trialPhase)) > 1 && factor < N)
 			return factor;
 
 		// do trial division after analyzing the good lehman numbers step
@@ -204,7 +205,7 @@ public class LehmanMidRange7 extends FactorAlgorithmBase {
 		}
 
 		// also for factors above n^1/3 we look in the higher range, but after the regular Lehman step
-		if ((factor = lehmanKEven (kLimit, kLimit << 1)) > 1 && factor < N)
+		if ((factor = lehmanKEven (kLimit, kLimit << 1, trialPhase)) > 1 && factor < N)
 			return factor;
 
 		if (trialPhase >= 2 && (factor = trialDivision.findFactor(N))>1)
@@ -213,8 +214,8 @@ public class LehmanMidRange7 extends FactorAlgorithmBase {
 		// now handle very seldom happening cases
 		// Complete middle range, according to lehman this is needed.
 		if (    (factor = lehmanKOdd  (kTwoA + 1, kLimit)) > 1 ||
-				(factor = lehmanKEven (kTwoA + 2, kLimit)) > 1 ||
-				(factor = lehmanKEven (kTwoA + 4, kLimit)) > 1 ||
+				(factor = lehmanKEven (kTwoA + 2, kLimit, trialPhase)) > 1 ||
+				(factor = lehmanKEven (kTwoA + 4, kLimit, trialPhase)) > 1 ||
 				(factor = lehmanKOdd  (kTwoA + 5, kLimit)) > 1)
 			return factor;
 
@@ -257,14 +258,15 @@ public class LehmanMidRange7 extends FactorAlgorithmBase {
 	 * Main lehman based loop for finding factors.
 	 * Find gcd(a+b) for a^2 - k* N = b^2, where k is a multiple of 6.
 	 * In this case a has to be odd.
-	 * We additionally check for multiples of 210 and 11 * 210.
-	 * This brings  10% performance for semiprimes in average.
-	 * We inspect in at most 3/2 * (kEnd - kBegin) numbers
+	 * For numbers with two factors of the same size we additionally check for multiples of 6 * (5*7),
+	 * 6 * (5*7*11) and 6 * (5*7*11*13).
+	 * This brings  40% performance (at 45 bits) for semiprimes in average.
 	 * @param kBegin
 	 * @param kEnd
+	 * @param trialPhase TODO
 	 * @return
 	 */
-	private long lehmanKEven(int kBegin, final int kEnd) {
+	private long lehmanKEven(int kBegin, final int kEnd, int trialPhase) {
 		int k = kBegin;
 		long a,b, test;
 		for (; k <= kEnd; k += 6) {
@@ -276,34 +278,27 @@ public class LehmanMidRange7 extends FactorAlgorithmBase {
 			if (b*b == test) {
 				return gcdEngine.gcd(a+b, N);
 			}
-			// and k'' = 11 * k' = 385 * k  = 11 * 7 * 5 * k
-			//			a = (long) (sqrt85085 * sqrt4kn + ROUND_UP_DOUBLE) | 1L;
-			//			test = a*a - 85085 * fourkn;
-			//			b = (long) Math.sqrt(test);
-			//			if (b*b == test) {
-			//				return gcdEngine.gcd(a+b, N);
-			//			}
-			// and k'' = 11 * k' = 385 * k  = 11 * 7 * 5 * k
-			a = (long) (sqrt5005 * sqrt4kn + ROUND_UP_DOUBLE) | 1L;
-			test = a*a - 5005 * fourkn;
-			b = (long) Math.sqrt(test);
-			if (b*b == test) {
-				return gcdEngine.gcd(a+b, N);
-			}
-			// and k'' = 11 * k' = 385 * k  = 11 * 7 * 5 * k
-			a = (long) (sqrt385 * sqrt4kn + ROUND_UP_DOUBLE) | 1L;
-			test = a*a - 385 * fourkn;
-			b = (long) Math.sqrt(test);
-			if (b*b == test) {
-				return gcdEngine.gcd(a+b, N);
-			}
-			if (k <= kEnd >> 2) {
-				// also investigate in k' 35 * k (k ' = 0 mod 7*5*6) which has high chances to have a factor
-				a = (long) (sqrt35 * sqrt4kn + ROUND_UP_DOUBLE) | 1L;
-				test = a*a - 35 * fourkn;
+			if (trialPhase == 2) {
+				a = (long) (sqrt5005 * sqrt4kn + ROUND_UP_DOUBLE) | 1L;
+				test = a*a - 5005 * fourkn;
 				b = (long) Math.sqrt(test);
 				if (b*b == test) {
 					return gcdEngine.gcd(a+b, N);
+				}
+				a = (long) (sqrt385 * sqrt4kn + ROUND_UP_DOUBLE) | 1L;
+				test = a*a - 385 * fourkn;
+				b = (long) Math.sqrt(test);
+				if (b*b == test) {
+					return gcdEngine.gcd(a+b, N);
+				}
+				if (k <= kEnd >> 2) {
+					// also investigate in k' 35 * k (k ' = 0 mod 7*5*6) which has high chances to have a factor
+					a = (long) (sqrt35 * sqrt4kn + ROUND_UP_DOUBLE) | 1L;
+					test = a*a - 35 * fourkn;
+					b = (long) Math.sqrt(test);
+					if (b*b == test) {
+						return gcdEngine.gcd(a+b, N);
+					}
 				}
 			}
 		}
