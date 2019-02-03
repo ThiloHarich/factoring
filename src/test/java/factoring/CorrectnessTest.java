@@ -15,8 +15,8 @@ import com.google.common.collect.TreeMultiset;
 
 import de.tilman_neumann.jml.factor.FactorAlgorithm;
 import de.tilman_neumann.util.SortedMultiset;
+import factoring.fermat.lehman.LehmanHart;
 import factoring.fermat.lehman.LehmanMidRange5;
-import factoring.fermat.lehman.Lehman_Fast;
 import factoring.rho.PollardRhoBrentDouble52;
 import factoring.shift.ErrorShiftFact;
 import factoring.trial.variant.TrialFact;
@@ -45,14 +45,14 @@ public class CorrectnessTest {
 		final int bits = 40;
 
 		long begin = (1L << bits) +7;
-		begin = 458611424422L;
+		begin = 9l;
 		//		begin = 805099L;
 		//		final LehmanFactorFinder factorizer1 = new LehmanFactorFinder(50, 1, false);
 		//		final FactorAlgorithm factorizer2 = new SquFoF31();
 		//		final FactorAlgorithm factorizer1 = new LehmanMultiplier6_5_7(true);
 		final FactorAlgorithm factorizer2 = new LehmanMidRange5(0);
 		//		final FactorAlgorithm factorizer2 = new LehmanMidRange(false,1.4);
-		final FactorAlgorithm factorizer1 = new Lehman_Fast(true);
+		final FactorAlgorithm factorizer1 = new LehmanHart(1);
 		//		final FactorizationOfLongs factorizer2 = new TrialMultiplyCorrection(1 << (bits/2));
 		//		Factorizer factorizer1 = new Fermat24();
 		//		Factorizer factorizer1 = new LehmanBigFact(bitsMax, 1);
@@ -72,7 +72,7 @@ public class CorrectnessTest {
 
 		//		while (begin < Long.MAX_VALUE / 1000)
 		//		{
-		for (long i = begin; ; i+=2) {
+		for (long i = begin; ; i++) {
 			//				final Collection<Long> factors = factorizer1.factorization(i);
 			//				System.out.println(i + ": " + factorizer1.printFactorization(i));
 			final SortedMultiset<BigInteger> factors = factorizer1.factor(BigInteger.valueOf(i));
