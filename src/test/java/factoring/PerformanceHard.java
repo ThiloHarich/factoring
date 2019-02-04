@@ -42,7 +42,7 @@ public class PerformanceHard {
 		//		final FactorAlgorithmBase factorizer2 = new de.tilman_neumann.jml.factor.lehman.Lehman_Fast(false);
 		//				final FactorAlgorithmBase factorizer2 = new LehmanMidRange(false, 1.);
 		//		final FactorAlgorithmBase factorizer2= new LehmanMidRange5(2);
-		final FactorAlgorithmBase factorizer1 = new LehmanMidRange7(1);
+		final LehmanMidRange7 factorizer1 = new LehmanMidRange7(2);
 		//				final FactorAlgorithmBase factorizer2 = new Hart_Fast();
 		//		final FactorAlgorithmBase factorizer1 = new LehmanHart(1);
 		//		final FactorAlgorithmBase factorizer1 = new Lehman_Fast_Test(false, 2.7);
@@ -56,6 +56,9 @@ public class PerformanceHard {
 		//		findFactors(factorizer1, semiprimes, loop);
 
 		test2(factorizer2);
+		for (int i = 0; i < LehmanMidRange7.foundInStep.length; i++) {
+			System.out.println("step " + i + " : " + LehmanMidRange7.foundInStep[i]);
+		}
 		//		System.out.println("loop 6k      first : " + factorizer2.loop_6_1);
 		//		System.out.println("loop 6      ground : " + factorizer2.loop_ground);
 		//		System.out.println("loop 6k     second : " + factorizer2.loop_6_2);
@@ -188,7 +191,7 @@ public class PerformanceHard {
 		for (int i=0; i< numPrimes; i++)
 		{
 			final Random rnd = new Random();
-			final int smallFactorBits = (bits / 2 ) /*- rnd.nextInt(bits / 3 ) */;
+			final int smallFactorBits = (bits / 2 ) /* - rnd.nextInt(bits / 6 ) */;
 			//			final int smallFactorBits = (bits / 2 );
 			//			final int smallFactorBits = (bits / 3) - 2;
 

@@ -147,40 +147,23 @@ public class LehmanHart extends FactorAlgorithmBase {
 		fourN = N<<2;
 		sqrt4N = Math.sqrt(fourN);
 
-		// kLimit must be 0 mod 6, since we also want to search above of it
-		final int kLimit = cbrt * 64;
 
 		// We start with the middle range cases k == 0 mod 6 and mod 6*5*7 and mod 6*5*7*11 ,
 		// which have the highest chance to find a factor. For factors around n^1/2 ~ 90% of the cases.
 		// Then we investigate in k = 3 mod 6. Then there are only very few cases open for big factors.
 		//		for small N gcd might return N
-		if ((factor = lehman (1, kLimit)) > 1 && factor < N)
+		if ((factor = lehman (1)) > 1 && factor < N)
 			return factor;
 
-		// do trial division after analyzing the good lehman numbers step
-		// TODO integrate in the step before
-		if (trialPhase == 1 && (factor = trialDivision.findFactor(N))>1)
-			return factor;
-
-		// If sqrt(4kN) is very near to an exact integer then the fast ceil() in the 'aStart'-computation
-		// may have failed. Then we need a "correction loop":
-		for (int k=1; k <= kLimit; k++) {
-			final long a = (long) (sqrt4N * sqrt[k] + ROUND_UP_DOUBLE) - 1;
-			final long test = a*a - k*fourN;
-			final long b = (long) Math.sqrt(test);
-			if (b*b == test) {
-				return gcdEngine.gcd(a+b, N);
-			}
-		}
 
 		return 0; // fail
 	}
 
 
 
-	private long lehman(int kBegin, final int kEnd) {
+	private long lehman(int kBegin) {
 		long factor = 1;
-		for (int k = kBegin; k <= kEnd;) {
+		for (int k = kBegin; ;) {
 			if (factor == 1 || factor == N)
 				factor = findFactorEven(6*k, factor);
 			if (factor == 1 || factor == N)
@@ -195,8 +178,6 @@ public class LehmanHart extends FactorAlgorithmBase {
 				return factor;
 			k++;
 		}
-		return -1;
-
 	}
 
 	private long findFactorOdd(int k, long factor) {

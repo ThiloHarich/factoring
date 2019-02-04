@@ -34,7 +34,7 @@ import factoring.trial.TrialMultiplyCorrection;
  *
  * @authors Tilman Neumann + Thilo Harich
  */
-public class LehmanMidRange7 extends FactorAlgorithmBase {
+public class LehmanMult extends FactorAlgorithmBase {
 	private static final Logger LOG = Logger.getLogger(Lehman_FastOrig.class);
 
 	/** This is a constant that is below 1 for rounding up double values to long. */
@@ -51,7 +51,10 @@ public class LehmanMidRange7 extends FactorAlgorithmBase {
 	private static final double sqrt385   = Math.sqrt(5 * 7 * 11);
 	// 5 * 7 * 11 * 13 = 5005
 	private static final double sqrt5005  = Math.sqrt(5 * 7 * 11 * 13);
+	// 5 * 7 * 11 * 13 * 17 = 85085
 	private static final double sqrt85085  = Math.sqrt(85085);
+	// 5 * 7 * 11 * 13 * 19 = 85085
+	private static final double sqrt95095  = Math.sqrt(95095);
 
 
 	static {
@@ -90,7 +93,7 @@ public class LehmanMidRange7 extends FactorAlgorithmBase {
 	 * choose 1. Then trial division is done in the middle. This is usually the best choice if you do not know
 	 * anything about the numbers.
 	 */
-	public LehmanMidRange7(int trialPhase) {
+	public LehmanMult(int trialPhase) {
 		this.trialPhase = trialPhase;
 	}
 
@@ -386,7 +389,7 @@ public class LehmanMidRange7 extends FactorAlgorithmBase {
 				5682546780292609L,
 		};
 
-		final LehmanMidRange7 lehman = new LehmanMidRange7(1);
+		final LehmanMult lehman = new LehmanMult(1);
 		for (final long N : testNumbers) {
 			final long factor = lehman.findSingleFactor(N);
 			LOG.info("N=" + N + " has factor " + factor);
