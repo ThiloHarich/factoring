@@ -15,8 +15,8 @@ import com.google.common.collect.TreeMultiset;
 
 import de.tilman_neumann.jml.factor.FactorAlgorithm;
 import de.tilman_neumann.util.SortedMultiset;
+import factoring.fermat.lehman.LehmanHart2;
 import factoring.fermat.lehman.LehmanMidRange5;
-import factoring.fermat.lehman.LehmanMidRange7;
 import factoring.rho.PollardRhoBrentDouble52;
 import factoring.shift.ErrorShiftFact;
 import factoring.trial.variant.TrialFact;
@@ -51,8 +51,8 @@ public class CorrectnessTest {
 		//		final FactorAlgorithm factorizer2 = new SquFoF31();
 		//		final FactorAlgorithm factorizer1 = new LehmanMultiplier6_5_7(true);
 		final FactorAlgorithm factorizer1 = new LehmanMidRange5(0);
-		final FactorAlgorithm factorizer2 = new LehmanMidRange7(3);
-		//		final FactorAlgorithm factorizer2 = new LehmanHart(1);
+		//		final FactorAlgorithm factorizer2 = new LehmanMidRange7(3);
+		final FactorAlgorithm factorizer2 = new LehmanHart2();
 		//		final FactorizationOfLongs factorizer2 = new TrialMultiplyCorrection(1 << (bits/2));
 		//		Factorizer factorizer1 = new Fermat24();
 		//		Factorizer factorizer1 = new LehmanBigFact(bitsMax, 1);

@@ -46,6 +46,8 @@ public class LehmanHart2 extends FactorAlgorithmBase {
 	private double sqrt4N;
 	private final Gcd63 gcdEngine = new Gcd63();
 
+	private final double sqrt35 = Math.sqrt(35);
+
 
 	public LehmanHart2() {
 	}
@@ -90,6 +92,14 @@ public class LehmanHart2 extends FactorAlgorithmBase {
 				if (factor < N)
 					return factor;
 			}
+			//			a = (long) (sqrt4N * sqrt35  * sqrt[k] + ROUND_UP_DOUBLE) | 1L;
+			//			test = a*a - k * 35 * fourN;
+			//			b = (long) Math.sqrt(test);
+			//			if (b*b == test) {
+			//				factor = gcdEngine.gcd(a+b, N);
+			//				if (factor < N)
+			//					return factor;
+			//			}
 			k += 3;
 			a = (long) (sqrt4N * sqrt[k] + ROUND_UP_DOUBLE);
 			a = adjustMod8(a, k + N);

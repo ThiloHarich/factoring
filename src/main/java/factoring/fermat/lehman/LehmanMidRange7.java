@@ -79,12 +79,13 @@ public class LehmanMidRange7 extends FactorAlgorithmBase {
 	 * all above n^1/3 set it to false. In this case the trial division is done after the
 	 * Leman loop.
 	 * @param factorSize depending on the size of the second largest factor the algorithm can be steered
-	 * to show best performance. It all factors are known to be lower then n^1/3 then 0 is the best value.
+	 * to show best performance. I all factors are known to be lower then n^1/3 then 0 is the best value.
 	 * Then the trial division for numbers up to n^1/3 is done right at the beginning.
-	 * If the numbers is a semiprime and booth factor are known to be much higher then n^1/3.
-	 * choose a value 3 or higher. Trial division is then applied as a last step.
-	 * If numbers have one factor above 4 * n^1/3 use 2. If you do not know anything use 1.
-	 * In the last two cases trial division is done in the middle.
+	 * If the numbers is a semiprime and one factor is known to be lightly higher then n^1/3.
+	 * choose a value 1. Trial division is then applied as a last step.
+	 * If the second highest factor is much greater then n^1/3 choose 2,
+	 * and we apply a loop with an additional multiplier. If factors are known to be around n^1/2
+	 * choose value 3.
 	 */
 	public LehmanMidRange7(int factorSize) {
 		this.factorSize = factorSize;
@@ -144,20 +145,10 @@ public class LehmanMidRange7 extends FactorAlgorithmBase {
 		final int twoA = cbrt / 64;
 		final int kTwoA = ((twoA + multiplier) /multiplier) * multiplier;
 		kLimit = Math.max(kLimit, kTwoA);
-		// we stop earlier then kLimit and can switch to trialdivision
-		final int kEvenSplit = (kLimit /18) * 6;
 
-		// We start with the middle range cases k == 0 mod 6 and for bigger factors mod 6*5*7 or mod 6*5*7*11 ,
-		// which have the highest chance to find a factor. For factors > n^1/3 ~ 98% of the cases for 45 bit.
-		if ((factor = lehmanKEven (kTwoA, kEvenSplit, factorSize)) > 1 && factor < N)
+		// We start with the middle range cases k == 0 mod 6 and for bigger factors mod 6*5*7 or mod 6*5*7*1		if ((factor = lehmanKEven (kTwoA, (kLimit /18) * 6, factorSize)) > 1 && factor < N)
+		if ((factor = lehmanKEven (kTwoA, (kLimit /18) * 6, factorSize)) > 1 && factor < N)
 			return factor;
-
-		// do trial division after analyzing the good lehman numbers step
-		// TODO integrate in the step before
-		if ((factorSize == 1 || factorSize == 2 ) && (factor = trialDivision.findFactor(N))>1) {
-			foundInStep[6]++;
-			return factor;
-		}
 
 		// Now investigate in k = 3 mod 6 which have the next highest chance for big factors
 		// handles ~ 2% of the cases (45 bit)
@@ -199,12 +190,12 @@ public class LehmanMidRange7 extends FactorAlgorithmBase {
 		}
 
 		// also for factors above n^1/3 we look in the higher range, but after the regular Lehman step
-		if ((factor = lehmanKEven (kEvenSplit, kLimit << 1, 0)) > 1 && factor < N) {
+		if ((factor = lehmanKEven ((kLimit /18) * 6, kLimit << 1, 0)) > 1 && factor < N) {
 			foundInStep[9]++;
 			return factor;
 		}
 
-		if (factorSize == 3 && (factor = trialDivision.findFactor(N))>1) {
+		if (factorSize >= 1 && (factor = trialDivision.findFactor(N))>1) {
 			foundInStep[11]++;
 			return factor;
 		}
@@ -286,6 +277,17 @@ public class LehmanMidRange7 extends FactorAlgorithmBase {
 			if (factorSize >= 2) {
 				a = (long) (sqrt385 * sqrt4kn + ROUND_UP_DOUBLE) | 1L;
 				test = a*a - 385 * fourkn;
+				b = (long) Math.sqrt(test);
+				if (b*b == test) {
+					foundInStep[4]++;
+					return gcdEngine.gcd(a+b, N);
+				}
+			}
+			// if we have a factor bigger then n^1/3 we can find more factors when looking
+			// into multiples of 6, even more
+			if (factorSize >= 3) {
+				a = (long) (sqrt5005* sqrt4kn + ROUND_UP_DOUBLE) | 1L;
+				test = a*a - 5005 * fourkn;
 				b = (long) Math.sqrt(test);
 				if (b*b == test) {
 					foundInStep[4]++;

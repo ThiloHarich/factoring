@@ -43,9 +43,9 @@ public class PerformanceHard {
 		//				final FactorAlgorithmBase factorizer2 = new LehmanMidRange(false, 1.);
 		//		final FactorAlgorithmBase factorizer2= new LehmanMidRange5(1);
 		final LehmanMidRange7 factorizer1 = new LehmanMidRange7(3);
-		//				final FactorAlgorithmBase factorizer2 = new Hart_Fast();
+		//		final FactorAlgorithmBase factorizer2 = new Hart_Fast();
 		//		final FactorAlgorithmBase factorizer1 = new LehmanHart(0);
-		//		final FactorAlgorithmBase factorizer2 = new LehmanHart2();
+		//		final FactorAlgorithmBase factorizer1 = new LehmanHart2();
 		//		final FactorAlgorithmBase factorizer1 = new Lehman_Fast_Test(false, 2.7);
 		final FactorAlgorithmBase factorizer2 = new Lehman_Fast(false);
 		//		final FactorAlgorithmBase factorizer1 = new LehmanMidRange2(false, 1.4);
@@ -192,7 +192,7 @@ public class PerformanceHard {
 		for (int i=0; i< numPrimes; i++)
 		{
 			final Random rnd = new Random();
-			final int smallFactorBits = (bits / 2 ) + 0 /*- rnd.nextInt(bits / 4 ) */;
+			final int smallFactorBits = (bits / 3 ) + 4  /*  rnd.nextInt(bits / 5 ) */;
 			//			final int smallFactorBits = (bits / 2 );
 			//			final int smallFactorBits = (bits / 3) - 2;
 
