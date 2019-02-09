@@ -53,11 +53,6 @@ public class HartMod8 extends FactorAlgorithm {
 	 */
 	private static final double K_LIMIT_EXP = 0.38;
 
-	private static final long multiplier = 11 * 13;
-	private static final double sqrtMultiplier = Math.sqrt(multiplier);
-
-	public static final int[] foundInStep = new int [4];
-
 	/** This constant is used for fast rounding of double values to long. */
 	private static final double ROUND_UP_DOUBLE = 0.9999999665;
 
@@ -124,9 +119,8 @@ public class HartMod8 extends FactorAlgorithm {
 
 		// adjust begin of loop
 		int i = (((K_MULT + N) & 3) != 0) ? 1 : 3;
-		int k = (((K_MULT + N) & 3) != 0) ? K_MULT : 3 * K_MULT;
 		try {
-			for (; ;) {
+			for (int k = i * K_MULT; ;) {
 				for (int adjustAMod = 3; adjustAMod <= 7; adjustAMod += 4) {
 					a = (long) (sqrt4N * sqrt[i++] + ROUND_UP_DOUBLE);
 					// adjust a mod 4 or 8
@@ -134,7 +128,6 @@ public class HartMod8 extends FactorAlgorithm {
 					test = a*a - k * fourN;
 					b = (long) Math.sqrt(test);
 					if (b*b == test) {
-						foundInStep[0]++;
 						return gcdEngine.gcd(a+b, N);
 					}
 					k += K_MULT;
@@ -144,7 +137,6 @@ public class HartMod8 extends FactorAlgorithm {
 					test = a*a - k * fourN;
 					b = (long) Math.sqrt(test);
 					if (b*b == test) {
-						foundInStep[1]++;
 						return gcdEngine.gcd(a+b, N);
 					}
 					k += K_MULT;

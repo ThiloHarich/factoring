@@ -1,9 +1,7 @@
 package factoring;
 
 import java.math.BigInteger;
-import java.util.Arrays;
 import java.util.Random;
-import java.util.stream.IntStream;
 
 import de.tilman_neumann.jml.factor.FactorAlgorithm;
 import de.tilman_neumann.jml.factor.hart.Hart_Fast;
@@ -41,7 +39,7 @@ public class PerformanceHard {
 		//		final FactorAlgorithmBase factorizer2 = new de.tilman_neumann.jml.factor.lehman.Lehman_Fast(false);
 		//				final FactorAlgorithmBase factorizer2 = new LehmanMidRange(false, 1.);
 		//		final FactorAlgorithmBase factorizer2= new LehmanMidRange5(1);
-		//		final LehmanMidRange7 factorizer1 = new LehmanMidRange7(0, 1);
+		//		final FactorAlgorithm factorizer2 = new LehmanMidRange7(0, 1);
 		final FactorAlgorithm factorizer2 = new Hart_Fast(true);
 		//		final FactorAlgorithmBase factorizer2 = new Hart_Fast();
 		//		final FactorAlgorithmBase factorizer1 = new LehmanHart(0);
@@ -57,11 +55,11 @@ public class PerformanceHard {
 		//		findFactors(factorizer1, semiprimes, loop);
 
 		test2(factorizer2);
-		final double completeWork = Arrays.asList(HartMod8.foundInStep).stream().flatMapToInt(IntStream::of).sum();
-		for (int i = 0; i < HartMod8.foundInStep.length; i++) {
-			final double work = (HartMod8.foundInStep[i] +0.0) / completeWork;
-			System.out.println("step " + i + " : " + work);
-		}
+		//		final double completeWork = Arrays.asList(HartMod8.foundInStep).stream().flatMapToInt(IntStream::of).sum();
+		//		for (int i = 0; i < HartMod8.foundInStep.length; i++) {
+		//			final double work = (HartMod8.foundInStep[i] +0.0) / completeWork;
+		//			System.out.println("step " + i + " : " + work);
+		//		}
 		//		System.out.println("loop 6k      first : " + factorizer2.loop_6_1);
 		//		System.out.println("loop 6      ground : " + factorizer2.loop_ground);
 		//		System.out.println("loop 6k     second : " + factorizer2.loop_6_2);
