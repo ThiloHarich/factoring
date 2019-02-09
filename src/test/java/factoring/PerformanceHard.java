@@ -1,14 +1,13 @@
 package factoring;
 
 import java.math.BigInteger;
+import java.util.Arrays;
 import java.util.Random;
+import java.util.stream.IntStream;
 
-import de.tilman_neumann.jml.factor.FactorAlgorithmBase;
-import de.tilman_neumann.jml.factor.lehman.Lehman_Fast;
-import factoring.fermat.lehman.LehmanMidRange7;
-import factoring.fermat.lehman.LehmanSimple;
-import factoring.fermat.lehman.Lehman_Fast30;
-import factoring.fermat.lehman.Lehman_FastOrig;
+import de.tilman_neumann.jml.factor.FactorAlgorithm;
+import de.tilman_neumann.jml.factor.hart.Hart_Fast;
+import factoring.hart.HartMod8;
 
 //import de.tilman_neumann.math.factor.CombinedFactorAlgorithm;
 //import de.tilman_neumann.math.factor.FactorAlgorithm;
@@ -16,8 +15,8 @@ import factoring.fermat.lehman.Lehman_FastOrig;
 public class PerformanceHard {
 
 	final static int bits = 45;
-	final static int numPrimes = 850;
-	final static int loop = 80;
+	final static int numPrimes = 550;
+	final static int loop = 180;
 	static long[] semiprimes;
 
 	public static void main(String[] args) {
@@ -42,12 +41,13 @@ public class PerformanceHard {
 		//		final FactorAlgorithmBase factorizer2 = new de.tilman_neumann.jml.factor.lehman.Lehman_Fast(false);
 		//				final FactorAlgorithmBase factorizer2 = new LehmanMidRange(false, 1.);
 		//		final FactorAlgorithmBase factorizer2= new LehmanMidRange5(1);
-		final LehmanMidRange7 factorizer1 = new LehmanMidRange7(3);
+		//		final LehmanMidRange7 factorizer1 = new LehmanMidRange7(0, 1);
+		final FactorAlgorithm factorizer2 = new Hart_Fast(true);
 		//		final FactorAlgorithmBase factorizer2 = new Hart_Fast();
 		//		final FactorAlgorithmBase factorizer1 = new LehmanHart(0);
 		//		final FactorAlgorithmBase factorizer1 = new LehmanHart2();
 		//		final FactorAlgorithmBase factorizer1 = new Lehman_Fast_Test(false, 2.7);
-		final FactorAlgorithmBase factorizer2 = new Lehman_Fast(false);
+		final FactorAlgorithm factorizer1 = new HartMod8(true);
 		//		final FactorAlgorithmBase factorizer1 = new LehmanMidRange2(false, 1.4);
 		//		final FactorAlgorithmBase factorizer1 = new LehmanMultiplier6_5_7(true);
 		semiprimes = makeSemiPrimesList(bits, numPrimes);
@@ -57,24 +57,26 @@ public class PerformanceHard {
 		//		findFactors(factorizer1, semiprimes, loop);
 
 		test2(factorizer2);
-		for (int i = 0; i < LehmanMidRange7.foundInStep.length; i++) {
-			System.out.println("step " + i + " : " + LehmanMidRange7.foundInStep[i]);
+		final double completeWork = Arrays.asList(HartMod8.foundInStep).stream().flatMapToInt(IntStream::of).sum();
+		for (int i = 0; i < HartMod8.foundInStep.length; i++) {
+			final double work = (HartMod8.foundInStep[i] +0.0) / completeWork;
+			System.out.println("step " + i + " : " + work);
 		}
 		//		System.out.println("loop 6k      first : " + factorizer2.loop_6_1);
 		//		System.out.println("loop 6      ground : " + factorizer2.loop_ground);
 		//		System.out.println("loop 6k     second : " + factorizer2.loop_6_2);
 		//		System.out.println("loop 6k + 3 ground : " + factorizer2.loop_3);
 	}
-	private static void factorize() {
-		final LehmanSimple factorizer1 = new LehmanSimple();
-		final FactorAlgorithmBase factorizer2 = new Lehman_FastOrig(true);
-		//		final FactorAlgorithmBase factorizer2 = new Lehman_Fast33(true);
-		semiprimes = makeSemiPrimesList(bits, numPrimes);
-		factorize(factorizer1);
-		factorize(factorizer2);
-	}
+	//	private static void factorize() {
+	//		final LehmanSimple factorizer1 = new LehmanSimple();
+	//		final FactorAlgorithm factorizer2 = new Lehman_FastOrig(true);
+	//		//		final FactorAlgorithmBase factorizer2 = new Lehman_Fast33(true);
+	//		semiprimes = makeSemiPrimesList(bits, numPrimes);
+	//		factorize(factorizer1);
+	//		factorize(factorizer2);
+	//	}
 
-	public static void factorize(FactorAlgorithmBase factorizer) {
+	public static void factorize(FactorAlgorithm factorizer) {
 		final long start = System.currentTimeMillis();
 		final long end = System.currentTimeMillis();
 		System.out.println("time for setup : " + (end - start));
@@ -86,16 +88,12 @@ public class PerformanceHard {
 		factorize(factorizer, semiprimes, loop);
 	}
 
-	public static void test2(FactorAlgorithmBase factorizer) {
+	public static void test2(FactorAlgorithm factorizer) {
 		final long start = System.currentTimeMillis();
 		final long end = System.currentTimeMillis();
 		System.out.println("time for setup : " + (end - start));
 
 		findFactors(factorizer, semiprimes, loop);
-		if (factorizer instanceof Lehman_Fast30) {
-			final Lehman_Fast30 fact = (Lehman_Fast30) factorizer;
-			fact.remainders.asMap().entrySet().stream().forEach(e -> System.out.println(e.getKey()+ " : "+ e.getValue().stream().count()));
-		}
 		findFactors(factorizer, semiprimes, loop);
 		findFactors(factorizer, semiprimes, loop);
 		findFactors(factorizer, semiprimes, loop);
@@ -131,7 +129,7 @@ public class PerformanceHard {
 		findFactors(factorizer, semiprimes, loop);
 	}
 
-	protected static long factorize(final FactorAlgorithmBase factorizer1, final long[] semiprimes, int loop) {
+	protected static long factorize(final FactorAlgorithm factorizer1, final long[] semiprimes, int loop) {
 		final long start = System.nanoTime();
 		for (int i = 0; i < loop; i++) {
 			for (final long semiprime : semiprimes) {
@@ -144,7 +142,7 @@ public class PerformanceHard {
 		return time;
 	}
 
-	protected static long findFactors(final FactorAlgorithmBase factorizer1, final long[] semiprimes, int loop) {
+	protected static long findFactors(final FactorAlgorithm factorizer1, final long[] semiprimes, int loop) {
 		final long start = System.nanoTime();
 		for (int i = 0; i < loop; i++) {
 			for (final long semiprime : semiprimes) {
@@ -192,7 +190,7 @@ public class PerformanceHard {
 		for (int i=0; i< numPrimes; i++)
 		{
 			final Random rnd = new Random();
-			final int smallFactorBits = (bits / 3 ) + 4  /*  rnd.nextInt(bits / 5 ) */;
+			final int smallFactorBits = (bits / 4 )  +  rnd.nextInt(bits / 4 ) ;
 			//			final int smallFactorBits = (bits / 2 );
 			//			final int smallFactorBits = (bits / 3) - 2;
 
