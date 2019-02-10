@@ -42,6 +42,8 @@ public class HartMod8 extends FactorAlgorithm {
 	 */
 	private static final long MAX_N = 1L<<50;
 
+	boolean [] squareMod11 = {false,true,false,true,true,true,false,false,false,true,false};
+
 	/**
 	 * We only test k-values that are multiples of this constant.
 	 * Best values for performance are 315, 45, 105, 15 and 3, in that order.
@@ -115,7 +117,7 @@ public class HartMod8 extends FactorAlgorithm {
 
 		final long fourN = N<<2;
 		final double sqrt4N = Math.sqrt(fourN);
-		long a,b,test;
+		long a,b,test, gcd;
 
 		// adjust begin of loop
 		int i = (((K_MULT + N) & 3) != 0) ? 1 : 3;
@@ -127,8 +129,8 @@ public class HartMod8 extends FactorAlgorithm {
 					a += (((k + N) - a) & adjustAMod);
 					test = a*a - k * fourN;
 					b = (long) Math.sqrt(test);
-					if (b*b == test) {
-						return gcdEngine.gcd(a+b, N);
+					if (b*b == test && (gcd = gcdEngine.gcd(a+b, N)) > 1 && gcd < N) {
+						return gcd;
 					}
 					k += K_MULT;
 
@@ -136,8 +138,8 @@ public class HartMod8 extends FactorAlgorithm {
 					a = (long) (sqrt4N * sqrt[i++] + ROUND_UP_DOUBLE) | 1L;
 					test = a*a - k * fourN;
 					b = (long) Math.sqrt(test);
-					if (b*b == test) {
-						return gcdEngine.gcd(a+b, N);
+					if (b*b == test && (gcd = gcdEngine.gcd(a+b, N)) > 1 && gcd < N) {
+						return gcd;
 					}
 					k += K_MULT;
 				}
