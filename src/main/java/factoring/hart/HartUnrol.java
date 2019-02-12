@@ -118,9 +118,9 @@ public class HartUnrol extends FactorAlgorithm {
 		final int multiplicationWorksBits = NBits - 53 + DISCRIMINATOR_BITS;
 		final int multiplicationWorks = Math.min(1<<multiplicationWorksBits, 0);
 
-		int primeIndex = 0;
+		int primeIndex = -1;
 		//for the smallest primes we must do standard trial division
-		for (; primes[primeIndex] < multiplicationWorks; primeIndex++) {
+		for (; primes[++primeIndex] < multiplicationWorks;) {
 			if (N%primes[primeIndex]==0) {
 				return primes[primeIndex];
 			}
@@ -131,28 +131,28 @@ public class HartUnrol extends FactorAlgorithm {
 			for (int k = i * K_MULT; ;) {
 				// do trial division
 				for (int adjustAMod = 3; adjustAMod <= 7; adjustAMod += 4) {
-					nDivPrime = (long) (N * primesInv[primeIndex] + DISCRIMINATOR);
-					if (nDivPrime * primes[primeIndex++] == N) {
-						return primes[--primeIndex];
+					nDivPrime = (long) (N * primesInv[++primeIndex] + DISCRIMINATOR);
+					if (nDivPrime * primes[primeIndex] == N) {
+						return primes[primeIndex];
 					}
 					// for most of the numbers it is beneficial to check for small primes multiple times
 					// a loop is much slower then unrolling it for unkown reasons.
 					if (!isHardSemiprime) {
-						nDivPrime = (long) (N * primesInv[primeIndex] + DISCRIMINATOR);
-						if (nDivPrime * primes[primeIndex++] == N) {
-							return primes[--primeIndex];
+						nDivPrime = (long) (N * primesInv[++primeIndex] + DISCRIMINATOR);
+						if (nDivPrime * primes[primeIndex] == N) {
+							return primes[primeIndex];
 						}
-						nDivPrime = (long) (N * primesInv[primeIndex] + DISCRIMINATOR);
-						if (nDivPrime * primes[primeIndex++] == N) {
-							return primes[--primeIndex];
+						nDivPrime = (long) (N * primesInv[++primeIndex] + DISCRIMINATOR);
+						if (nDivPrime * primes[primeIndex] == N) {
+							return primes[primeIndex];
 						}
-						nDivPrime = (long) (N * primesInv[primeIndex] + DISCRIMINATOR);
-						if (nDivPrime * primes[primeIndex++] == N) {
-							return primes[--primeIndex];
+						nDivPrime = (long) (N * primesInv[++primeIndex] + DISCRIMINATOR);
+						if (nDivPrime * primes[primeIndex] == N) {
+							return primes[primeIndex];
 						}
-						nDivPrime = (long) (N * primesInv[primeIndex] + DISCRIMINATOR);
-						if (nDivPrime * primes[primeIndex++] == N) {
-							return primes[--primeIndex];
+						nDivPrime = (long) (N * primesInv[++primeIndex] + DISCRIMINATOR);
+						if (nDivPrime * primes[primeIndex] == N) {
+							return primes[primeIndex];
 						}
 					}
 					a = (long) (sqrt4N * sqrt[i++] + ROUND_UP_DOUBLE);
