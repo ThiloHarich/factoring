@@ -125,7 +125,7 @@ public class HartMod8 extends FactorAlgorithm {
 			for (int k = i * K_MULT; ;) {
 				for (int adjustAMod = 3; adjustAMod <= 7; adjustAMod += 4) {
 					a = (long) (sqrt4N * sqrt[i++] + ROUND_UP_DOUBLE);
-					// adjust a mod 4 or 8
+					// k odd -> a + k + N = 0 mod 4, k + N = 0 mod 8 if k+N = 0 mod 4, we adjust a accordingly
 					a += (((k + N) - a) & adjustAMod);
 					test = a*a - k * fourN;
 					b = (long) Math.sqrt(test);

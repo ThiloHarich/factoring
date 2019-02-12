@@ -21,7 +21,7 @@ import factoring.primes.Primes;
  *
  * Created by Thilo Harich on 02.03.2017.
  */
-public class TrialMultiplyCorrection implements FactorizationOfLongs {
+public class TrialMultiplyUnrol implements FactorizationOfLongs {
 
 	// Size of number is ~ 2^52
 	private static final int DISCRIMINATOR_BITS = 10; // experimental result
@@ -30,12 +30,12 @@ public class TrialMultiplyCorrection implements FactorizationOfLongs {
 	double[] primesInv;
 	int[] primes;
 
-	public TrialMultiplyCorrection(int maxFactor) {
+	public TrialMultiplyUnrol(int maxFactor) {
 		//        if (maxFactor > 65535)
 		//            throw new IllegalArgumentException("the maximal factor has to be lower then 65536");
 		this.maxFactor = maxFactor;
 		//		initPrimes();
-		final Primes primesGen = Primes.initPrimesEratosthenes(maxFactor);
+		final Primes primesGen = Primes.initPrimesEratosthenes(maxFactor+10);
 		primes = primesGen.primes;
 		primesInv = primesGen.primesInv;
 	}
@@ -45,36 +45,51 @@ public class TrialMultiplyCorrection implements FactorizationOfLongs {
 	public long findFactors(long n, Collection<Long> primeFactors) {
 		final int Nbits = 64-Long.numberOfLeadingZeros(n);
 		final int multiplicationWorksBits = Nbits - 53 + DISCRIMINATOR_BITS;
-		int primeIndex = 0;
+		int primeIndex = -1;
 		if (multiplicationWorksBits>0) {
 			// for the smallest primes we must do standard trial division
 			final int multiplicationWorks = 1<<multiplicationWorksBits;
-			for (; primes[primeIndex] < multiplicationWorks; primeIndex++) {
+			for (; primes[++primeIndex] < multiplicationWorks;) {
 				if (n%primes[primeIndex]==0) {
 					return primes[primeIndex];
 				}
 			}
 		}
 		final int primeLimit = (int) Math.min(Math.sqrt(n), maxFactor);
-		for (; primes[primeIndex] <= primeLimit; primeIndex++) {
+		for (; primes[++primeIndex] <= primeLimit;) {
 			// round the number. Casting to long is faster then rounding the double number itself, but we
 			// have to prevent some cases were the number is not correctly rounded by adding a small number
 			long nDivPrime = (long) (n*primesInv[primeIndex] + DISCRIMINATOR);
 			// TODO if we want to return all factors this must we a while loop and some special handling
+			// Unrolling the loop improves much (30%) do not know why
 			if (nDivPrime * primes[primeIndex] == n) {
-				if (primeFactors == null)
-					return primes[primeIndex];
-				primeFactors.add((long) primes[primeIndex]);
-				n = nDivPrime;
-				// if the remaining number is lower then the maximal factor we look for it must be a prime
-				nDivPrime = (long) (n*primesInv[primeIndex] + DISCRIMINATOR);
+				return primes[primeIndex];
+			}
+			nDivPrime = (long) (n*primesInv[++primeIndex] + DISCRIMINATOR);
+			if (nDivPrime * primes[primeIndex] == n) {
+				return primes[primeIndex];
+			}
+			nDivPrime = (long) (n*primesInv[++primeIndex] + DISCRIMINATOR);
+			if (nDivPrime * primes[primeIndex] == n) {
+				return primes[primeIndex];
+			}
+			nDivPrime = (long) (n*primesInv[++primeIndex] + DISCRIMINATOR);
+			if (nDivPrime * primes[primeIndex] == n) {
+				return primes[primeIndex];
+			}
+			nDivPrime = (long) (n*primesInv[++primeIndex] + DISCRIMINATOR);
+			if (nDivPrime * primes[primeIndex] == n) {
+				return primes[primeIndex];
 			}
 			// if the remaining part is less then the maximal prime, it must be a prime power
 		}
 		return n;
 	}
 
-
+	@Override
+	public boolean findsPrimesOnly() {
+		return false;
+	}
 	@Override
 	public void setMaxFactor(int maxTrialFactor) {
 		maxFactor = maxTrialFactor;
