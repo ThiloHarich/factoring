@@ -42,10 +42,10 @@ public class CorrectnessTest {
 
 	@Test
 	public void testCorrect() {
-		final int bits = 30;
+		final int bits = 49;
 
-		long begin = (1L << bits) +5;
-		begin =35l;
+		final long begin = (1L << bits) +5;
+		//		begin =35l;
 		//		begin = 1073741835L;
 		//		final LehmanFactorFinder factorizer1 = new LehmanFactorFinder(50, 1, false);
 		//		final FactorAlgorithm factorizer2 = new SquFoF31();

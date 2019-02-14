@@ -47,7 +47,8 @@ public class HartSimple extends FactorAlgorithm {
 
 	private static double[] sqrt;
 
-	private static int maxFactor = 1 << 19;
+	// works for numbers up to 49 Bits
+	private static int maxFactor = 1 << 21;
 
 	static {
 		// Precompute sqrts for all k required for N <= MAX_N and multiplier K_MULT
@@ -117,10 +118,8 @@ public class HartSimple extends FactorAlgorithm {
 			}
 			test = a*a - k * fourN;
 			b = (long) Math.sqrt(test);
-			if (b*b == test) {
-				if ((gcd = gcdEngine.gcd(a+b, N))>1 && gcd < N)
-					return gcd;
-			}
+			if (b*b == test && (gcd = gcdEngine.gcd(a+b, N))>1 && gcd < N)
+				return gcd;
 		}
 	}
 }
