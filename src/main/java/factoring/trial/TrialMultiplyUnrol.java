@@ -1,8 +1,9 @@
 package factoring.trial;
 
+import java.math.BigInteger;
 import java.util.Collection;
 
-import factoring.FactorizationOfLongs;
+import de.tilman_neumann.jml.factor.FactorAlgorithm;
 import factoring.primes.Primes;
 
 /**
@@ -21,7 +22,7 @@ import factoring.primes.Primes;
  *
  * Created by Thilo Harich on 02.03.2017.
  */
-public class TrialMultiplyUnrol implements FactorizationOfLongs {
+public class TrialMultiplyUnrol  extends FactorAlgorithm {
 
 	// Size of number is ~ 2^52
 	private static final int DISCRIMINATOR_BITS = 10; // experimental result
@@ -42,7 +43,11 @@ public class TrialMultiplyUnrol implements FactorizationOfLongs {
 
 
 	@Override
-	public long findFactors(long n, Collection<Long> primeFactors) {
+	public BigInteger findSingleFactor(BigInteger N) {
+		return BigInteger.valueOf(findSingleFactor(N.longValue()));
+	}
+
+	public int findSingleFactor(long n) {
 		final int Nbits = 64-Long.numberOfLeadingZeros(n);
 		final int multiplicationWorksBits = Nbits - 53 + DISCRIMINATOR_BITS;
 		int primeIndex = -1;
@@ -55,43 +60,38 @@ public class TrialMultiplyUnrol implements FactorizationOfLongs {
 				}
 			}
 		}
-		final int primeLimit = (int) Math.min(Math.sqrt(n), maxFactor);
-		for (; primes[++primeIndex] <= primeLimit;) {
+		for (; primes[++primeIndex] <= maxFactor;) {
 			// round the number. Casting to long is faster then rounding the double number itself, but we
 			// have to prevent some cases were the number is not correctly rounded by adding a small number
-			long nDivPrime = (long) (n*primesInv[primeIndex] + DISCRIMINATOR);
+			final long nDivPrime = (long) (n*primesInv[primeIndex] + DISCRIMINATOR);
 			// TODO if we want to return all factors this must we a while loop and some special handling
 			// Unrolling the loop improves much (30%) do not know why
 			if (nDivPrime * primes[primeIndex] == n) {
 				return primes[primeIndex];
 			}
-			nDivPrime = (long) (n*primesInv[++primeIndex] + DISCRIMINATOR);
-			if (nDivPrime * primes[primeIndex] == n) {
-				return primes[primeIndex];
-			}
-			nDivPrime = (long) (n*primesInv[++primeIndex] + DISCRIMINATOR);
-			if (nDivPrime * primes[primeIndex] == n) {
-				return primes[primeIndex];
-			}
-			nDivPrime = (long) (n*primesInv[++primeIndex] + DISCRIMINATOR);
-			if (nDivPrime * primes[primeIndex] == n) {
-				return primes[primeIndex];
-			}
-			nDivPrime = (long) (n*primesInv[++primeIndex] + DISCRIMINATOR);
-			if (nDivPrime * primes[primeIndex] == n) {
-				return primes[primeIndex];
-			}
+			//			nDivPrime = (long) (n*primesInv[++primeIndex] + DISCRIMINATOR);
+			//			if (nDivPrime * primes[primeIndex] == n) {
+			//				return primes[primeIndex];
+			//			}
 			// if the remaining part is less then the maximal prime, it must be a prime power
 		}
-		return n;
+		return 0;
 	}
 
-	@Override
-	public boolean findsPrimesOnly() {
-		return false;
+	/**
+	 * Set the upper limit of primes to be tested in the next findSingleFactor() run.
+	 * pLimit must be smaller than the factorLimit parameter passed to the constructor.
+	 * @param pLimit
+	 */
+	public void setTestLimit(int pLimit) {
+		maxFactor = pLimit;
 	}
+
+
 	@Override
-	public void setMaxFactor(int maxTrialFactor) {
-		maxFactor = maxTrialFactor;
+	public String getName() {
+		// TODO Auto-generated method stub
+		return null;
 	}
+
 }

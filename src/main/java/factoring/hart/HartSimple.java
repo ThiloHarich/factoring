@@ -15,8 +15,6 @@ package factoring.hart;
 
 import java.math.BigInteger;
 
-import org.apache.log4j.Logger;
-
 import de.tilman_neumann.jml.factor.FactorAlgorithm;
 import de.tilman_neumann.jml.gcd.Gcd63;
 import factoring.primes.Primes;
@@ -31,12 +29,9 @@ import factoring.primes.Primes;
  *
  * @authors Thilo Harich & Tilman Neumann
  */
-public class HartUnrol extends FactorAlgorithm {
-	private static final Logger LOG = Logger.getLogger(HartUnrol.class);
-
+public class HartSimple extends FactorAlgorithm {
 	// Size of number is ~ 2^52
-	private static final int DISCRIMINATOR_BITS = 10; // experimental result
-	private static final double DISCRIMINATOR = 1.0/(1<<DISCRIMINATOR_BITS);
+	private static final double DISCRIMINATOR = 1.0/(1<<10); // experimental result
 
 	/**
 	 * We only test k-values that are multiples of this constant.
@@ -51,8 +46,6 @@ public class HartUnrol extends FactorAlgorithm {
 	private static final double ROUND_UP_DOUBLE = 0.9999999665;
 
 	private static double[] sqrt;
-
-	private boolean isHardSemiprime = true;
 
 	private static int maxFactor = 1 << 19;
 
@@ -74,11 +67,10 @@ public class HartUnrol extends FactorAlgorithm {
 	 * @param isHardSemiprime Set this to false for most of the numbers.
 	 * You should set this to true only if it is a semiprime with both factors near n^1/2.
 	 */
-	public HartUnrol(boolean isHardSemiprime) {
-		final Primes primesGen = Primes.initPrimesEratosthenes(3 * maxFactor );
+	public HartSimple() {
+		final Primes primesGen = Primes.initPrimesEratosthenes(maxFactor );
 		primes = primesGen.primes;
 		primesInv = primesGen.primesInv;
-		this.isHardSemiprime = isHardSemiprime;
 	}
 
 	@Override
@@ -100,64 +92,40 @@ public class HartUnrol extends FactorAlgorithm {
 		long a,b,test, gcd, nDivPrime;
 		final long fourN = N<<2;
 		final double sqrt4N = Math.sqrt(fourN);
-		final int NBits = 64-Long.numberOfLeadingZeros(N);
-		final int multiplicationWorksBits = NBits - 53 + DISCRIMINATOR_BITS;
-		final int multiplicationWorks = Math.min(1<<multiplicationWorksBits, 0);
+		final int multiplicationWorks = Math.min (1<<(21 - Long.numberOfLeadingZeros(N)), 0);
 
-		int primeIndex = -1;
+		int primeIndex = 0;
 		//for the smallest primes we must do standard trial division
-		for (; primes[++primeIndex] < multiplicationWorks;) {
+		for (; primes[primeIndex] < multiplicationWorks; primeIndex++) {
 			if (N%primes[primeIndex]==0) {
 				return primes[primeIndex];
 			}
 		}
-
-		int i = (((K_MULT + N) & 3) != 0) ? 1 : 3;
+		int i = 1;
 		try {
-			for (int k = i * K_MULT; ;) {
+			for (int k = i * K_MULT; ;k += K_MULT, primeIndex++, i++) {
 				// do trial division
-				for (int adjustAMod = 3; adjustAMod <= 7; adjustAMod += 4) {
-					// for most of the numbers it is beneficial to check for small primes multiple times
-					// a loop is much slower then unrolling it for unkown reasons.
-					nDivPrime = (long) (N * primesInv[++primeIndex] + DISCRIMINATOR);
-					if (nDivPrime * primes[primeIndex] == N) {
-						return primes[primeIndex];
+				nDivPrime = (long) (N * primesInv[primeIndex] + DISCRIMINATOR);
+				if (nDivPrime * primes[primeIndex] == N) {
+					return primes[primeIndex];
+				}
+				a = (long) (sqrt4N * sqrt[i] + ROUND_UP_DOUBLE);
+				// adjust a
+				if ((i & 1) == 0)
+					a |= 1;
+				else {
+					final long kPlusN = k + N;
+					if ((kPlusN & 3) == 0) {
+						a += ((kPlusN - a) & 7);
+					} else {
+						a += ((kPlusN - a) & 3);
 					}
-					nDivPrime = (long) (N * primesInv[++primeIndex] + DISCRIMINATOR);
-					if (nDivPrime * primes[primeIndex] == N) {
-						return primes[primeIndex];
-					}
-					nDivPrime = (long) (N * primesInv[++primeIndex] + DISCRIMINATOR);
-					if (nDivPrime * primes[primeIndex] == N) {
-						return primes[primeIndex];
-					}
-					a = (long) (sqrt4N * sqrt[i++] + ROUND_UP_DOUBLE);
-					// k odd -> a + k + N = 0 mod 4, k + N = 0 mod 8 if k+N = 0 mod 4, we adjust a accordingly
-					a += (((k + N) - a) & adjustAMod);
-					test = a*a - k * fourN;
-					b = (long) Math.sqrt(test);
-					if (b*b == test && (gcd = gcdEngine.gcd(a+b, N)) > 1 && gcd < N) {
+				}
+				test = a*a - k * fourN;
+				b = (long) Math.sqrt(test);
+				if (b*b == test) {
+					if ((gcd = gcdEngine.gcd(a+b, N))>1 && gcd < N)
 						return gcd;
-					}
-					k += K_MULT;
-
-					// even k -> a must be odd
-					a = (long) (sqrt4N * sqrt[i++] + ROUND_UP_DOUBLE) | 1L;
-					test = a*a - k * fourN;
-					b = (long) Math.sqrt(test);
-					if (b*b == test && (gcd = gcdEngine.gcd(a+b, N)) > 1 && gcd < N) {
-						return gcd;
-					}
-					k += K_MULT;
-
-					nDivPrime = (long) (N * primesInv[++primeIndex] + DISCRIMINATOR);
-					if (nDivPrime * primes[primeIndex] == N) {
-						return primes[primeIndex];
-					}
-					nDivPrime = (long) (N * primesInv[++primeIndex] + DISCRIMINATOR);
-					if (nDivPrime * primes[primeIndex] == N) {
-						return primes[primeIndex];
-					}
 				}
 			}
 		} catch (final ArrayIndexOutOfBoundsException e) {

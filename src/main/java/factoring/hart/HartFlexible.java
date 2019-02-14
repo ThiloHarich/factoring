@@ -15,11 +15,10 @@ package factoring.hart;
 
 import java.math.BigInteger;
 
-import org.apache.log4j.Logger;
-
 import de.tilman_neumann.jml.factor.FactorAlgorithm;
 import de.tilman_neumann.jml.gcd.Gcd63;
 import factoring.primes.Primes;
+import factoring.trial.TrialMultiplyUnrol;
 
 /**
  * Pretty simple yet fast variant of Hart's one line factorizer.
@@ -31,8 +30,7 @@ import factoring.primes.Primes;
  *
  * @authors Thilo Harich & Tilman Neumann
  */
-public class HartUnrol extends FactorAlgorithm {
-	private static final Logger LOG = Logger.getLogger(HartUnrol.class);
+public class HartFlexible extends FactorAlgorithm {
 
 	// Size of number is ~ 2^52
 	private static final int DISCRIMINATOR_BITS = 10; // experimental result
@@ -52,7 +50,7 @@ public class HartUnrol extends FactorAlgorithm {
 
 	private static double[] sqrt;
 
-	private boolean isHardSemiprime = true;
+	private final int trialDivisonWhen;
 
 	private static int maxFactor = 1 << 19;
 
@@ -66,6 +64,7 @@ public class HartUnrol extends FactorAlgorithm {
 	}
 
 	private final Gcd63 gcdEngine = new Gcd63();
+	private final TrialMultiplyUnrol trialDivision = new TrialMultiplyUnrol(maxFactor);
 	double[] primesInv;
 	int[] primes;
 
@@ -74,11 +73,11 @@ public class HartUnrol extends FactorAlgorithm {
 	 * @param isHardSemiprime Set this to false for most of the numbers.
 	 * You should set this to true only if it is a semiprime with both factors near n^1/2.
 	 */
-	public HartUnrol(boolean isHardSemiprime) {
+	public HartFlexible(int trialDivisonWhen) {
 		final Primes primesGen = Primes.initPrimesEratosthenes(3 * maxFactor );
 		primes = primesGen.primes;
 		primesInv = primesGen.primesInv;
-		this.isHardSemiprime = isHardSemiprime;
+		this.trialDivisonWhen = trialDivisonWhen;
 	}
 
 	@Override
@@ -97,13 +96,24 @@ public class HartUnrol extends FactorAlgorithm {
 	 * @return factor of N
 	 */
 	public long findSingleFactor(long N) {
-		long a,b,test, gcd, nDivPrime;
+		long a,b,test, gcd;
+		long nDivPrime;
+		long multiplicationWorks = 0;
 		final long fourN = N<<2;
 		final double sqrt4N = Math.sqrt(fourN);
-		final int NBits = 64-Long.numberOfLeadingZeros(N);
-		final int multiplicationWorksBits = NBits - 53 + DISCRIMINATOR_BITS;
-		final int multiplicationWorks = Math.min(1<<multiplicationWorksBits, 0);
 
+		if (trialDivisonWhen <= 0) {
+			final int testLimit = (int) Math.cbrt(N);
+			trialDivision.setTestLimit(testLimit);
+			final long factor = trialDivision.findSingleFactor(N);
+			if (factor < N && factor > 1)
+				return factor;
+			else {
+				final int NBits = 64-Long.numberOfLeadingZeros(N);
+				final int multiplicationWorksBits = NBits - 53 + DISCRIMINATOR_BITS;
+				multiplicationWorks = Math.min(1<<multiplicationWorksBits, 0);
+			}
+		}
 		int primeIndex = -1;
 		//for the smallest primes we must do standard trial division
 		for (; primes[++primeIndex] < multiplicationWorks;) {
@@ -123,14 +133,30 @@ public class HartUnrol extends FactorAlgorithm {
 					if (nDivPrime * primes[primeIndex] == N) {
 						return primes[primeIndex];
 					}
-					nDivPrime = (long) (N * primesInv[++primeIndex] + DISCRIMINATOR);
-					if (nDivPrime * primes[primeIndex] == N) {
-						return primes[primeIndex];
+					//						nDivPrime = (long) (N * primesInv[++primeIndex] + DISCRIMINATOR);
+					//						if (nDivPrime * primes[primeIndex] == N) {
+					//							return primes[primeIndex];
+					//						}
+					if (trialDivisonWhen != 2) {
+						nDivPrime = (long) (N * primesInv[++primeIndex] + DISCRIMINATOR);
+						if (nDivPrime * primes[primeIndex] == N) {
+							return primes[primeIndex];
+						}
+						nDivPrime = (long) (N * primesInv[++primeIndex] + DISCRIMINATOR);
+						if (nDivPrime * primes[primeIndex] == N) {
+							return primes[primeIndex];
+						}
+						nDivPrime = (long) (N * primesInv[++primeIndex] + DISCRIMINATOR);
+						if (nDivPrime * primes[primeIndex] == N) {
+							return primes[primeIndex];
+						}
+						//						nDivPrime = (long) (N * primesInv[++primeIndex] + DISCRIMINATOR);
+						//						if (nDivPrime * primes[primeIndex] == N) {
+						//							return primes[primeIndex];
+						//						}
 					}
-					nDivPrime = (long) (N * primesInv[++primeIndex] + DISCRIMINATOR);
-					if (nDivPrime * primes[primeIndex] == N) {
-						return primes[primeIndex];
-					}
+
+
 					a = (long) (sqrt4N * sqrt[i++] + ROUND_UP_DOUBLE);
 					// k odd -> a + k + N = 0 mod 4, k + N = 0 mod 8 if k+N = 0 mod 4, we adjust a accordingly
 					a += (((k + N) - a) & adjustAMod);
@@ -150,10 +176,6 @@ public class HartUnrol extends FactorAlgorithm {
 					}
 					k += K_MULT;
 
-					nDivPrime = (long) (N * primesInv[++primeIndex] + DISCRIMINATOR);
-					if (nDivPrime * primes[primeIndex] == N) {
-						return primes[primeIndex];
-					}
 					nDivPrime = (long) (N * primesInv[++primeIndex] + DISCRIMINATOR);
 					if (nDivPrime * primes[primeIndex] == N) {
 						return primes[primeIndex];

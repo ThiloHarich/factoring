@@ -18,9 +18,9 @@ import java.math.BigInteger;
 import org.apache.log4j.Logger;
 
 import de.tilman_neumann.jml.factor.FactorAlgorithm;
-import de.tilman_neumann.jml.factor.tdiv.TDiv63Inverse;
 import de.tilman_neumann.jml.gcd.Gcd63;
 import de.tilman_neumann.util.ConfigUtil;
+import factoring.trial.TrialMultiplyUnrol;
 
 /**
  * Pretty simple yet fast variant of Hart's one line factorizer.
@@ -32,8 +32,8 @@ import de.tilman_neumann.util.ConfigUtil;
  *
  * @authors Thilo Harich & Tilman Neumann
  */
-public class HartMod8 extends FactorAlgorithm {
-	private static final Logger LOG = Logger.getLogger(HartMod8.class);
+public class HartTrialFirst extends FactorAlgorithm {
+	private static final Logger LOG = Logger.getLogger(HartTrialFirst.class);
 
 	/**
 	 * The biggest N supported by the algorithm.
@@ -41,8 +41,6 @@ public class HartMod8 extends FactorAlgorithm {
 	 * Thus it is recommended to reduce this constant to the minimum required.
 	 */
 	private static final long MAX_N = 1L<<50;
-
-	boolean [] squareMod11 = {false,true,false,true,true,true,false,false,false,true,false};
 
 	/**
 	 * We only test k-values that are multiples of this constant.
@@ -70,9 +68,9 @@ public class HartMod8 extends FactorAlgorithm {
 		System.out.println("Hart_Fast: Initialized sqrt array with " + iMax + " entries");
 	}
 
-	private static final TDiv63Inverse tdiv = new TDiv63Inverse((int) Math.cbrt(MAX_N));
+	//	private static final TDiv63Inverse tdiv = new TDiv63Inverse((int) Math.cbrt(MAX_N));
+	private static final TrialMultiplyUnrol tdiv = new TrialMultiplyUnrol((int) Math.cbrt(MAX_N));
 
-	private final boolean doTDivFirst;
 	private final Gcd63 gcdEngine = new Gcd63();
 
 	/**
@@ -80,13 +78,12 @@ public class HartMod8 extends FactorAlgorithm {
 	 * @param doTDivFirst If true then trial division is done before the Lehman loop.
 	 * This is recommended if arguments N are known to have factors < cbrt(N) frequently.
 	 */
-	public HartMod8(boolean doTDivFirst) {
-		this.doTDivFirst = doTDivFirst;
+	public HartTrialFirst() {
 	}
 
 	@Override
 	public String getName() {
-		return "Hart_Fast(" + doTDivFirst + ")";
+		return "Hart_Fast(" + ")";
 	}
 
 	@Override
@@ -100,20 +97,14 @@ public class HartMod8 extends FactorAlgorithm {
 	 * @return factor of N
 	 */
 	public long findSingleFactor(long N) {
-		long factor;
-		if (doTDivFirst) {
-			// do trial division before the Hart loop until cbrt(N); great choice for random composites
-			// avoid Exceptions when N > MAX_N
-			final int testLimit = (int) Math.cbrt(N<MAX_N ? N : MAX_N);
-			tdiv.setTestLimit(testLimit);
-			if ((factor = tdiv.findSingleFactor(N))>1 && factor < N) return factor;
-		} else {
-			// Hart needs a minimum amount of tdiv for random composites, at least up to primes p <= 2^(NBits-27)/2
-			final int NBits = 64-Long.numberOfLeadingZeros(N);
-			final int lowTDivLimit = NBits>30 ? (int) Math.sqrt(1L<<(NBits-27)) : 0;
-			tdiv.setTestLimit(lowTDivLimit);
-			if ((factor = tdiv.findSingleFactor(N))>1) return factor;
-		}
+		final long factor;
+
+		// do trial division before the Hart loop until cbrt(N); great choice for random composites
+		// avoid Exceptions when N > MAX_N
+		tdiv.setTestLimit((int) Math.cbrt(N));
+		if (((factor = tdiv.findSingleFactor(N))) > 1 && factor < N)
+			return factor;
+
 
 		final long fourN = N<<2;
 		final double sqrt4N = Math.sqrt(fourN);
@@ -244,10 +235,11 @@ public class HartMod8 extends FactorAlgorithm {
 				883246601513L, // = 251 * 3518910763
 		};
 
-		final HartMod8 holf = new HartMod8(false);
+		final HartTrialFirst holf = new HartTrialFirst();
 		for (final long N : testNumbers) {
 			final long factor = holf.findSingleFactor(N);
 			LOG.info("N=" + N + " has factor " + factor);
 		}
 	}
+
 }
