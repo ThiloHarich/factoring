@@ -89,7 +89,7 @@ public class HartSimple extends FactorAlgorithm {
 	 * @return factor of N
 	 */
 	public long findSingleFactor(long N) {
-		long a,b,test, gcd, nDivPrime;
+		long a,b,test, gcd;
 		final long fourN = N<<2;
 		final double sqrt4N = Math.sqrt(fourN);
 		final int multiplicationWorks = Math.min (1<<(21 - Long.numberOfLeadingZeros(N)), 0);
@@ -102,10 +102,9 @@ public class HartSimple extends FactorAlgorithm {
 			}
 		}
 
-		for (int i =1, k = i * K_MULT; ;k += K_MULT, primeIndex++, i++) {
+		for (int i = 1, k = i * K_MULT; ;k += K_MULT, primeIndex++, i++) {
 			// do trial division
-			nDivPrime = (long) (N * primesInv[primeIndex] + DISCRIMINATOR);
-			if (nDivPrime * primes[primeIndex] == N) {
+			if ((long) (N * primesInv[primeIndex] + DISCRIMINATOR) * primes[primeIndex] == N) {
 				return primes[primeIndex];
 			}
 			a = (long) (sqrt4N * sqrt[i] + ROUND_UP_DOUBLE);
@@ -114,11 +113,7 @@ public class HartSimple extends FactorAlgorithm {
 				a |= 1;
 			else {
 				final long kPlusN = k + N;
-				if ((kPlusN & 3) == 0) {
-					a += ((kPlusN - a) & 7);
-				} else {
-					a += ((kPlusN - a) & 3);
-				}
+				a += (kPlusN & 3) == 0 ? ((kPlusN - a) & 7) : ((kPlusN - a) & 3);
 			}
 			test = a*a - k * fourN;
 			b = (long) Math.sqrt(test);
