@@ -93,7 +93,7 @@ public class HartSimple extends FactorAlgorithm {
 		long a,b,test, gcd;
 		final long fourN = N<<2;
 		final double sqrt4N = Math.sqrt(fourN);
-		final int multiplicationWorks = Math.max (1<<(21 - Long.numberOfLeadingZeros(N)), 0);
+		final int multiplicationWorks =  Long.numberOfLeadingZeros(N) > 21 ? 0 : 1<<(21 - Long.numberOfLeadingZeros(N));
 
 		int primeIndex = 0;
 		//for the smallest primes we must do standard trial division

@@ -4,16 +4,16 @@ import java.math.BigInteger;
 import java.util.Random;
 
 import de.tilman_neumann.jml.factor.FactorAlgorithm;
-import de.tilman_neumann.jml.factor.tdiv.TDiv63Inverse_NoDoubleCheck_Unroll;
-import factoring.trial.TrialMultiplyCorrection;
+import de.tilman_neumann.jml.factor.hart.Hart_TDiv_Race2;
+import factoring.hart.HartSimple;
 
 //import de.tilman_neumann.math.factor.CombinedFactorAlgorithm;
 //import de.tilman_neumann.math.factor.FactorAlgorithm;
 
 public class PerformanceHard {
 
-	final static int bits = 20;
-	final static int numPrimes = 13009;
+	final static int bits = 35;
+	final static int numPrimes = 5309;
 	final static int loop = 150;
 	static long[] semiprimes;
 
@@ -32,8 +32,9 @@ public class PerformanceHard {
 		//		final FactorizationOfLongs factorizer1 = new PollardRhoBrentDouble53();
 		//		final FactorAlgorithmBase factorizer1 = new Lehman_FastJones(true);
 		//				final FactorAlgorithmBase factorizer1 = new Lehman_Fast6(true);
-		final FactorizationOfLongs factorizer1 = new TrialMultiplyCorrection(1 << (bits/2));
-		final FactorAlgorithm  factorizer2 = new TDiv63Inverse_NoDoubleCheck_Unroll(1 << (bits/2));
+		//		final FactorizationOfLongs factorizer1 = new TrialMultiplyCorrection(1 << (bits/2));
+		//		final FactorizationOfLongs factorizer2 = new TrialMultiplyCorrection(1 << (bits/2));
+		//		final FactorAlgorithm  factorizer1 = new TDiv63Inverse_NoDoubleCheck_Unroll(1 << (bits/2));
 		//		final FactorizationOfLongs factorizer2 = new LehmanFactorFinder(bits, 2.f, false);
 		//		final FactorizationOfLongs factorizer2 = new PollardRhoBrentDouble52();
 		//		final FactorAlgorithmBase factorizer1 = new LehmanMultiplier6_5_7_11(true);
@@ -42,11 +43,11 @@ public class PerformanceHard {
 		//		final FactorAlgorithmBase factorizer2= new LehmanMidRange5(1);
 		//		final FactorAlgorithm factorizer2 = new LehmanMidRange7(2, 3);
 		//		final FactorAlgorithm factorizer2 = new Hart_TDiv_Race2();
-		//		final FactorAlgorithm factorizer1 = new factoring.hart.Hart_TDiv_Race();
+		final FactorAlgorithm factorizer2 = new Hart_TDiv_Race2();
 		//		final FactorAlgorithm factorizer2 = new Hart_Fast(true);
 		//		final FactorAlgorithmBase factorizer1 = new LehmanHart(0);
 		//		final FactorAlgorithmBase factorizer1 = new LehmanHart2();
-		//		final FactorAlgorithm factorizer1 = new HartSimple();
+		final FactorAlgorithm factorizer1 = new HartSimple();
 		//		final FactorAlgorithm factorizer1 = new HartMod8(true);
 		//		final FactorAlgorithm factorizer2 = new HartMod8(true);
 		//		final FactorAlgorithmBase factorizer1 = new LehmanMidRange2(false, 1.4);
@@ -192,7 +193,7 @@ public class PerformanceHard {
 		for (int i=0; i< numPrimes; i++)
 		{
 			final Random rnd = new Random();
-			final int smallFactorBits = (bits / 2 ) /* +  rnd.nextInt(bits / 6 ) + 2 */;
+			final int smallFactorBits = (bits / 3 );
 			//			final int smallFactorBits = (bits / 2 );
 			//			final int smallFactorBits = (bits / 3) - 2;
 
