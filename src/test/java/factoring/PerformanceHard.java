@@ -12,8 +12,8 @@ import factoring.hart.HartSimple;
 
 public class PerformanceHard {
 
-	final static int bits = 40;
-	final static int numPrimes = 2009;
+	final static int bits = 46;
+	final static int numPrimes = 309;
 	final static int loop = 150;
 	static long[] semiprimes;
 
@@ -192,7 +192,7 @@ public class PerformanceHard {
 		for (int i=0; i< numPrimes; i++)
 		{
 			final Random rnd = new Random();
-			final int smallFactorBits = (bits / 3 )  +  rnd.nextInt(bits / 6 ) + 2;
+			final int smallFactorBits = (bits / 4 )  +  rnd.nextInt(bits / 4 ) + 2;
 			//			final int smallFactorBits = (bits / 2 );
 			//			final int smallFactorBits = (bits / 3) - 2;
 
