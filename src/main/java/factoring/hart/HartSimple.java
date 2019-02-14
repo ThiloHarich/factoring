@@ -101,9 +101,9 @@ public class HartSimple extends FactorAlgorithm {
 				return primes[primeIndex];
 			}
 		}
-		int i = 1;
+
 		try {
-			for (int k = i * K_MULT; ;k += K_MULT, primeIndex++, i++) {
+			for (int i =1, k = i * K_MULT; ;k += K_MULT, primeIndex++, i++) {
 				// do trial division
 				nDivPrime = (long) (N * primesInv[primeIndex] + DISCRIMINATOR);
 				if (nDivPrime * primes[primeIndex] == N) {
