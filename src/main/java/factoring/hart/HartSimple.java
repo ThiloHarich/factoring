@@ -76,7 +76,7 @@ public class HartSimple extends FactorAlgorithm {
 
 	@Override
 	public String getName() {
-		return "HartMod9";
+		return "HartSimple";
 	}
 
 	@Override
@@ -103,13 +103,13 @@ public class HartSimple extends FactorAlgorithm {
 			}
 		}
 
-		for (int i = 1, k = i * K_MULT; ;k += K_MULT, primeIndex++, i++) {
+		for (int sqrtIndex = 1, k = sqrtIndex * K_MULT; ;k += K_MULT, primeIndex++, sqrtIndex++) {
 			// do trial division
 			if ((long) (N * primesInv[primeIndex] + DISCRIMINATOR) * primes[primeIndex] == N)
 				return primes[primeIndex];
-			a = (long) (sqrt4N * sqrt[i] + ROUND_UP_DOUBLE);
+			a = (long) (sqrt4N * sqrt[sqrtIndex] + ROUND_UP_DOUBLE);
 			// adjust a
-			if ((i & 1) == 0)
+			if ((sqrtIndex & 1) == 0)
 				a |= 1;
 			else {
 				final long kPlusN = k + N;

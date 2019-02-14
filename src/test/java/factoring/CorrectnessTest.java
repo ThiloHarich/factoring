@@ -16,9 +16,9 @@ import com.google.common.collect.TreeMultiset;
 import de.tilman_neumann.jml.factor.FactorAlgorithm;
 import de.tilman_neumann.jml.factor.hart.Hart_TDiv_Race2;
 import de.tilman_neumann.util.SortedMultiset;
-import factoring.hart.HartSimple;
 import factoring.rho.PollardRhoBrentDouble52;
 import factoring.shift.ErrorShiftFact;
+import factoring.trial.TrialMultiplyUnrol;
 import factoring.trial.variant.TrialFact;
 
 public class CorrectnessTest {
@@ -42,22 +42,22 @@ public class CorrectnessTest {
 
 	@Test
 	public void testCorrect() {
-		final int bits = 49;
+		final int bits = 40;
 
 		final long begin = (1L << bits) +5;
-		//		begin =35l;
+		//		begin = 841l;
 		//		begin = 1073741835L;
 		//		final LehmanFactorFinder factorizer1 = new LehmanFactorFinder(50, 1, false);
 		//		final FactorAlgorithm factorizer2 = new SquFoF31();
 		//		final FactorAlgorithm factorizer1 = new LehmanMultiplier6_5_7(true);
-		final FactorAlgorithm factorizer2 = new HartSimple();
+		//		final FactorAlgorithm factorizer2 = new HartSimple();
 		//		final FactorAlgorithm factorizer2 = new HartMod8(true);
 		//		final FactorAlgorithm factorizer2 = new Hart_Fast(true);
 		final FactorAlgorithm factorizer1 = new Hart_TDiv_Race2();
 		//		final FactorAlgorithm factorizer1 = new LehmanMidRange7(0,1);
 		//		final FactorAlgorithm factorizer1 = new factoring.hart.Hart_TDiv_Race();
 		//		final FactorAlgorithm factorizer2 = new LehmanHart2();
-		//		final FactorizationOfLongs factorizer2 = new TrialMultiplyUnrol(1 << (bits/2));
+		final FactorAlgorithm factorizer2 = new TrialMultiplyUnrol(1 << (bits/2));
 		//		Factorizer factorizer1 = new Fermat24();
 		//		Factorizer factorizer1 = new LehmanBigFact(bitsMax, 1);
 		//		final Factorizer factorizer2 = new LehmanMod16Fact(bitsMax);

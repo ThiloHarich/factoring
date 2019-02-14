@@ -63,16 +63,15 @@ public class TrialMultiplyUnrol  extends FactorAlgorithm {
 		for (; primes[++primeIndex] <= maxFactor;) {
 			// round the number. Casting to long is faster then rounding the double number itself, but we
 			// have to prevent some cases were the number is not correctly rounded by adding a small number
-			final long nDivPrime = (long) (n*primesInv[primeIndex] + DISCRIMINATOR);
-			// TODO if we want to return all factors this must we a while loop and some special handling
 			// Unrolling the loop improves much (30%) do not know why
-			if (nDivPrime * primes[primeIndex] == n) {
-				return primes[primeIndex];
-			}
-			//			nDivPrime = (long) (n*primesInv[++primeIndex] + DISCRIMINATOR);
-			//			if (nDivPrime * primes[primeIndex] == n) {
-			//				return primes[primeIndex];
-			//			}
+			if ((long) (n*primesInv[primeIndex] + DISCRIMINATOR) * primes[primeIndex] == n) return primes[primeIndex];
+			if ((long) (n*primesInv[++primeIndex] + DISCRIMINATOR) * primes[primeIndex] == n) return primes[primeIndex];
+			if ((long) (n*primesInv[++primeIndex] + DISCRIMINATOR) * primes[primeIndex] == n) return primes[primeIndex];
+			if ((long) (n*primesInv[++primeIndex] + DISCRIMINATOR) * primes[primeIndex] == n) return primes[primeIndex];
+			if ((long) (n*primesInv[++primeIndex] + DISCRIMINATOR) * primes[primeIndex] == n) return primes[primeIndex];
+			if ((long) (n*primesInv[++primeIndex] + DISCRIMINATOR) * primes[primeIndex] == n) return primes[primeIndex];
+			if ((long) (n*primesInv[++primeIndex] + DISCRIMINATOR) * primes[primeIndex] == n) return primes[primeIndex];
+			if ((long) (n*primesInv[++primeIndex] + DISCRIMINATOR) * primes[primeIndex] == n) return primes[primeIndex];
 			// if the remaining part is less then the maximal prime, it must be a prime power
 		}
 		return 0;
@@ -86,6 +85,7 @@ public class TrialMultiplyUnrol  extends FactorAlgorithm {
 	public void setTestLimit(int pLimit) {
 		maxFactor = pLimit;
 	}
+
 
 
 	@Override
