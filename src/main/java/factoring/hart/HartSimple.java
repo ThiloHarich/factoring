@@ -102,36 +102,30 @@ public class HartSimple extends FactorAlgorithm {
 			}
 		}
 
-		try {
-			for (int i =1, k = i * K_MULT; ;k += K_MULT, primeIndex++, i++) {
-				// do trial division
-				nDivPrime = (long) (N * primesInv[primeIndex] + DISCRIMINATOR);
-				if (nDivPrime * primes[primeIndex] == N) {
-					return primes[primeIndex];
-				}
-				a = (long) (sqrt4N * sqrt[i] + ROUND_UP_DOUBLE);
-				// adjust a
-				if ((i & 1) == 0)
-					a |= 1;
-				else {
-					final long kPlusN = k + N;
-					if ((kPlusN & 3) == 0) {
-						a += ((kPlusN - a) & 7);
-					} else {
-						a += ((kPlusN - a) & 3);
-					}
-				}
-				test = a*a - k * fourN;
-				b = (long) Math.sqrt(test);
-				if (b*b == test) {
-					if ((gcd = gcdEngine.gcd(a+b, N))>1 && gcd < N)
-						return gcd;
+		for (int i =1, k = i * K_MULT; ;k += K_MULT, primeIndex++, i++) {
+			// do trial division
+			nDivPrime = (long) (N * primesInv[primeIndex] + DISCRIMINATOR);
+			if (nDivPrime * primes[primeIndex] == N) {
+				return primes[primeIndex];
+			}
+			a = (long) (sqrt4N * sqrt[i] + ROUND_UP_DOUBLE);
+			// adjust a
+			if ((i & 1) == 0)
+				a |= 1;
+			else {
+				final long kPlusN = k + N;
+				if ((kPlusN & 3) == 0) {
+					a += ((kPlusN - a) & 7);
+				} else {
+					a += ((kPlusN - a) & 3);
 				}
 			}
-		} catch (final ArrayIndexOutOfBoundsException e) {
-			// should never happen in this implementation; if it does then N > MAX_N
-			System.out.println(this.getClass().getSimpleName() + " failed to factor N=" + N + ". Cause: " + e);
-			return 0;
+			test = a*a - k * fourN;
+			b = (long) Math.sqrt(test);
+			if (b*b == test) {
+				if ((gcd = gcdEngine.gcd(a+b, N))>1 && gcd < N)
+					return gcd;
+			}
 		}
 	}
 }
