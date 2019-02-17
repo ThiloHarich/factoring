@@ -17,7 +17,7 @@ import java.math.BigInteger;
 
 import org.apache.log4j.Logger;
 
-import de.tilman_neumann.jml.factor.FactorAlgorithmBase;
+import de.tilman_neumann.jml.factor.FactorAlgorithm;
 import de.tilman_neumann.jml.factor.tdiv.TDiv63Inverse;
 import de.tilman_neumann.jml.gcd.Gcd63;
 import de.tilman_neumann.util.ConfigUtil;
@@ -34,7 +34,7 @@ import de.tilman_neumann.util.ConfigUtil;
  *
  * @authors Tilman Neumann + Thilo Harich
  */
-public class Lehman_Fast extends FactorAlgorithmBase {
+public class Lehman_Fast extends FactorAlgorithm {
 	private static final Logger LOG = Logger.getLogger(Lehman_FastOrig.class);
 
 	/** This is a constant that is below 1 for rounding up double values to long. */
@@ -129,8 +129,10 @@ public class Lehman_Fast extends FactorAlgorithmBase {
 
 		// We start with the middle range cases k == 0 (mod 6) and k == 3 (mod 6),
 		// which have the highest chance to find a factor. for small N gcd might return N
-		if ((    factor = lehmanEven (kTwoA,         kLimit))      > 1 && factor < N ||
-				(factor = lehmanOdd  (kTwoA + 3,     kLimit))      > 1 && factor < N /*||
+		if ((    factor = lehmanEven315 (kTwoA,         kLimit))      > 1 && factor < N ||
+				//				(factor = lehmanOdd315  (kTwoA + 3,     kLimit))      > 1 && factor < N ||
+				(factor = lehmanEven    (kTwoA,         kLimit))      > 1 && factor < N ||
+				(factor = lehmanOdd     (kTwoA + 3,     kLimit))      > 1 && factor < N /*||
 				(factor = lehmanEven (kLimit,        kLimit << 1)) > 1 && factor < N ||
 				(factor = lehmanOdd  (kLimit + 3, (3*kLimit)>> 1)) > 1 && factor < N*/)
 			return factor;
@@ -205,6 +207,27 @@ public class Lehman_Fast extends FactorAlgorithmBase {
 	 * @param kEnd
 	 * @return
 	 */
+	private long lehmanOdd315(int kBegin, final int kEnd) {
+		final double sqrt1260N = Math.sqrt(315) * sqrt4N;
+		final long N1260 = 1260 * N;
+		for (int k = kBegin; k <= kEnd; k += 6) {
+			long a = (long) (sqrt1260N * sqrt[k] + ROUND_UP_DOUBLE);
+			a = adjustMod8(a, k + N);
+			final long test = a*a - k * N1260;
+			final long b = (long) Math.sqrt(test);
+			if (b*b == test) {
+				return gcdEngine.gcd(a+b, N);
+			}
+		}
+		return -1;
+	}
+	/**
+	 * Find gcd(a+b) for a^2 - k* N = b^2, where k is odd.
+	 * In this case a has to be even and k + n == a mod 4.
+	 * @param kBegin
+	 * @param kEnd
+	 * @return
+	 */
 	private long lehmanOdd(int kBegin, final int kEnd) {
 		for (int k = kBegin; k <= kEnd; k += 6) {
 			long a = (long) (sqrt4N * sqrt[k] + ROUND_UP_DOUBLE);
@@ -218,6 +241,27 @@ public class Lehman_Fast extends FactorAlgorithmBase {
 		return -1;
 	}
 
+	/**
+	 * Find gcd(a+b) for a^2 - k* N = b^2, where k is even.
+	 * In this case a has to be odd.
+	 * @param kBegin
+	 * @param kEnd
+	 * @return
+	 */
+	private long lehmanEven315(int kBegin, final int kEnd) {
+		final double sqrt1260N = Math.sqrt(315) * sqrt4N;
+		final long N1260 = 1260 * N;
+		for (int k = kBegin; k <= kEnd; k += 6) {
+			// k even -> a must be odd
+			final long a = (long) (sqrt1260N  * sqrt[k] + ROUND_UP_DOUBLE) | 1L;
+			final long test = a*a - k * N1260 ;
+			final long b = (long) Math.sqrt(test);
+			if (b*b == test) {
+				return gcdEngine.gcd(a+b, N);
+			}
+		}
+		return -1;
+	}
 	/**
 	 * Find gcd(a+b) for a^2 - k* N = b^2, where k is even.
 	 * In this case a has to be odd.

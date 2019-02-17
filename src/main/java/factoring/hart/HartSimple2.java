@@ -29,7 +29,7 @@ import factoring.primes.Primes;
  *
  * @authors Thilo Harich & Tilman Neumann
  */
-public class HartSimple extends FactorAlgorithm {
+public class HartSimple2 extends FactorAlgorithm {
 	// Size of number is ~ 2^52
 	private static final double DISCRIMINATOR = 1.0/(1<<10); // experimental result
 
@@ -71,7 +71,7 @@ public class HartSimple extends FactorAlgorithm {
 	 * @param isHardSemiprime Set this to false for most of the numbers.
 	 * You should set this to true only if it is a semiprime with both factors near n^1/2.
 	 */
-	public HartSimple() {
+	public HartSimple2() {
 		final Primes primesGen = Primes.initPrimesEratosthenes(maxFactor );
 		primes = primesGen.primes;
 		primesInv = primesGen.primesInv;
@@ -116,7 +116,13 @@ public class HartSimple extends FactorAlgorithm {
 				a |= 1;
 			else {
 				final long kPlusN = k + N;
-				a += (kPlusN & 3) == 0 ? ((kPlusN - a) & 7) : ((kPlusN - a) & 3);
+				if ((kPlusN & 3) == 0) {
+					a += ((kPlusN - a) & 7);
+				} else {
+					final long adjust1 = (kPlusN - a) & 15;
+					final long adjust2 = (-kPlusN - a) & 15;
+					a += adjust1<adjust2 ? adjust1 : adjust2;
+				}
 			}
 			test = a*a - k * fourN;
 			b = (long) Math.sqrt(test);

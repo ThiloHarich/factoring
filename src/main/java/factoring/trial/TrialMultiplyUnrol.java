@@ -72,7 +72,6 @@ public class TrialMultiplyUnrol  extends FactorAlgorithm {
 			if ((long) (n*primesInv[++primeIndex] + DISCRIMINATOR) * primes[primeIndex] == n) return primes[primeIndex];
 			if ((long) (n*primesInv[++primeIndex] + DISCRIMINATOR) * primes[primeIndex] == n) return primes[primeIndex];
 			if ((long) (n*primesInv[++primeIndex] + DISCRIMINATOR) * primes[primeIndex] == n) return primes[primeIndex];
-			// if the remaining part is less then the maximal prime, it must be a prime power
 		}
 		return 0;
 	}
