@@ -98,28 +98,24 @@ public class Hart_TDiv_Race extends FactorAlgorithm {
 			if (pMinBits>0) {
 				// for the smallest primes we must do standard trial division
 				final int pMin = 1<<pMinBits;
-				for ( ; primes[i]<pMin; ) {
+				for ( ; primes[i]<pMin; i++, k += K_MULT) {
 					// tdiv step
-					//LOG.debug("test p[" + i + "] = " + primes[i]);
 					if (N%primes[i]==0) {
-						//LOG.debug("found factor " + primes[i]);
 						return primes[i];
 					}
 
 					a = (long) (sqrt4N * sqrt[i] + ROUND_UP_DOUBLE);
-					a = adjustAMod64(N, a, k, i);
-					i++;
+					a = adjustA(N, a, k, i);
 					test = a*a - k * fourN;
 					b = (long) Math.sqrt(test);
 					if (b*b == test) {
 						if ((gcd = gcdEngine.gcd(a+b, N))>1 && gcd<N) return gcd;
 					}
-					k += K_MULT;
 				}
 			}
 
 			// continue with Hart and fast inverse trial division
-			for (; ;) {
+			for (; ; i++, k += K_MULT) {
 				// tdiv step
 				//LOG.debug("test p[" + i + "] = " + primes[i]);
 				final long nDivPrime = (long) (N*reciprocals[i] + DISCRIMINATOR);
@@ -133,14 +129,12 @@ public class Hart_TDiv_Race extends FactorAlgorithm {
 
 				// odd k -> adjust a mod 8
 				a = (long) (sqrt4N * sqrt[i] + ROUND_UP_DOUBLE);
-				a = adjustAMod64(N, a, k, i);
-				i++;
+				a = adjustA(N, a, k, i);
 				test = a*a - k * fourN;
 				b = (long) Math.sqrt(test);
 				if (b*b == test) {
 					if ((gcd = gcdEngine.gcd(a+b, N))>1 && gcd<N) return gcd;
 				}
-				k += K_MULT;
 			}
 		} catch (final ArrayIndexOutOfBoundsException e) {
 			LOG.error("Hart_TDiv_Race: Failed to factor N=" + N + " because the arrays are too small.");
@@ -148,7 +142,7 @@ public class Hart_TDiv_Race extends FactorAlgorithm {
 		}
 	}
 
-	private long adjustAMod64(long N, long a, int k, int i) {
+	private long adjustA(long N, long a, int k, int i) {
 		if ((i & 1) == 0)
 			a |= 1;
 		else {
