@@ -12,7 +12,7 @@ import factoring.hart.Hart_TDiv_Race;
 public class PerformanceHard {
 
 	final static int bits = 40;
-	final static int numPrimes = 1730;
+	final static int numPrimes = 1630;
 	final static int loop = 200;
 	static long[] semiprimes;
 
@@ -51,6 +51,7 @@ public class PerformanceHard {
 		//		final FactorAlgorithm factorizer2 = new LehmanMidRange7(2, 3);
 		//				final FactorAlgorithm factorizer1 = new Hart_TDiv_Race();
 		final FactorAlgorithm factorizer1 = new Hart_TDiv_Race();
+		//		final FactorAlgorithm factorizer2 = new Hart_TDiv_Race();
 		final FactorAlgorithm factorizer2 = new de.tilman_neumann.jml.factor.hart.Hart_TDiv_Race();
 		//		final FactorAlgorithm factorizer1 = new Hart_Fast2(true);
 		//		final FactorAlgorithmBase factorizer1 = new LehmanHart(0);
@@ -205,7 +206,7 @@ public class PerformanceHard {
 		for (int i=0; i< numPrimes; i++)
 		{
 			final Random rnd = new Random();
-			final int smallFactorBits = (bits / 4 )  +  rnd.nextInt(bits / 4) + 1 ;
+			final int smallFactorBits = (bits / 4 )  +  rnd.nextInt(bits / 4);
 			//			final int smallFactorBits = (bits / 2 );
 			//			final int smallFactorBits = (bits / 3) - 2;
 

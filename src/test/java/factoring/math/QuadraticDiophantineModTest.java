@@ -33,7 +33,7 @@ public class QuadraticDiophantineModTest {
 	@Test
 	public void print63() {
 
-		final int mod = 63;
+		final int mod = 5*7*64;
 		final QuadraticDiophantineModBit solutionsMod = new QuadraticDiophantineModBit(mod);
 
 		solutionsMod.lehmanSolutions();

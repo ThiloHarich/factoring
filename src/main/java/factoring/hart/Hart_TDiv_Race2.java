@@ -31,14 +31,14 @@ import de.tilman_neumann.util.ConfigUtil;
  *
  * @authors Thilo Harich & Tilman Neumann
  */
-public class Hart_TDiv_Race extends FactorAlgorithm {
-	private static final Logger LOG = Logger.getLogger(Hart_TDiv_Race.class);
+public class Hart_TDiv_Race2 extends FactorAlgorithm {
+	private static final Logger LOG = Logger.getLogger(Hart_TDiv_Race2.class);
 
 	/**
 	 * We only test k-values that are multiples of this constant.
 	 * Best values for performance are 315, 45, 105, 15 and 3, in that order.
 	 */
-	private static final int K_MULT = 315;
+	private static final int K_MULT = 3 * 3 * 5 * 7;
 
 	/** Size of arrays, sufficient to factor all numbers <= 52 bit. */
 	private static final int I_MAX = 1<<20;
@@ -59,7 +59,7 @@ public class Hart_TDiv_Race extends FactorAlgorithm {
 	/**
 	 * Full constructor.
 	 */
-	public Hart_TDiv_Race() {
+	public Hart_TDiv_Race2() {
 		sqrt = new double[I_MAX];
 		primes = new int[I_MAX];
 		reciprocals = new double[I_MAX];
@@ -263,7 +263,7 @@ public class Hart_TDiv_Race extends FactorAlgorithm {
 				9
 		};
 
-		final Hart_TDiv_Race holf = new Hart_TDiv_Race();
+		final Hart_TDiv_Race2 holf = new Hart_TDiv_Race2();
 		for (final long N : testNumbers) {
 			final long factor = holf.findSingleFactor(N);
 			LOG.info("N=" + N + " has factor " + factor);
