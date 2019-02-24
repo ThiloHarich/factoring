@@ -48,6 +48,7 @@ public class LehmanMidRange5 extends FactorAlgorithm {
 	private static final double sqrt35 = Math.sqrt(35);
 	// 5 * 7 * 11 = 385
 	private static final double sqrt385 = Math.sqrt(385);
+	private static final double sqrt315 = Math.sqrt(315);
 
 
 	static {

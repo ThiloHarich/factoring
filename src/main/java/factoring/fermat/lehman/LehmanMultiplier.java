@@ -20,7 +20,7 @@ import org.apache.log4j.Logger;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 
-import de.tilman_neumann.jml.factor.FactorAlgorithmBase;
+import de.tilman_neumann.jml.factor.FactorAlgorithm;
 import de.tilman_neumann.jml.gcd.Gcd63;
 import de.tilman_neumann.util.ConfigUtil;
 import factoring.trial.TrialMultiply;
@@ -33,7 +33,7 @@ import factoring.trial.TrialMultiply;
  *
  * @authors Tilman Neumann + Thilo Harich
  */
-public class LehmanMultiplier extends FactorAlgorithmBase {
+public class LehmanMultiplier extends FactorAlgorithm {
 	private static final Logger LOG = Logger.getLogger(LehmanMultiplier.class);
 
 	/** This is a constant that is below 1 for rounding up double values to long. */

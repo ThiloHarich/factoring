@@ -28,8 +28,101 @@ import factoring.primes.Primes;
  * If test numbers are known to be random composites, then doTDivFirst=true will improve performance significantly.
  *
  * @authors Thilo Harich & Tilman Neumann
+ *
+ * a^2 - 4m * k*N = b^2 mod 9
+ * a^2 - b^2  = 4m * k*N  mod 9
+ * a^2 = 0,1,4,7  mod 9
+ * 4m = 0 mod 9 -> we have highest chances -> m=0 mod 9
+ * it is sufficient to ensure
+ * a^2 - 4m * k*N = 0,1,4,7 mod 9
+ * a^2 = 4m * k*N + 0,1,4 mod 9
+ * 0 -> 0 (0, 3, 6)
+ * 1 -> 1 (1, 8)
+ * 2 -> 4 (2, 5)
+ * 3 -> 0
+ * 4 -> 7 (4)
+ * 5 -> 4
+ * 6 -> 0
+ * 7 -> 4
+ * 8 -> 1
+ *
+ * mod 8:
+ * 0 -> 0 (0,4)
+ * 1 -> 1 (1,3,5,7) <- preferred solution
+ * 2 -> 4 (2,6)
+ * 3 -> 1
+ * 4 -> 0
+ * 5 -> 1
+ * 6 -> 4
+ * 7 -> 1
+ *
+ * -> we want a^2 - 4m * k*N = 1 mod 8
+ * -> we want a^2  = 1 + 4m * k*N mod 8 , m,N
+ * -> we want a^2  = 1 + 4k mod 8
+ * 1) k even
+ * a^2  = 1 mod 8  -> a odd, every second b fulfills the equation
+ * 2) k odd has no solution
+ * here b^2 must be 0,2 ->  2 out of 8 values for b will work
+
+ * mod 16:
+ * 0 ->  0 (0,4,8,12)
+ * 1 ->  1 (1,15,7,9)
+ * 2 ->  4 (2,6,10,14)
+ * 3 ->  9 (3,5,11,13)
+ * 4 ->  0
+ * 5 ->  9
+ * 6 ->  4
+ * 7 ->  1
+ * 8 ->  0
+ * 9 ->  1
+ *10 ->  4
+ *11 ->  9
+ *12 ->  0
+ *13 ->  9
+ *14 ->  4
+ *15 ->  1
+ * mod 32:
+ * 0 ->  0 (0,8,16,24)
+ * 1 ->  1 (1,15,17,31)
+ * 2 ->  4 (2,6,10,14,18,22,26,30) <- preferred sol.
+ * 3 ->  9 4*
+ * 4 -> 16 (4,12,20,28)
+ * 5 -> 25 4*
+ * 6 ->  4
+ * 7 -> 17 4*
+ * 8 ->  0
+ * 9 -> 17
+ *10 ->  4
+ *11 -> 25
+ *12 -> 16
+ *13 ->  9
+ *14 ->  4
+ *15 ->  1
+ *16 ->  0
+ * k = even
+ * a^2 - 4m *k* N = 4, mod 32 , only possible for m*k*N = -1,0,3 mod 8
+ * a^2  = 4 + 4m *k* N mod 32
+ * a^2  = 4 * (1 + m *k* N) mod 32  ->  a^2 = 0,4,16 <-> a*a & 3 == 0
+ * ->  1+ m*k * N = 0,1,4 mod 8
+ * ->  m*k * N = 7,0,3 mod 8
+ * m = 315 = 27 mod 32
+ * -> a^2 - b^2 != 2,6
+ * 4m * k*N != 2,6 mod 9
+ *  k != (4*m*N) ^-1 * i mod 9 , i=2,6
+ *  sei m= 5*7 = 35, N != 0 mod 3
+ *  k != (4*35*N) ^-1 * i mod 9 , i=2,6
+ *  k != 5^-1 * N ^-1 * i mod 9 , i=2,6
+ *  k != 2 * N ^-1 * i mod 9 , i=2,6
+ *  k != 4 * N ^-1  mod 9 and   <-> k*N != 4 mod 9
+ *  k != 3 * N ^-1  mod 9 and   <-> k*N != 3 mod 9
+ *  -> check it
+ *  a^2 - 4* 35 * 4 = b^2 mod 9
+ *  a^2 - 5 * 4 = b^2 mod 9
+ *  a^2 - 5 * 3 = b^2 mod 9
+
+ *  is this also working for other mods?
  */
-public class HartSimple2 extends FactorAlgorithm {
+public class HartSimple3 extends FactorAlgorithm {
 	// Size of number is ~ 2^52
 	private static final double DISCRIMINATOR = 1.0/(1<<10); // experimental result
 
@@ -40,8 +133,7 @@ public class HartSimple2 extends FactorAlgorithm {
 	 * Since the K_MULT consists out of 4 primes these numbers have a 2^4 = 16 times
 	 * higher chance of being a square then random numbers. This is very helpful
 	 */
-	//	private static final int K_MULT = 3 * 3 * 5 * 7;
-	private static final int K_MULT = 3 * 3 * 5 * 5;
+	private static final int K_MULT = 3 * 3 * 5 * 7 /*11 * 13*/;
 
 	/** This constant is used for fast rounding of double values to long. */
 	private static final double ROUND_UP_DOUBLE = 0.9999999665;
@@ -72,7 +164,7 @@ public class HartSimple2 extends FactorAlgorithm {
 	 * @param isHardSemiprime Set this to false for most of the numbers.
 	 * You should set this to true only if it is a semiprime with both factors near n^1/2.
 	 */
-	public HartSimple2() {
+	public HartSimple3() {
 		final Primes primesGen = Primes.initPrimesEratosthenes(maxFactor );
 		primes = primesGen.primes;
 		primesInv = primesGen.primesInv;
@@ -111,8 +203,16 @@ public class HartSimple2 extends FactorAlgorithm {
 			// do trial division
 			if ((long) (N * primesInv[primeIndex] + DISCRIMINATOR) * primes[primeIndex] == N)
 				return primes[primeIndex];
+
+			//			final long kN = k * N;
+			//			if ((sqrtIndex & 1) ==  1 && (kN & 7) > 2 && (kN & 7) != 4)
+			//				continue;
+
 			final double aDouble = sqrt4N * sqrt[sqrtIndex];
 			a = (long) (aDouble + ROUND_UP_DOUBLE);
+
+			// a^2 - 4m * k*n = b^2   mod 9*64 ; 4m = 4*5*7 = 140
+			// a^2 - 140 * k*n = b^2   mod 9*64 ; 4m = 4*5*7 = 140  , we can
 			// adjust a
 			if ((sqrtIndex & 1) == 0)
 				a |= 1;
@@ -126,11 +226,16 @@ public class HartSimple2 extends FactorAlgorithm {
 					a += adjust1<adjust2 ? adjust1 : adjust2;
 				}
 			}
+
 			test = a*a - k * fourN;
 			b = (long) Math.sqrt(test);
-			if (b*b == test && (gcd = gcdEngine.gcd(a+b, N))>1 && gcd < N) {
+			if (test == b*b && (gcd = gcdEngine.gcd(a+b, N))>1 && gcd < N) {
+				//					System.out.print("," + test % 32);
+				if ((b*b) % 32 == 4)
+					System.out.print("," + a % 32);
 				return gcd;
 			}
+
 		}
 	}
 }

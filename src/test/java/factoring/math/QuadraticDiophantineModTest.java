@@ -22,4 +22,27 @@ public class QuadraticDiophantineModTest {
 		}
 
 	}
+	@Test
+	public void printHart() {
+
+		final int mod = 16;
+		final QuadraticDiophantineModBit solutionsMod = new QuadraticDiophantineModBit(mod);
+
+		solutionsMod.lehmanSolutions();
+	}
+	@Test
+	public void print63() {
+
+		final int mod = 63;
+		final QuadraticDiophantineModBit solutionsMod = new QuadraticDiophantineModBit(mod);
+
+		solutionsMod.lehmanSolutions();
+		final int[] x = solutionsMod.xArray(0);
+
+		for (final int element : x) {
+			if (element < 0)
+				break;
+			System.out.print(", " + element);
+		}
+	}
 }

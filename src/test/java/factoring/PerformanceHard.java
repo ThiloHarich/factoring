@@ -4,8 +4,7 @@ import java.math.BigInteger;
 import java.util.Random;
 
 import de.tilman_neumann.jml.factor.FactorAlgorithm;
-import factoring.hart.HartSimple;
-import factoring.hart.HartSimple2;
+import factoring.hart.Hart_TDiv_Race;
 
 //import de.tilman_neumann.math.factor.CombinedFactorAlgorithm;
 //import de.tilman_neumann.math.factor.FactorAlgorithm;
@@ -42,24 +41,28 @@ public class PerformanceHard {
 		//		final FactorizationOfLongs factorizer2 = new LehmanFactorFinder(bits, 2.f, false);
 		//		final FactorizationOfLongs factorizer2 = new PollardRhoBrentDouble52();
 		//		final FactorAlgorithmBase factorizer1 = new LehmanMultiplier6_5_7_11(true);
-		//		final FactorAlgorithm factorizer1 = new Lehman_Fast(false);
-		//		final FactorAlgorithm factorizer2 = new Lehman_Fast(false);
+		//		final FactorAlgorithm factorizer2 = new Lehman_FastOrig(true);
+		//				final FactorAlgorithm factorizer1 = new Lehman_FastOrig(false);
+		//		final FactorAlgorithm factorizer2 = new Lehman_Fast2(true);
+		//		final FactorizationOfLongs factorizer1 = new LehmanMod30(false);
+		//		final FactorAlgorithm factorizer1 = new LehmanMultiplier(false);
 		//				final FactorAlgorithmBase factorizer2 = new LehmanMidRange(false, 1.);
 		//		final FactorAlgorithmBase factorizer2= new LehmanMidRange5(1);
 		//		final FactorAlgorithm factorizer2 = new LehmanMidRange7(2, 3);
-		//		final FactorAlgorithm factorizer1 = new Hart_TDiv_Race2();
-		//		final FactorAlgorithm factorizer2 = new Hart_TDiv_Race2();
-		//		final FactorAlgorithm factorizer2 = new Hart_TDiv_Race();
+		//				final FactorAlgorithm factorizer1 = new Hart_TDiv_Race();
+		final FactorAlgorithm factorizer1 = new Hart_TDiv_Race();
+		final FactorAlgorithm factorizer2 = new de.tilman_neumann.jml.factor.hart.Hart_TDiv_Race();
 		//		final FactorAlgorithm factorizer1 = new Hart_Fast2(true);
 		//		final FactorAlgorithmBase factorizer1 = new LehmanHart(0);
 		//		final FactorAlgorithmBase factorizer1 = new LehmanHart2();
-		final FactorAlgorithm factorizer1 = new HartSimple();
-		final FactorAlgorithm factorizer2 = new HartSimple2();
+		//		final FactorAlgorithm factorizer1 = new HartSimple2();
+		//		final FactorAlgorithm factorizer2 = new HartSimple4();
+		//		final FactorAlgorithm factorizer1 = new HartSimple4();
 		//		final FactorAlgorithm factorizer1 = new HartSimpleMin();
 		//		final FactorAlgorithm factorizer2 = new HartSimpleMin();
 		//		final FactorAlgorithm factorizer1 = new HartMod8(true);
 		//		final FactorAlgorithm factorizer2 = new HartMod8(true);
-		//		final FactorAlgorithmBase factorizer1 = new LehmanMidRange2(false, 1.4);
+		//		final FactorAlgorithm factorizer1 = new LehmanMidRange5(1);
 		//		final FactorAlgorithmBase factorizer1 = new LehmanMultiplier6_5_7(true);
 		semiprimes = makeSemiPrimesList(bits, numPrimes);
 		test2(factorizer1);
@@ -202,7 +205,7 @@ public class PerformanceHard {
 		for (int i=0; i< numPrimes; i++)
 		{
 			final Random rnd = new Random();
-			final int smallFactorBits = (bits / 3 )  +  rnd.nextInt(bits / 6) + 1 ;
+			final int smallFactorBits = (bits / 4 )  +  rnd.nextInt(bits / 4) + 1 ;
 			//			final int smallFactorBits = (bits / 2 );
 			//			final int smallFactorBits = (bits / 3) - 2;
 

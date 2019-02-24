@@ -17,7 +17,7 @@ import java.math.BigInteger;
 
 import org.apache.log4j.Logger;
 
-import de.tilman_neumann.jml.factor.FactorAlgorithmBase;
+import de.tilman_neumann.jml.factor.FactorAlgorithm;
 import de.tilman_neumann.jml.factor.tdiv.TDiv63Inverse;
 import de.tilman_neumann.jml.gcd.Gcd63;
 import de.tilman_neumann.util.ConfigUtil;
@@ -34,7 +34,7 @@ import de.tilman_neumann.util.ConfigUtil;
  *
  * @authors Tilman Neumann + Thilo Harich
  */
-public class Lehman_FastOrig extends FactorAlgorithmBase {
+public class Lehman_FastOrig extends FactorAlgorithm {
 	private static final Logger LOG = Logger.getLogger(Lehman_FastOrig.class);
 
 	/** This is a constant that is below 1 for rounding up double values to long. */
@@ -109,7 +109,7 @@ public class Lehman_FastOrig extends FactorAlgorithmBase {
 		// We start with the middle range cases k == 0 (mod 6) and k == 3 (mod 6),
 		// which have the highest chance to find a factor. for k=6 and N small gcd might return N
 		if ((factor = lehmanEven(kTwoA, kLimit)) > 1 && factor < N ||
-				(factor = lehmanOdd(kTwoA + 3, kLimit)) > 1)
+				(factor = lehmanOdd(kTwoA + 3, kLimit))  > 1 && factor < N)
 			return factor;
 
 
@@ -193,7 +193,15 @@ public class Lehman_FastOrig extends FactorAlgorithmBase {
 	private long lehmanOdd(int kBegin, final int kLimit) {
 		for (int k = kBegin; k <= kLimit; k += 6) {
 			long a = (long) (sqrt4N * sqrt[k] + ROUND_UP_DOUBLE);
-			a = adjustMod8(a, k + N);
+			//			a = adjustMod8(a, k + N);
+			final long kPlusN = k + N;
+			if ((kPlusN & 3) == 0) {
+				a += ((kPlusN - a) & 7);
+			} else {
+				final long adjust1 = (kPlusN - a) & 15;
+				final long adjust2 = (-kPlusN - a) & 15;
+				a += adjust1<adjust2 ? adjust1 : adjust2;
+			}
 			final long test = a*a - k * fourN;
 			final long b = (long) Math.sqrt(test);
 			if (b*b == test) {

@@ -15,8 +15,6 @@ package factoring.fermat.lehman;
 
 import java.util.Collection;
 
-import org.apache.log4j.Logger;
-
 import factoring.FactorFinder;
 import factoring.FactorizationOfLongs;
 import factoring.math.PrimeMath;
@@ -31,7 +29,6 @@ import factoring.trial.TrialInvFact;
  * @authors Tilman Neumann + Thilo Harich
  */
 public class LehmanMod30 implements FactorizationOfLongs, FactorFinder {
-	private static final Logger LOG = Logger.getLogger(Lehman_Fast30.class);
 
 	/** This is a constant that is below 1 for rounding up double values to long. */
 	private static final double ROUND_UP_DOUBLE = 0.9999999665;

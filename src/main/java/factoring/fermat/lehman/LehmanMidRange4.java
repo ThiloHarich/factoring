@@ -17,7 +17,7 @@ import java.math.BigInteger;
 
 import org.apache.log4j.Logger;
 
-import de.tilman_neumann.jml.factor.FactorAlgorithmBase;
+import de.tilman_neumann.jml.factor.FactorAlgorithm;
 import de.tilman_neumann.jml.gcd.Gcd63;
 import de.tilman_neumann.util.ConfigUtil;
 import factoring.trial.TrialMultiplyCorrection;
@@ -34,7 +34,7 @@ import factoring.trial.TrialMultiplyCorrection;
  *
  * @authors Tilman Neumann + Thilo Harich
  */
-public class LehmanMidRange4 extends FactorAlgorithmBase {
+public class LehmanMidRange4 extends FactorAlgorithm {
 	private static final Logger LOG = Logger.getLogger(Lehman_FastOrig.class);
 
 	/** This is a constant that is below 1 for rounding up double values to long. */

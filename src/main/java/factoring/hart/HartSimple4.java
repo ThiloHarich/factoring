@@ -29,7 +29,7 @@ import factoring.primes.Primes;
  *
  * @authors Thilo Harich & Tilman Neumann
  */
-public class HartSimple2 extends FactorAlgorithm {
+public class HartSimple4 extends FactorAlgorithm {
 	// Size of number is ~ 2^52
 	private static final double DISCRIMINATOR = 1.0/(1<<10); // experimental result
 
@@ -40,8 +40,7 @@ public class HartSimple2 extends FactorAlgorithm {
 	 * Since the K_MULT consists out of 4 primes these numbers have a 2^4 = 16 times
 	 * higher chance of being a square then random numbers. This is very helpful
 	 */
-	//	private static final int K_MULT = 3 * 3 * 5 * 7;
-	private static final int K_MULT = 3 * 3 * 5 * 5;
+	private static final int K_MULT = 3 * 3 * 5 * 7;
 
 	/** This constant is used for fast rounding of double values to long. */
 	private static final double ROUND_UP_DOUBLE = 0.9999999665;
@@ -72,7 +71,7 @@ public class HartSimple2 extends FactorAlgorithm {
 	 * @param isHardSemiprime Set this to false for most of the numbers.
 	 * You should set this to true only if it is a semiprime with both factors near n^1/2.
 	 */
-	public HartSimple2() {
+	public HartSimple4() {
 		final Primes primesGen = Primes.initPrimesEratosthenes(maxFactor );
 		primes = primesGen.primes;
 		primesInv = primesGen.primesInv;
@@ -107,30 +106,54 @@ public class HartSimple2 extends FactorAlgorithm {
 			}
 		}
 
-		for (int sqrtIndex = 1, k = sqrtIndex * K_MULT; ;k += K_MULT, primeIndex++, sqrtIndex++) {
-			// do trial division
-			if ((long) (N * primesInv[primeIndex] + DISCRIMINATOR) * primes[primeIndex] == N)
-				return primes[primeIndex];
-			final double aDouble = sqrt4N * sqrt[sqrtIndex];
-			a = (long) (aDouble + ROUND_UP_DOUBLE);
-			// adjust a
-			if ((sqrtIndex & 1) == 0)
-				a |= 1;
-			else {
-				final long kPlusN = k + N;
-				if ((kPlusN & 3) == 0) {
-					a += ((kPlusN - a) & 7);
-				} else {
-					final long adjust1 = (kPlusN - a) & 15;
-					final long adjust2 = (-kPlusN - a) & 15;
-					a += adjust1<adjust2 ? adjust1 : adjust2;
+		int k = K_MULT;
+		for (int i = 1; ;) {
+			// tdiv step
+			//LOG.debug("test p[" + i + "] = " + primes[i]);
+			long nDivPrime = (long) (N*primesInv[primeIndex] + DISCRIMINATOR);
+			if (nDivPrime * primes[primeIndex] == N) {
+				// nDivPrime is very near to an integer
+				if (N%primes[primeIndex]==0) {
+					//LOG.debug("Found factor " + primes[i]);
+					return primes[i];
 				}
+			}
+			primeIndex++;
+			// odd k -> adjust a mod 8
+			a = (long) (sqrt4N * sqrt[i++] + ROUND_UP_DOUBLE);
+			final long kPlusN = k + N;
+			if ((kPlusN & 3) == 0) {
+				a += ((kPlusN - a) & 7);
+			} else {
+				final long adjust1 = (kPlusN - a) & 15;
+				final long adjust2 = (-kPlusN - a) & 15;
+				a += adjust1<adjust2 ? adjust1 : adjust2;
 			}
 			test = a*a - k * fourN;
 			b = (long) Math.sqrt(test);
-			if (b*b == test && (gcd = gcdEngine.gcd(a+b, N))>1 && gcd < N) {
-				return gcd;
+			if (b*b == test) {
+				if ((gcd = gcdEngine.gcd(a+b, N))>1 && gcd<N) return gcd;
 			}
+			k += K_MULT;
+
+			nDivPrime = (long) (N*primesInv[primeIndex] + DISCRIMINATOR);
+			if (nDivPrime * primes[primeIndex] == N) {
+				// nDivPrime is very near to an integer
+				if (N%primes[primeIndex]==0) {
+					//LOG.debug("Found factor " + primes[i]);
+					return primes[i];
+				}
+			}
+			primeIndex++;
+
+			// even k -> a must be odd
+			a = (long) (sqrt4N * sqrt[i++] + ROUND_UP_DOUBLE) | 1L;
+			test = a*a - k * fourN;
+			b = (long) Math.sqrt(test);
+			if (b*b == test) {
+				if ((gcd = gcdEngine.gcd(a+b, N))>1 && gcd<N) return gcd;
+			}
+			k += K_MULT;
 		}
 	}
 }

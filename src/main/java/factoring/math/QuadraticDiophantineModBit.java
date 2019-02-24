@@ -1,5 +1,12 @@
 package factoring.math;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
 import com.google.common.math.IntMath;
 
 /**
@@ -272,5 +279,43 @@ public class QuadraticDiophantineModBit {
 		}
 		x[resIndex++] = -1;
 		return x;
+	}
+
+	/**
+	 * These are solutions for a^2 - 4kn = b^2 mod mod.
+	 *
+	 * @return an array nextSolution where nextSolution[kn][a/2] holds a value a' with
+	 * a'^2 - 4kn = b^2 modulus mod
+	 */
+	public byte[] lehmanSolutions() {
+		final byte [] diffToSolution = new byte[(mod/4+1) * mod];
+
+		for (int kn=1; kn< mod / 4; kn+= 2) {
+			final int fourKN = 4 * kn;
+			final int[] x = xArray(-fourKN % mod);
+			final List<Integer> sorted = new ArrayList<>();
+			for (int i = 0; x[i] >= 0; i++) {
+				sorted.add(x[i]);
+			}
+			sorted.sort(Comparator.naturalOrder());
+			final Object[] array = sorted.toArray();
+			for (int a = 0; a < mod; a++) {
+				final int index = Arrays.binarySearch(array, a);
+				final byte diff;
+				if (a > sorted.get(sorted.size()-1)) {
+					diff = (byte) (mod+sorted.get(0) - a);
+				}
+				else
+					diff = (byte) (index >= 0 ? 0 : sorted.get(-index - 1) - a);
+				diffToSolution[mod * kn + a] = diff;
+			}
+			final List<Integer> currentDiffs = new ArrayList<>();
+			IntStream.range(mod * kn, mod * (kn+1)).forEach(i -> currentDiffs.add(Integer.valueOf((diffToSolution[i]))));
+			final String diffString = IntStream.range(0, mod).mapToObj(i -> Integer.toString(i) + "->" + currentDiffs.get(i)).collect(Collectors.joining(", "));
+			final String solutionsString = sorted.stream().map(i -> Integer.toString(i)).collect(Collectors.joining(", "));
+			//			final String diffString = Arrays.stream(diffToSolution[fourKN%16]).mapToObj(Integer::toString).collect(Collectors.joining(", "));
+			System.out.println("k*n : \t" + ((kn) %mod) + " : \t" + solutionsString + " : \t" + diffString);
+		}
+		return diffToSolution;
 	}
 }
