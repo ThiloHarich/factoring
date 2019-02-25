@@ -5,6 +5,7 @@ import java.util.Random;
 
 import de.tilman_neumann.jml.factor.FactorAlgorithm;
 import factoring.hart.Hart_TDiv_Race;
+import factoring.hart.Hart_TDiv_Race2;
 
 //import de.tilman_neumann.math.factor.CombinedFactorAlgorithm;
 //import de.tilman_neumann.math.factor.FactorAlgorithm;
@@ -50,9 +51,9 @@ public class PerformanceHard {
 		//		final FactorAlgorithmBase factorizer2= new LehmanMidRange5(1);
 		//		final FactorAlgorithm factorizer2 = new LehmanMidRange7(2, 3);
 		//				final FactorAlgorithm factorizer1 = new Hart_TDiv_Race();
-		final FactorAlgorithm factorizer1 = new Hart_TDiv_Race();
-		//		final FactorAlgorithm factorizer2 = new Hart_TDiv_Race();
-		final FactorAlgorithm factorizer2 = new de.tilman_neumann.jml.factor.hart.Hart_TDiv_Race();
+		final FactorAlgorithm factorizer2 = new Hart_TDiv_Race();
+		final FactorAlgorithm factorizer1 = new Hart_TDiv_Race2();
+		//		final FactorAlgorithm factorizer2 = new de.tilman_neumann.jml.factor.hart.Hart_TDiv_Race();
 		//		final FactorAlgorithm factorizer1 = new Hart_Fast2(true);
 		//		final FactorAlgorithmBase factorizer1 = new LehmanHart(0);
 		//		final FactorAlgorithmBase factorizer1 = new LehmanHart2();
