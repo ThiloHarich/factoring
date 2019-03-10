@@ -14,12 +14,8 @@
 package factoring.fermat.lehman;
 
 import java.math.BigInteger;
-import java.util.Collection;
-import java.util.Map.Entry;
 
 import org.apache.log4j.Logger;
-
-import com.google.common.collect.TreeMultimap;
 
 import de.tilman_neumann.jml.factor.FactorAlgorithm;
 import de.tilman_neumann.jml.factor.tdiv.TDiv63Inverse;
@@ -50,10 +46,6 @@ public class Lehman_CustomKOrderTh extends FactorAlgorithm {
 	private final double[] sqrts1;
 	private final double[] sqrtInvs1;
 	private final int[] ks1;
-	private final int[] levelCounts = new int[maxLevel+1];
-	TreeMultimap<Integer, Multiplier> positionToK = TreeMultimap.create();
-
-
 
 	private long N;
 	private long fourN;
@@ -76,33 +68,14 @@ public class Lehman_CustomKOrderTh extends FactorAlgorithm {
 		sqrtInvs1 = new double[K_MAX+1];
 		ks1 = new int [K_MAX+1];
 
-		for (int k = 1; k <= K_MAX; k++) {
-			if (k % 315 == 0) {
-				addToArray(k, 2 * ++levelCounts[0]);
-			}
-			else if (k % 105 == 0) {
-				addToArray(k, ++levelCounts[1]);
-			}
+		for (int pos = 0; pos < K_MAX; pos ++) {
+			ks[pos] = 105 * (pos+1);
+			sqrts[pos] = Math.sqrt(105 * (pos+1));
+			sqrtInvs[pos] = 1 / sqrts[pos];
+			ks1[pos] = pos+1;
+			sqrts1[pos] = Math.sqrt(pos+1);
+			sqrtInvs1[pos] = 1 / sqrts1[pos];
 		}
-
-		int pos = 0;
-		for (final Entry<Integer, Collection<Multiplier>> entry : positionToK.asMap().entrySet()) {
-			for (final Multiplier multiplier : entry.getValue()) {
-				ks[pos] = multiplier.value;
-				sqrts[pos] = multiplier.sqrt;
-				sqrtInvs[pos] = multiplier.sqrtInv;
-				ks1[pos] = pos;
-				sqrts1[pos] = Math.sqrt(pos);
-				sqrtInvs1[pos] = 1 / sqrts1[pos];
-				pos++;
-			}
-		}
-	}
-
-	private void addToArray(int k, int index) {
-		final double sqrtK = Math.sqrt(k);
-		final Multiplier multiplier = new Multiplier(k, sqrtK, 1.0/sqrtK);
-		positionToK.put(index, multiplier);
 	}
 
 	@Override
