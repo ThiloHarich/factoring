@@ -1,20 +1,27 @@
 package factoring;
 
 import java.math.BigInteger;
+import java.util.Iterator;
+import java.util.Map.Entry;
 import java.util.Random;
 
 import de.tilman_neumann.jml.factor.FactorAlgorithm;
-import factoring.hart.Hart_TDiv_Race;
-import factoring.hart.Hart_TDiv_Race2;
+import de.tilman_neumann.jml.factor.lehman.Lehman_CustomKOrder;
+import de.tilman_neumann.jml.factor.tdiv.TDiv63Inverse;
+import factoring.fermat.lehman.Lehman_CustomKOrderTh;
+import factoring.hart.Hart_FastT2;
+import factoring.math.PrimeMath;
 
 //import de.tilman_neumann.math.factor.CombinedFactorAlgorithm;
 //import de.tilman_neumann.math.factor.FactorAlgorithm;
 
 public class PerformanceHard {
 
-	final static int bits = 40;
-	final static int numPrimes = 1630;
-	final static int loop = 200;
+	// 37,
+	final static int bits = 38;
+	final static int numPrimes = 10300;
+	final static int loop = 50;
+	//	final static int loop = 1;
 	static long[] semiprimes;
 
 	public static void main(String[] args) {
@@ -44,17 +51,24 @@ public class PerformanceHard {
 		//		final FactorAlgorithmBase factorizer1 = new LehmanMultiplier6_5_7_11(true);
 		//		final FactorAlgorithm factorizer2 = new Lehman_FastOrig(true);
 		//				final FactorAlgorithm factorizer1 = new Lehman_FastOrig(false);
-		//		final FactorAlgorithm factorizer2 = new Lehman_Fast2(true);
+		//		final FactorAlgorithm factorizer2 = new Lehman_Fast(false);
+		//		final FactorAlgorithm factorizer1 = new Lehman_Fast(false);
 		//		final FactorizationOfLongs factorizer1 = new LehmanMod30(false);
 		//		final FactorAlgorithm factorizer1 = new LehmanMultiplier(false);
 		//				final FactorAlgorithmBase factorizer2 = new LehmanMidRange(false, 1.);
 		//		final FactorAlgorithmBase factorizer2= new LehmanMidRange5(1);
 		//		final FactorAlgorithm factorizer2 = new LehmanMidRange7(2, 3);
 		//				final FactorAlgorithm factorizer1 = new Hart_TDiv_Race();
-		final FactorAlgorithm factorizer2 = new Hart_TDiv_Race();
-		final FactorAlgorithm factorizer1 = new Hart_TDiv_Race2();
+		//		final FactorAlgorithm factorizer2 = new Hart_TDiv_Race();
+		//		final FactorAlgorithm factorizer1 = new Hart_TDiv_Race2();
 		//		final FactorAlgorithm factorizer2 = new de.tilman_neumann.jml.factor.hart.Hart_TDiv_Race();
-		//		final FactorAlgorithm factorizer1 = new Hart_Fast2(true);
+		//		final FactorAlgorithm factorizer2 = new Lehman_CustomKOrder(true);
+		final FactorAlgorithm factorizer2 = new Lehman_CustomKOrder(false);
+		//		final FactorAlgorithm factorizer1 = new Lehman_CustomKOrderTh(true);
+		final FactorAlgorithm factorizer1 = new Lehman_CustomKOrderTh(false);
+		//		final FactorAlgorithm factorizer1 = new Hart_FastT(true);
+		//		final FactorAlgorithm factorizer1 = new Hart_FastT(true);
+		//		final FactorAlgorithm factorizer1 = new Hart_FastT5(true);
 		//		final FactorAlgorithmBase factorizer1 = new LehmanHart(0);
 		//		final FactorAlgorithmBase factorizer1 = new LehmanHart2();
 		//		final FactorAlgorithm factorizer1 = new HartSimple2();
@@ -66,7 +80,8 @@ public class PerformanceHard {
 		//		final FactorAlgorithm factorizer2 = new HartMod8(true);
 		//		final FactorAlgorithm factorizer1 = new LehmanMidRange5(1);
 		//		final FactorAlgorithmBase factorizer1 = new LehmanMultiplier6_5_7(true);
-		semiprimes = makeSemiPrimesList(bits, numPrimes);
+		//		semiprimes = makeSemiPrimesList(bits, numPrimes);
+		semiprimes = makeSemiPrimesListReal(bits, numPrimes);
 		test2(factorizer1);
 
 		//		test2(factorizer1);
@@ -110,6 +125,16 @@ public class PerformanceHard {
 		System.out.println("time for setup : " + (end - start));
 
 		findFactors(factorizer, semiprimes, loop);
+		//		for (final Entry<BigInteger, Integer> entry : Hart_FastT2.factors.entrySet()) {
+		final Iterator<Entry<BigInteger, Integer>> iterator = Hart_FastT2.factors.entrySet().iterator();
+		final Iterator<Entry<BigInteger, Integer>> iterator2 = Hart_FastT2.factorsExpo.entrySet().iterator();
+		for (int i = 0; i < Hart_FastT2.factors.entrySet().size(); i++) {
+			final Entry<BigInteger, Integer> entry = iterator.next();
+			final Entry<BigInteger, Integer> entry2 = iterator2.next();
+			System.out.println("factor : \t" + entry.getKey() + " : \t" + (entry.getValue() * entry.getKey().longValue()) / (double) (Hart_FastT2.factorNumber)+
+					"\tfactorExpo : \t" + entry2.getKey() + " : \t" + (entry2.getValue() * entry2.getKey().longValue()) / (double) (Hart_FastT2.factorNumber - 1));
+		}
+
 		findFactors(factorizer, semiprimes, loop);
 		findFactors(factorizer, semiprimes, loop);
 		findFactors(factorizer, semiprimes, loop);
@@ -206,14 +231,39 @@ public class PerformanceHard {
 		final long[] semiPrimes = new long[numPrimes];
 		for (int i=0; i< numPrimes; i++)
 		{
-			final Random rnd = new Random();
-			final int smallFactorBits = (bits / 4 )  +  rnd.nextInt(bits / 4);
+			Random rnd = new Random();
+			final int smallFactorBits = (bits / 4 )  +  rnd.nextInt(bits / 4) + 4;
 			//			final int smallFactorBits = (bits / 2 );
 			//			final int smallFactorBits = (bits / 3) - 2;
 
+			rnd = new Random();
 			final BigInteger fact1 = BigInteger.probablePrime(smallFactorBits, rnd);
-			final BigInteger fact2 = BigInteger.probablePrime(bits - smallFactorBits, rnd);
+			final int bigFactorBits = bits - smallFactorBits;
+			rnd = new Random();
+			final BigInteger fact2 = BigInteger.probablePrime(bigFactorBits, rnd);
 			semiPrimes[i] = fact1.longValue() * fact2.longValue();
+		}
+
+		return semiPrimes;
+	}
+
+	public static long[] makeSemiPrimesListReal(int bits, int numPrimes) {
+		final long[] semiPrimes = new long[numPrimes];
+		final int limit = (int) Math.pow(2,bits / 3.0);
+		final TDiv63Inverse factorizer = new TDiv63Inverse(limit);
+
+		//		final Random rnd = new Random();
+		//		final long offset = Math.abs(rnd.nextInt());
+		final long offset = 0;
+		long candidate = (1l << bits) + offset;
+		int j = 0;
+		for (int i=0; i< numPrimes; candidate++)
+		{
+			final BigInteger findSingleFactor = factorizer.findSingleFactor(BigInteger.valueOf(candidate));
+			if (findSingleFactor == BigInteger.ONE && !PrimeMath.isPrime(candidate)) {
+				semiPrimes[j++] = candidate;
+				i++;
+			}
 		}
 
 		return semiPrimes;

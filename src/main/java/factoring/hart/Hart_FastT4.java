@@ -32,8 +32,8 @@ import de.tilman_neumann.util.ConfigUtil;
  *
  * @authors Thilo Harich & Tilman Neumann
  */
-public class Hart_FastT extends FactorAlgorithm {
-	private static final Logger LOG = Logger.getLogger(Hart_FastT.class);
+public class Hart_FastT4 extends FactorAlgorithm {
+	private static final Logger LOG = Logger.getLogger(Hart_FastT4.class);
 
 	/**
 	 * We only test k-values that are multiples of this constant.
@@ -58,7 +58,7 @@ public class Hart_FastT extends FactorAlgorithm {
 	 * @param doTDivFirst If true then trial division is done before the Lehman loop.
 	 * This is recommended if arguments N are known to have factors < cbrt(N) frequently.
 	 */
-	public Hart_FastT(boolean doTDivFirst) {
+	public Hart_FastT4(boolean doTDivFirst) {
 		this.doTDivFirst = doTDivFirst;
 		// Precompute sqrts for all k < I_MAX
 		sqrt = new double[I_MAX];
@@ -106,6 +106,15 @@ public class Hart_FastT extends FactorAlgorithm {
 				a = adjustA(N, a, k, i);
 				test = a*a - k * fourN;
 				b = (long) Math.sqrt(test);
+				final long diff = test - b*b;
+				if (diff % 4 == 0) {
+					//					System.out.println(factor(BigInteger.valueOf(b)));
+					if (N > 1l << 38) {
+						System.out.println(factor(BigInteger.valueOf(2*b+1)));
+						System.out.println(factor(BigInteger.valueOf(diff))  + " * " + factor(BigInteger.valueOf(N+1)));
+					}
+
+				}
 				if (b*b == test) {
 					if ((gcd = gcdEngine.gcd(a+b, N))>1 && gcd<N) return gcd;
 				}
@@ -232,7 +241,7 @@ public class Hart_FastT extends FactorAlgorithm {
 				9 // works
 		};
 
-		final Hart_FastT holf = new Hart_FastT(false);
+		final Hart_FastT4 holf = new Hart_FastT4(false);
 		for (final long N : testNumbers) {
 			final long factor = holf.findSingleFactor(N);
 			LOG.info("N=" + N + " has factor " + factor);

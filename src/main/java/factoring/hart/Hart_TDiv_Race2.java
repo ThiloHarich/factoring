@@ -38,7 +38,7 @@ public class Hart_TDiv_Race2 extends FactorAlgorithm {
 	 * We only test k-values that are multiples of this constant.
 	 * Best values for performance are 315, 45, 105, 15 and 3, in that order.
 	 */
-	private static final int K_MULT = 3 * 3 * 5 * 7;
+	private static final int K_MULT =3;
 
 	/** Size of arrays, sufficient to factor all numbers <= 52 bit. */
 	private static final int I_MAX = 1<<20;
@@ -52,6 +52,9 @@ public class Hart_TDiv_Race2 extends FactorAlgorithm {
 	private final double[] sqrt;
 	private final int[] primes;
 	private final double[] reciprocals;
+
+	private final int [] divisors = new int []{3,3,7};
+	private final boolean[] smooth =  new boolean [3*3*7]; // 63, 2431, 46189
 
 	private final AutoExpandingPrimesArray SMALL_PRIMES = AutoExpandingPrimesArray.get();
 	private final Gcd63 gcdEngine = new Gcd63();
@@ -68,6 +71,12 @@ public class Hart_TDiv_Race2 extends FactorAlgorithm {
 			final int p = SMALL_PRIMES.getPrime(i);
 			primes[i] = p;
 			reciprocals[i] = 1.0/p;
+		}
+		for (int i=1; i<smooth.length; i++) {
+			for (final int divisor : divisors){
+				if ( i% divisor == 0)
+					smooth[i] = true;
+			}
 		}
 	}
 

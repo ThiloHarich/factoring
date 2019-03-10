@@ -32,15 +32,14 @@ import de.tilman_neumann.util.ConfigUtil;
  *
  * @authors Thilo Harich & Tilman Neumann
  */
-public class Hart_FastT extends FactorAlgorithm {
-	private static final Logger LOG = Logger.getLogger(Hart_FastT.class);
+public class Hart_FastT3 extends FactorAlgorithm {
+	private static final Logger LOG = Logger.getLogger(Hart_FastT3.class);
 
 	/**
 	 * We only test k-values that are multiples of this constant.
 	 * Best values for performance are 315, 45, 105, 15 and 3, in that order.
 	 */
-	private static final int K_MULT = 3*3*5*7; // 315
-	//	private static final int K_MULT = 1; // 315
+	private static final int K_MULT = 1; // 315
 
 	/** Size of arrays */
 	private static final int I_MAX = 1<<20;
@@ -58,7 +57,7 @@ public class Hart_FastT extends FactorAlgorithm {
 	 * @param doTDivFirst If true then trial division is done before the Lehman loop.
 	 * This is recommended if arguments N are known to have factors < cbrt(N) frequently.
 	 */
-	public Hart_FastT(boolean doTDivFirst) {
+	public Hart_FastT3(boolean doTDivFirst) {
 		this.doTDivFirst = doTDivFirst;
 		// Precompute sqrts for all k < I_MAX
 		sqrt = new double[I_MAX];
@@ -98,16 +97,29 @@ public class Hart_FastT extends FactorAlgorithm {
 		final long fourN = N<<2;
 		final double sqrt4N = Math.sqrt(fourN);
 		long a, b, test, gcd;
-		int k = K_MULT;
 		try {
-			for (int i=1; ;i++, k += K_MULT) {
-				// odd k -> adjust a mod 8
-				a = (long) (sqrt4N * sqrt[i] + ROUND_UP_DOUBLE);
-				a = adjustA(N, a, k, i);
-				test = a*a - k * fourN;
-				b = (long) Math.sqrt(test);
-				if (b*b == test) {
-					if ((gcd = gcdEngine.gcd(a+b, N))>1 && gcd<N) return gcd;
+			for (int kFactorN=1; ;kFactorN++) {
+				// 1 , 3
+				for (int kFactor1=1; kFactor1 <= 3 ;kFactor1 += 3) {
+					// 5
+					//					for (int kFactor2=5; kFactor2 <= 11 ;kFactor2 += 2) {
+					final int kFactor2=5;
+					// 5, 15
+					//						for (int kFactor3=5; kFactor3 <= 9 ;kFactor3 += 2) {
+					final int k = kFactor1 * kFactor2  * kFactorN;
+					// odd k -> adjust a mod 8
+					a = (long) (sqrt4N * sqrt[k] + ROUND_UP_DOUBLE);
+					a = adjustA(N, a, k);
+					test = a*a - k * fourN;
+					b = (long) Math.sqrt(test);
+					if (b*b == test) {
+						if ((gcd = gcdEngine.gcd(a+b, N))>1 && gcd<N) {
+
+							return gcd;
+						}
+					}
+					//						}
+					//					}
 				}
 			}
 		} catch (final ArrayIndexOutOfBoundsException e) {
@@ -117,8 +129,8 @@ public class Hart_FastT extends FactorAlgorithm {
 		}
 	}
 
-	private long adjustA(long N, long a, int k, int i) {
-		if ((i & 1) == 0)
+	private long adjustA(long N, long a, int k) {
+		if ((k & 1) == 0)
 			a |= 1;
 		else {
 			final long kPlusN = k + N;
@@ -232,7 +244,7 @@ public class Hart_FastT extends FactorAlgorithm {
 				9 // works
 		};
 
-		final Hart_FastT holf = new Hart_FastT(false);
+		final Hart_FastT3 holf = new Hart_FastT3(false);
 		for (final long N : testNumbers) {
 			final long factor = holf.findSingleFactor(N);
 			LOG.info("N=" + N + " has factor " + factor);

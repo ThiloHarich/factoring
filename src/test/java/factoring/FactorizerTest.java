@@ -91,6 +91,7 @@ public class FactorizerTest {
 
 				new factoring.hart.Hart_TDiv_Race2(),
 				new factoring.hart.Hart_FastT(false),
+				new factoring.hart.Hart_FastT2(false),
 
 				// Lehman
 				//new Lehman_Simple(false),

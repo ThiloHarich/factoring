@@ -32,15 +32,15 @@ import de.tilman_neumann.util.ConfigUtil;
  *
  * @authors Thilo Harich & Tilman Neumann
  */
-public class Hart_FastT extends FactorAlgorithm {
-	private static final Logger LOG = Logger.getLogger(Hart_FastT.class);
+public class Hart_FastT5 extends FactorAlgorithm {
+	private static final Logger LOG = Logger.getLogger(Hart_FastT5.class);
 
 	/**
 	 * We only test k-values that are multiples of this constant.
 	 * Best values for performance are 315, 45, 105, 15 and 3, in that order.
 	 */
-	private static final int K_MULT = 3*3*5*7; // 315
-	//	private static final int K_MULT = 1; // 315
+	//	private static final int K_MULT = 3*3*5*7; // 315
+	private static final int K_MULT = 1; // 315
 
 	/** Size of arrays */
 	private static final int I_MAX = 1<<20;
@@ -58,7 +58,7 @@ public class Hart_FastT extends FactorAlgorithm {
 	 * @param doTDivFirst If true then trial division is done before the Lehman loop.
 	 * This is recommended if arguments N are known to have factors < cbrt(N) frequently.
 	 */
-	public Hart_FastT(boolean doTDivFirst) {
+	public Hart_FastT5(boolean doTDivFirst) {
 		this.doTDivFirst = doTDivFirst;
 		// Precompute sqrts for all k < I_MAX
 		sqrt = new double[I_MAX];
@@ -104,10 +104,54 @@ public class Hart_FastT extends FactorAlgorithm {
 				// odd k -> adjust a mod 8
 				a = (long) (sqrt4N * sqrt[i] + ROUND_UP_DOUBLE);
 				a = adjustA(N, a, k, i);
+				// with the multiplier k = x*y we want to ensure that q / p ~ y/x , q /(N/q) = q^2/N
+				// q = (a+b)/2 , p = (a-b)/2 form a^2 - 4kN = b^2 <-> a^2 - 4x*yN = b^2
+				// q / p ~ k = x * y
 				test = a*a - k * fourN;
 				b = (long) Math.sqrt(test);
 				if (b*b == test) {
-					if ((gcd = gcdEngine.gcd(a+b, N))>1 && gcd<N) return gcd;
+					final int nBits = 63 - Long.numberOfLeadingZeros(N);
+
+					final long aPlusBHalf = (a+b) /2;
+					if ((gcd = gcdEngine.gcd(a+b, N))>1 && gcd<N) {
+						final long y = N / gcd;
+						//						gcd / y = k
+						//						gcd*gcd / N ~k
+						//						gcd*gcd / N ~k
+						//						gcd*gcd ~ k * N
+						//						gcd =(a+b)/2
+						//						gcd*gcd  = ((a+b)/2)^2
+						//						gcd*gcd  = a^2/4 + ab/2 + b^2/4
+						//
+						//						a^2 - 4kN = b^2
+						//						a^2 + b^2  = 4kN
+						//						a^2/4 + b^2/4  = kN
+						//						gcd*gcd  = kN + ab/2
+						//						2*gcd*gcd  = 2kN + ab
+						//						2*gcd*gcd/a  = 2kN/a + b
+						//						b = 2kN/a -  (a+b)*(a+b)/2a
+						//						b = 2kN/a -  (a^2 +2ab +b^2)/2a
+						//						b = 2kN/a -  a/2 - b - b^2/2a
+
+						//						System.out.println("gcd ^2 : " + gcd*gcd + "\t k * N : " + (k * N) );
+						if (Math.abs(Math.max(gcd, y) / (double)Math.min(gcd, y) - 64) < 0.01) {
+							//							assertTrue(k== 64);
+						}
+						System.out.print("," + k);
+						final long xPlusY = gcd + y;
+						long xMinY = gcd - y;
+						xMinY = Math.abs(xMinY);
+						//						if (xPlusY*xMinY % 16 == 0)
+						//							System.out.print(4);
+						//						if (k == 16 && nBits >= 28) {
+						//							final long l = xPlusY*xMinY;
+						//							assertTrue(l % 16 == 0);
+						//						}
+
+						//							System.out.println();
+
+						return gcd;
+					}
 				}
 			}
 		} catch (final ArrayIndexOutOfBoundsException e) {
@@ -232,7 +276,7 @@ public class Hart_FastT extends FactorAlgorithm {
 				9 // works
 		};
 
-		final Hart_FastT holf = new Hart_FastT(false);
+		final Hart_FastT5 holf = new Hart_FastT5(false);
 		for (final long N : testNumbers) {
 			final long factor = holf.findSingleFactor(N);
 			LOG.info("N=" + N + " has factor " + factor);

@@ -14,6 +14,7 @@
 package factoring.hart;
 
 import java.math.BigInteger;
+import java.util.Map.Entry;
 
 import org.apache.log4j.Logger;
 
@@ -21,6 +22,8 @@ import de.tilman_neumann.jml.factor.FactorAlgorithm;
 import de.tilman_neumann.jml.factor.tdiv.TDiv63Inverse;
 import de.tilman_neumann.jml.gcd.Gcd63;
 import de.tilman_neumann.util.ConfigUtil;
+import de.tilman_neumann.util.SortedMultiset;
+import de.tilman_neumann.util.SortedMultiset_BottomUp;
 
 /**
  * Pretty simple yet fast variant of Hart's one line factorizer.
@@ -32,15 +35,14 @@ import de.tilman_neumann.util.ConfigUtil;
  *
  * @authors Thilo Harich & Tilman Neumann
  */
-public class Hart_FastT extends FactorAlgorithm {
-	private static final Logger LOG = Logger.getLogger(Hart_FastT.class);
+public class Hart_FastT2 extends FactorAlgorithm {
+	private static final Logger LOG = Logger.getLogger(Hart_FastT2.class);
 
 	/**
 	 * We only test k-values that are multiples of this constant.
 	 * Best values for performance are 315, 45, 105, 15 and 3, in that order.
 	 */
-	private static final int K_MULT = 3*3*5*7; // 315
-	//	private static final int K_MULT = 1; // 315
+	private static final int K_MULT = 1; // 315
 
 	/** Size of arrays */
 	private static final int I_MAX = 1<<20;
@@ -53,23 +55,37 @@ public class Hart_FastT extends FactorAlgorithm {
 	private final TDiv63Inverse tdiv = new TDiv63Inverse(I_MAX);
 	private final Gcd63 gcdEngine = new Gcd63();
 
+	private final int [] divisors = new int []{3,7};
+	private final boolean[] smooth =  new boolean [3*7]; // 63, 2431, 46189
+
+	public static int factorNumber = 0;
+
+	public static SortedMultiset<BigInteger> factors = new SortedMultiset_BottomUp<>();
+	public static SortedMultiset<BigInteger> factorsExpo = new SortedMultiset_BottomUp<>();
+
 	/**
 	 * Full constructor.
 	 * @param doTDivFirst If true then trial division is done before the Lehman loop.
 	 * This is recommended if arguments N are known to have factors < cbrt(N) frequently.
 	 */
-	public Hart_FastT(boolean doTDivFirst) {
+	public Hart_FastT2(boolean doTDivFirst) {
 		this.doTDivFirst = doTDivFirst;
 		// Precompute sqrts for all k < I_MAX
 		sqrt = new double[I_MAX];
 		for (int i=1; i<I_MAX; i++) {
 			sqrt[i] = Math.sqrt(i*K_MULT);
 		}
+		for (int i=1; i<smooth.length; i++) {
+			for (final int divisor : divisors){
+				if ( i% divisor == 0)
+					smooth[i] = true;
+			}
+		}
 	}
 
 	@Override
 	public String getName() {
-		return "Hart_FastT(" + doTDivFirst + ")";
+		return "Hart_FastT2(" + doTDivFirst + ")";
 	}
 
 	@Override
@@ -98,17 +114,127 @@ public class Hart_FastT extends FactorAlgorithm {
 		final long fourN = N<<2;
 		final double sqrt4N = Math.sqrt(fourN);
 		long a, b, test, gcd;
-		int k = K_MULT;
+		//		final int [] multiplier = new int[] {11,13,17,23,29};
+		//		final double [] sqrtMultiplier = IntStream.range(0, multiplier.length).mapToDouble(i -> Math.sqrt(multiplier[i])).toArray();
+		//		final int [] ks = IntStream.range(0, multiplier.length).map(i -> K_MULT * multiplier[i]).toArray();
+
+		final int multiplier1 = 1;
+		final int mult1 = multiplier1 * K_MULT;
+		int k1 = mult1;
+		final double sqrt1 = Math.sqrt(multiplier1);
+		final double sqrtN1 = sqrt4N * sqrt1;
+		//		final int k1Mod11 = k1 % 11;
+		//		final int k1Inc = (multiplier1 * K_MULT) % 11;
+
+		//		final int multiplier2 = 5 * 7 * 9;
+		//		final int mult2 = multiplier2 * K_MULT;
+		//		int k2 = mult2;
+		//		final double sqrt2 = Math.sqrt(multiplier2);
+		//		final double sqrtN2 = sqrt4N * sqrt2;
+		//
+		//		final int multiplier3 = 9;
+		//		final int mult3 = multiplier3 * K_MULT;
+		//		int k3 = mult3;
+		//		final double sqrt3 = Math.sqrt(multiplier3);
+		//		final double sqrtN3 = sqrt4N * sqrt3;
+		//
+		//		final int multiplier4 = 17;
+		//		final int k4 = multiplier4 * K_MULT;
+		//		final double sqrt4 = Math.sqrt(multiplier4);
+		//
+		//		final int multiplier5 = 29;
+		//		int k5 = multiplier5 * K_MULT;
+		//		final double sqrt5 = Math.sqrt(multiplier5);
+
 		try {
-			for (int i=1; ;i++, k += K_MULT) {
+			for (int i=1; ;i++) {
+				//				for (int j = 0; j < ks.length; j++) {
+				//					// odd k -> adjust a mod 8
+				//					a = (long) (sqrt4N * sqrtMultiplier[j] * sqrt[i] + ROUND_UP_DOUBLE);
+				//					a = adjustA(N, a, ks[j], i);
+				//					test = a*a - ks[j] * fourN;
+				//					//				assertEquals(k * fourN, fourKN);
+				//					b = (long) Math.sqrt(test);
+				//					if (b*b == test) {
+				//						if ((gcd = gcdEngine.gcd(a+b, N))>1 && gcd<N) return gcd;
+				//					}
+				//					ks[j] += multiplier[j] * K_MULT;
+				//				}
 				// odd k -> adjust a mod 8
-				a = (long) (sqrt4N * sqrt[i] + ROUND_UP_DOUBLE);
-				a = adjustA(N, a, k, i);
-				test = a*a - k * fourN;
+				a = (long) (sqrtN1 * sqrt[i] + ROUND_UP_DOUBLE);
+				a = adjustA(N, a, k1, i);
+				test = a*a - k1 * fourN;
 				b = (long) Math.sqrt(test);
 				if (b*b == test) {
-					if ((gcd = gcdEngine.gcd(a+b, N))>1 && gcd<N) return gcd;
+					if ((gcd = gcdEngine.gcd(a+b, N))>1 && gcd<N) {
+						final SortedMultiset<BigInteger> factor2 = factor(BigInteger.valueOf(k1));
+						for (final Entry<BigInteger, Integer> entry : factor2.entrySet()) {
+							if (factors.containsKey(entry.getKey())) {
+								factors.put(entry.getKey(), factors.get(entry.getKey()) + 1);
+								factorsExpo.put(entry.getKey(), factors.get(entry.getKey()) + factor2.get(entry.getKey()));
+							}
+							else {
+								factors.put(entry.getKey(), 1);
+								factorsExpo.put(entry.getKey(), factor2.get(entry.getKey()));
+							}
+						}
+						factorNumber ++;
+
+						System.out.println("," + (a*a) % 315);
+
+					}
 				}
+
+				//				if (k1Mod11 != 0)
+				//				{
+				//				a = (long) (sqrtN2 * sqrt[i] + ROUND_UP_DOUBLE);
+				//				a = adjustA(N, a, k2, i);
+				//				test = a*a - k2 * fourN;
+				//				b = (long) Math.sqrt(test);
+				//				if (b*b == test) {
+				//					if ((gcd = gcdEngine.gcd(a+b, N))>1 && gcd<N) return gcd;
+				//				}
+
+				//				if ((i & 1) == 0) {
+				//				a = (long) (sqrtN3 * sqrt[i] + ROUND_UP_DOUBLE);
+				//				a = adjustA(N, a, k3, i);
+				//				test = a*a - k3 * fourN;
+				//				//				assertEquals(k * fourN, fourKN);
+				//				b = (long) Math.sqrt(test);
+				//				if (b*b == test) {
+				//					if ((gcd = gcdEngine.gcd(a+b, N))>1 && gcd<N) return gcd;
+				//				}
+				//				k3 += mult3;
+				//				//				}
+				//				k2 += mult2;
+				//
+				//						a = (long) (sqrt4N * sqrt4 * sqrt[i >> 1] + ROUND_UP_DOUBLE);
+				//						a = adjustA(N, a, k4, i);
+				//						test = a*a - k4 * fourN;
+				//						//				assertEquals(k * fourN, fourKN);
+				//						b = (long) Math.sqrt(test);
+				//						if (b*b == test) {
+				//							if ((gcd = gcdEngine.gcd(a+b, N))>1 && gcd<N) return gcd;
+				//						}
+				//						k4 += multiplier4 * K_MULT;
+				//					}
+				//				}
+				k1 += mult1;
+				//				k1Mod11 += k1Inc;
+				//				k1Mod11 = k1Mod11 >= 11 ? k1Mod11 - 11 : k1Mod11;
+				//				assertEquals(k1 % 11, k1Mod11);
+
+				//
+				//
+				//				a = (long) (sqrt4N * sqrt5 * sqrt[i] + ROUND_UP_DOUBLE);
+				//				a = adjustA(N, a, k5, i);
+				//				test = a*a - k5 * fourN;
+				//				//				assertEquals(k * fourN, fourKN);
+				//				b = (long) Math.sqrt(test);
+				//				if (b*b == test) {
+				//					if ((gcd = gcdEngine.gcd(a+b, N))>1 && gcd<N) return gcd;
+				//				}
+				//				k5 += multiplier5 * K_MULT;
 			}
 		} catch (final ArrayIndexOutOfBoundsException e) {
 			// this may happen if this implementation is tested with doTDivFirst==false and N having
@@ -232,7 +358,7 @@ public class Hart_FastT extends FactorAlgorithm {
 				9 // works
 		};
 
-		final Hart_FastT holf = new Hart_FastT(false);
+		final Hart_FastT2 holf = new Hart_FastT2(false);
 		for (final long N : testNumbers) {
 			final long factor = holf.findSingleFactor(N);
 			LOG.info("N=" + N + " has factor " + factor);
