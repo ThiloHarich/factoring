@@ -69,8 +69,8 @@ public class Lehman_CustomKOrderTh extends FactorAlgorithm {
 		ks1 = new int [K_MAX+1];
 
 		for (int pos = 0; pos < K_MAX; pos ++) {
-			ks[pos] = 105 * (pos+1);
-			sqrts[pos] = Math.sqrt(105 * (pos+1));
+			ks[pos] = 315 * (pos+1);
+			sqrts[pos] = Math.sqrt(315 * (pos+1));
 			sqrtInvs[pos] = 1 / sqrts[pos];
 			ks1[pos] = pos+1;
 			sqrts1[pos] = Math.sqrt(pos+1);
