@@ -13,13 +13,21 @@
  */
 package factoring.hart;
 
+import java.io.IOException;
 import java.math.BigInteger;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Random;
 
 import org.apache.log4j.Logger;
 
 import de.tilman_neumann.jml.factor.FactorAlgorithm;
 import de.tilman_neumann.jml.factor.tdiv.TDiv63Inverse;
 import de.tilman_neumann.jml.gcd.Gcd63;
+import factoring.math.PrimeMath;
 
 /**
  * Pretty simple yet fast variant of Hart's one line factorizer.
@@ -31,8 +39,10 @@ import de.tilman_neumann.jml.gcd.Gcd63;
  *
  * @authors Thilo Harich & Tilman Neumann
  */
-public class Hart_FastT extends FactorAlgorithm {
-	private static final Logger LOG = Logger.getLogger(Hart_FastT.class);
+public class HartTraining extends FactorAlgorithm {
+
+
+	private static final Logger LOG = Logger.getLogger(HartTraining.class);
 
 	/**
 	 * We only test k-values that are multiples of this constant.
@@ -42,30 +52,28 @@ public class Hart_FastT extends FactorAlgorithm {
 	//	private static final int K_MULT = 1; // 315
 
 	/** Size of arrays */
-	private static final int I_MAX = 1<<18;
+	private static final int I_MAX = 1<<17;
 
 	/** This constant is used for fast rounding of double values to long. */
 	private static final double ROUND_UP_DOUBLE = 0.9999999665;
 
 	private final boolean doTDivFirst;
-	private final double[] sqrt;
+	private double[] sqrt;
 	private final TDiv63Inverse tdiv = new TDiv63Inverse(I_MAX);
 	private final Gcd63 gcdEngine = new Gcd63();
 
 	public static int [] ks = new int[I_MAX];
+	public static int [] hits;
 
 	/**
 	 * Full constructor.
 	 * @param doTDivFirst If true then trial division is done before the Lehman loop.
 	 * This is recommended if arguments N are known to have factors < cbrt(N) frequently.
 	 */
-	public Hart_FastT(boolean doTDivFirst) {
+	public HartTraining(boolean doTDivFirst, boolean train) {
 		this.doTDivFirst = doTDivFirst;
 		// Precompute sqrts for all k < I_MAX
-		sqrt = new double[I_MAX];
-		for (int i=1; i<I_MAX; i++) {
-			sqrt[i] = Math.sqrt(i*K_MULT);
-		}
+		readKSequence(train);
 	}
 
 	@Override
@@ -99,18 +107,18 @@ public class Hart_FastT extends FactorAlgorithm {
 		final long fourN = N<<2;
 		final double sqrt4N = Math.sqrt(fourN);
 		long a, b, test, gcd;
-		int k = K_MULT;
 		try {
-			for (int i=1; ;i++, k += K_MULT) {
+			for (int i=0; ;i++) {
+				final int k = ks[i];
 				// odd k -> adjust a mod 8
 				a = (long) (sqrt4N * sqrt[i] + ROUND_UP_DOUBLE);
-				a = adjustA(N, a, k, i);
+				a = adjustA(N, a, k, k);
 				test = a*a - k * fourN;
 				b = (long) Math.sqrt(test);
 				if (b*b == test) {
 					if ((gcd = gcdEngine.gcd(a+b, N))>1 && gcd<N) {
-						//						System.out.print("," + i );
-						//						System.out.print("," + i % 9 + ";" + a % 9);
+						if (hits != null)
+							hits[i]++;
 						return gcd;
 					}
 				}
@@ -138,5 +146,112 @@ public class Hart_FastT extends FactorAlgorithm {
 		return a;
 	}
 
+	public void readKSequence(boolean train) {
+		final Path path = Paths.get("/tmp/factorSequence.txt");
+		sqrt = new double[I_MAX];
+		ks = new int[I_MAX];
+		if (!train && Files.exists(path)) {
+			List<String> lines = null;
+			try {
+				lines = Files.readAllLines(path);
+				final String line = lines.get(0);
+				final String[] numbers = line.split(",");
+				for (int i = 0; i < numbers.length; i++) {
+					final String number = numbers[i];
+					if (!number.isEmpty()) {
+						final int k = Integer.parseInt(number);
+						ks[i] = k * K_MULT;
+						sqrt[i] = Math.sqrt(k*K_MULT);
+					}
+				}
+			} catch (final IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}else {
+			hits = new int[I_MAX];
+			for (int k = 0; k < ks.length; k++) {
+				ks[k] = k * K_MULT;
+				sqrt[k] = Math.sqrt(k*K_MULT);
+			}
+		}
+
+	}
+	/**
+	 * Test.
+	 * @param args ignored
+	 * @throws IOException
+	 */
+	public static void main(String[] args) {
+
+		final HartTraining hart = new HartTraining(false, true);
+		final int numPrimes = 1_000_000;
+		final long[] semiprimes = makeSemiPrimesListReal(40, numPrimes);
+		for (final long l : semiprimes) {
+			hart.findSingleFactor(BigInteger.valueOf(l));
+		}
+		final Pair[] pairs = new Pair[HartTraining.hits.length];
+		for (int i = 0; i < HartTraining.hits.length; i++) {
+			final int k = HartTraining.hits[i];
+			final Pair pair = hart.new Pair(i, k);
+			pairs[i] = pair;
+		}
+		Arrays.sort(pairs);
+		String factorSequence = "";
+		for (final Pair pair : pairs) {
+			if (pair.hits >0) {
+				factorSequence += pair.k + ",";
+				//				System.out.print(pair.k + ",");
+			}
+		}
+		final Path path = Paths.get("/tmp/factorSequence.txt");
+		final byte[] strToBytes = factorSequence.getBytes();
+
+		try {
+			Files.write(path, strToBytes);
+		} catch (final IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
+
+	public static long[] makeSemiPrimesListReal(int bits, int numPrimes) {
+		final long[] semiPrimes = new long[numPrimes];
+		final int limit = (int) Math.pow(2,bits / 3.0);
+		final TDiv63Inverse factorizer = new TDiv63Inverse(limit);
+
+		//		final long offset = 0;
+		final Random rnd = new Random();
+		final long offset = Math.abs(rnd.nextInt());
+		long candidate = (1l << bits) + offset;
+		int j = 0;
+		for (int i=0; i< numPrimes; candidate++)
+		{
+			final BigInteger findSingleFactor = factorizer.findSingleFactor(BigInteger.valueOf(candidate));
+			if (findSingleFactor == BigInteger.ONE && !PrimeMath.isPrime(candidate)) {
+				semiPrimes[j++] = candidate;
+				i++;
+			}
+		}
+
+		return semiPrimes;
+	}
+	public class Pair implements Comparable<Pair>{
+		public Pair(int k, int hits) {
+			this.k = k;
+			this.hits = hits;
+		}
+		int k;
+		int hits;
+		@Override
+		public int compareTo(Pair o) {
+			return o.hits - hits;
+		}
+		@Override
+		public String toString() {
+			return "Pair [k=" + k + ", hits=" + hits + "]";
+		}
+	}
 
 }
