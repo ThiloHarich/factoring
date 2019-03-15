@@ -20,7 +20,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Random;
 
 import org.apache.log4j.Logger;
 
@@ -41,6 +40,8 @@ import factoring.math.PrimeMath;
  */
 public class HartTraining extends FactorAlgorithm {
 
+
+	private static final String FACTOR_SEQUENCE_FILE = "/tmp/factorSequence.txt";
 
 	private static final Logger LOG = Logger.getLogger(HartTraining.class);
 
@@ -147,26 +148,35 @@ public class HartTraining extends FactorAlgorithm {
 	}
 
 	public void readKSequence(boolean train) {
-		final Path path = Paths.get("/tmp/factorSequence.txt");
+		final Path path = Paths.get(FACTOR_SEQUENCE_FILE);
 		sqrt = new double[I_MAX];
 		ks = new int[I_MAX];
 		if (!train && Files.exists(path)) {
 			List<String> lines = null;
+			final boolean [] added = new boolean[I_MAX];
+			int i = 0;
 			try {
 				lines = Files.readAllLines(path);
 				final String line = lines.get(0);
 				final String[] numbers = line.split(",");
-				for (int i = 0; i < numbers.length; i++) {
+				for (; i < numbers.length; i++) {
 					final String number = numbers[i];
 					if (!number.isEmpty()) {
 						final int k = Integer.parseInt(number);
 						ks[i] = k * K_MULT;
 						sqrt[i] = Math.sqrt(k*K_MULT);
+						added[k] = true;
 					}
 				}
 			} catch (final IOException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
+			}
+			// fill up the k Array with k's that were not hit by the training
+			for (int k = 1; k < added.length; k++) {
+				if (!added[k]) {
+					ks[i] = k * K_MULT;
+					sqrt[i++] = Math.sqrt(k*K_MULT);
+				}
 			}
 		}else {
 			hits = new int[I_MAX];
@@ -175,7 +185,6 @@ public class HartTraining extends FactorAlgorithm {
 				sqrt[k] = Math.sqrt(k*K_MULT);
 			}
 		}
-
 	}
 	/**
 	 * Test.
@@ -185,8 +194,8 @@ public class HartTraining extends FactorAlgorithm {
 	public static void main(String[] args) {
 
 		final HartTraining hart = new HartTraining(false, true);
-		final int numPrimes = 1_000_000;
-		final long[] semiprimes = makeSemiPrimesListReal(40, numPrimes);
+		final int numPrimes = 3_000_000;
+		final long[] semiprimes = makeSemiPrimesListReal(45, numPrimes);
 		for (final long l : semiprimes) {
 			hart.findSingleFactor(BigInteger.valueOf(l));
 		}
@@ -196,15 +205,17 @@ public class HartTraining extends FactorAlgorithm {
 			final Pair pair = hart.new Pair(i, k);
 			pairs[i] = pair;
 		}
+		//		for (final Pair pair : pairs) {
+		//			System.out.println(pair + ",");
+		//		}
 		Arrays.sort(pairs);
 		String factorSequence = "";
 		for (final Pair pair : pairs) {
 			if (pair.hits >0) {
 				factorSequence += pair.k + ",";
-				//				System.out.print(pair.k + ",");
 			}
 		}
-		final Path path = Paths.get("/tmp/factorSequence.txt");
+		final Path path = Paths.get(FACTOR_SEQUENCE_FILE);
 		final byte[] strToBytes = factorSequence.getBytes();
 
 		try {
@@ -221,10 +232,7 @@ public class HartTraining extends FactorAlgorithm {
 		final int limit = (int) Math.pow(2,bits / 3.0);
 		final TDiv63Inverse factorizer = new TDiv63Inverse(limit);
 
-		//		final long offset = 0;
-		final Random rnd = new Random();
-		final long offset = Math.abs(rnd.nextInt());
-		long candidate = (1l << bits) + offset;
+		long candidate = (1l << bits);
 		int j = 0;
 		for (int i=0; i< numPrimes; candidate++)
 		{
