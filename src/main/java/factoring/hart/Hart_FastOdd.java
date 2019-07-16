@@ -31,24 +31,26 @@ import de.tilman_neumann.jml.gcd.Gcd63;
  *
  * @authors Thilo Harich & Tilman Neumann
  */
-public class Hart_FastT4 extends FactorAlgorithm {
-	private static final Logger LOG = Logger.getLogger(Hart_FastT4.class);
+public class Hart_FastOdd extends FactorAlgorithm {
+	private static final Logger LOG = Logger.getLogger(Hart_FastOdd.class);
 
 	/**
 	 * We only test k-values that are multiples of this constant.
 	 * Best values for performance are 315, 45, 105, 15 and 3, in that order.
 	 */
-	private static final int K_MULT = 3*3*5*7; // 315
+	private static final int K_MULT = 3*5*7; // 315
 	//	private static final int K_MULT = 1; // 315
 
 	/** Size of arrays */
-	private static final int I_MAX = 1<<20;
+	private static final int I_MAX = 1<<18;
 
 	/** This constant is used for fast rounding of double values to long. */
 	private static final double ROUND_UP_DOUBLE = 0.9999999665;
 
 	private final boolean doTDivFirst;
 	private final double[] sqrt;
+	private final double[] sqrtOdd;
+	private final double[] sqrtEven;
 	private final TDiv63Inverse tdiv = new TDiv63Inverse(I_MAX);
 	private final Gcd63 gcdEngine = new Gcd63();
 
@@ -57,12 +59,16 @@ public class Hart_FastT4 extends FactorAlgorithm {
 	 * @param doTDivFirst If true then trial division is done before the Lehman loop.
 	 * This is recommended if arguments N are known to have factors < cbrt(N) frequently.
 	 */
-	public Hart_FastT4(boolean doTDivFirst) {
+	public Hart_FastOdd(boolean doTDivFirst) {
 		this.doTDivFirst = doTDivFirst;
 		// Precompute sqrts for all k < I_MAX
-		sqrt = new double[I_MAX];
-		for (int i=1; i<I_MAX; i++) {
-			sqrt[i] = Math.sqrt(i*K_MULT);
+		sqrtOdd = new double[I_MAX>>1];
+		sqrtEven= new double[I_MAX>>1];
+		sqrt    = new double[I_MAX>>1];
+		for (int i=0; i < (I_MAX>>1) -1; i++) {
+			sqrtOdd  [i] = Math.sqrt((2*i+1)*K_MULT);
+			sqrtEven [i] = Math.sqrt((2*i+2)*K_MULT);
+			sqrt     [i] = Math.sqrt(  (i+1)*K_MULT);
 		}
 	}
 
@@ -88,35 +94,68 @@ public class Hart_FastT4 extends FactorAlgorithm {
 			tdiv.setTestLimit((int) Math.cbrt(N));
 			if ((factor = tdiv.findSingleFactor(N))>1) return factor;
 		}
+
 		final long fourN = N<<2;
 		final double sqrt4N = Math.sqrt(fourN);
 		long a, b, test, gcd;
-		int k = K_MULT;
+		int kOdd = K_MULT;
+		final int kMult2 = K_MULT << 1;
+		int kEven = kMult2;
+		int iOdd=0;
+		int iEven = 0;
 		try {
-			for (int i=1; ;i++, k += K_MULT) {
-				// odd k -> adjust a mod 8
-				final long aOrig = (long) (sqrt4N * sqrt[i] + ROUND_UP_DOUBLE);
-				a = adjustA(N, aOrig, k);
-				//				a = adjustA(N, aOrig, k, 27);
-				final long fourKN = k * fourN;
-				test = a*a - fourKN;
-				//				final long testMod = test % 27;
+			for (; ;iOdd++,  iEven++, kOdd += kMult2, kEven += kMult2) {
+				a = (long) (sqrt4N * sqrtOdd[iOdd] + ROUND_UP_DOUBLE);
+				a = adjustA(N, a, kOdd);
+				test = a*a - kOdd * fourN;
 				b = (long) Math.sqrt(test);
 				if (b*b == test) {
 					if ((gcd = gcdEngine.gcd(a+b, N))>1 && gcd<N) {
-						//						final long knMod8 = (k*N) % 8;
-						//						if (knMod8 == 1) {
-						final long mod = 16;
-						//							final int step = (int) ((a-aOrig) % mod );
-						final int aMod = (int) (a % mod);
-						final int knMod = (int) ((k*N) % 8);
-						//							final int diff = (int) ((aMod - knMod) % mod);
-						//							System.out.print(aMod + ",");
-						//							//						System.out.print((k*N) % 8);
-						//						}
 						return gcd;
 					}
 				}
+				//				iOdd++;
+				//				kOdd += kMult2;
+				//				a = (long) (sqrt4N * sqrtOdd[iOdd] + ROUND_UP_DOUBLE);
+				//				a = adjustA(N, a, kOdd);
+				//				test = a*a - kOdd * fourN;
+				//				b = (long) Math.sqrt(test);
+				//				if (b*b == test) {
+				//					if ((gcd = gcdEngine.gcd(a+b, N))>1 && gcd<N) {
+				//						return gcd;
+				//					}
+				//				}
+				//				iOdd++;
+				//				kOdd += kMult2;
+				//				a = (long) (sqrt4N * sqrtOdd[iOdd] + ROUND_UP_DOUBLE);
+				//				a = adjustA(N, a, kOdd);
+				//				test = a*a - kOdd * fourN;
+				//				b = (long) Math.sqrt(test);
+				//				if (b*b == test) {
+				//					if ((gcd = gcdEngine.gcd(a+b, N))>1 && gcd<N) {
+				//						return gcd;
+				//					}
+				//				}
+				a = (long) (sqrt4N * sqrtEven[iEven] + ROUND_UP_DOUBLE) | 1;
+				//				a = adjustA(N, a, kEven);
+				test = a*a - kEven * fourN;
+				b = (long) Math.sqrt(test);
+				if (b*b == test) {
+					if ((gcd = gcdEngine.gcd(a+b, N))>1 && gcd<N) {
+						return gcd;
+					}
+				}
+				//				iEven++;
+				//				kEven += kMult2;
+				//				a = (long) (sqrt4N * sqrtEven[iEven] + ROUND_UP_DOUBLE) | 1;
+				//				//				a = adjustA(N, a, kEven);
+				//				test = a*a - kEven * fourN;
+				//				b = (long) Math.sqrt(test);
+				//				if (b*b == test) {
+				//					if ((gcd = gcdEngine.gcd(a+b, N))>1 && gcd<N) {
+				//						return gcd;
+				//					}
+				//				}
 			}
 		} catch (final ArrayIndexOutOfBoundsException e) {
 			// this may happen if this implementation is tested with doTDivFirst==false and N having
@@ -125,34 +164,21 @@ public class Hart_FastT4 extends FactorAlgorithm {
 		}
 	}
 
-
 	private long adjustA(long N, long x, int k) {
-		if ((k&1)==0)
-			return x | 1;
+		//		if ((k&1)==0)
+		//			return x | 1;
 		final long kNp1 = k*N+1;
-		if ((kNp1 & 3) == 0)
-		{
+		if ((kNp1 & 3) == 0) {
 			return x + ((kNp1 - x) & 7);
-		}
-		else if ((kNp1 & 7) == 2) {
+		} else if ((kNp1 & 7) == 2) {
 			final long adjust1 = ( kNp1 - x) & 15;
 			final long adjust2 = (-kNp1 - x) & 15;
-			final long diff = adjust1<adjust2 ? adjust1 : adjust2;
-			//					final int xMod = (int) ((x) % 16);
-			//					final int resMod = (int) ((x+ diff) % 16);
-			return x + diff;
+			return x + (adjust1<adjust2 ? adjust1 : adjust2);
 		}
 		final long adjust1 = ( kNp1 - x) & 31;
 		final long adjust2 = (-kNp1 - x) & 31;
 		return x + (adjust1<adjust2 ? adjust1 : adjust2);
 	}
 
-	private long adjustA(long N, long x, int k, int mod) {
-		final long kNp1 = k*N+1;
-		final long adjust1 = Math.floorMod( kNp1 - x, mod);
-		final long adjust2 = Math.floorMod(-kNp1 - x, mod);
-		return x + (adjust1<adjust2 ? adjust1 : adjust2);
-	}
+
 }
-
-

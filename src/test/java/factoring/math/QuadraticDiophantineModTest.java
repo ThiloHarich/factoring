@@ -25,7 +25,7 @@ public class QuadraticDiophantineModTest {
 	@Test
 	public void printHart() {
 
-		final int mod = 16;
+		final int mod = 11*13*17;
 		final QuadraticDiophantineModBit solutionsMod = new QuadraticDiophantineModBit(mod);
 
 		solutionsMod.lehmanSolutions();
@@ -33,10 +33,17 @@ public class QuadraticDiophantineModTest {
 	@Test
 	public void print63() {
 
-		final int mod = 5*7*64;
+		final int mod = 11*13*17;
 		final QuadraticDiophantineModBit solutionsMod = new QuadraticDiophantineModBit(mod);
 
-		solutionsMod.lehmanSolutions();
+		final byte[][] sol = solutionsMod.lehmanSolutions();
+		final int n = 0;
+		for (final byte[] bs : sol) {
+			System.out.println("n : " + n + " next sol: ");
+			for (final byte next : bs) {
+				System.out.println(next + ",");
+			}
+		}
 		final int[] x = solutionsMod.xArray(0);
 
 		for (final int element : x) {

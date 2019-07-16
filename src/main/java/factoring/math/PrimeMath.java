@@ -146,25 +146,25 @@ public class PrimeMath {
 	}
 
 
-	//	/**
-	//	 * This a deterministic variant of the Rabin Miller test for up to 41 Bits.
-	//	 * It is sufficient to call the rabin miller test with a = 2, 3, 5, 7, 11
-	//	 * @param n
-	//	 * @return
-	//	 */
-	//	public static boolean isPrime41Bit (long n) {
-	//		if (n <= 3 || n %2 == 0)
-	//			return n <= 3;
-	//		final int [] as = {2, 3, 5, 7, 11};
-	//		final long nMin1 = n - 1;
-	//		for (int i = 0; i < as.length && as[i] < nMin1; i++) {
-	//			final boolean probablePrime = isProbablePrime(BigInteger.valueOf(n), as[i]);
-	//			//			final boolean probablePrime = isProbablePrime((int) n, as[i]);
-	//			if (!probablePrime)
-	//				return false;
-	//		}
-	//		return true;
-	//	}
+	/**
+	 * This a deterministic variant of the Rabin Miller test for up to 41 Bits.
+	 * It is sufficient to call the rabin miller test with a = 2, 3, 5, 7, 11
+	 * @param n
+	 * @return
+	 */
+	public static boolean isPrime41Bit (long n) {
+		if (n <= 3 || n %2 == 0)
+			return n <= 3;
+		final int [] as = {2, 3, 5, 7, 11};
+		final long nMin1 = n - 1;
+		for (int i = 0; i < as.length && as[i] < nMin1; i++) {
+			final boolean probablePrime = isProbablePrime(BigInteger.valueOf(n), as[i]);
+			//			final boolean probablePrime = isProbablePrime((int) n, as[i]);
+			if (!probablePrime)
+				return false;
+		}
+		return true;
+	}
 	//
 	//	/**
 	//	 * This a deterministic variant of the Rabin Miller test for up to 61 Bits.

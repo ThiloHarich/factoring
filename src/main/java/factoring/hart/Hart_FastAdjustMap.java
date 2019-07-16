@@ -22,6 +22,8 @@ import de.tilman_neumann.jml.factor.tdiv.TDiv63Inverse;
 import de.tilman_neumann.jml.gcd.Gcd63;
 
 /**
+ * Here we implement the adjust a method by a map/array
+ *
  * Pretty simple yet fast variant of Hart's one line factorizer.
  * This implementations introduces some improvements that make it the fastest factoring algorithm
  * for numbers with more then 20? and less then 50 bit.
@@ -57,7 +59,7 @@ import de.tilman_neumann.jml.gcd.Gcd63;
  *
  * @authors Thilo Harich & Tilman Neumann
  */
-public class Hart_FastT extends FactorAlgorithm {
+public class Hart_FastAdjustMap extends FactorAlgorithm {
 	private static final Logger LOG = Logger.getLogger(Hart_FastT.class);
 
 	/**
@@ -65,9 +67,7 @@ public class Hart_FastT extends FactorAlgorithm {
 	 * Best values for performance are 315, 45, 105, 15 and 3, in that order.
 	 */
 	private static final int K_MULT = 3*3*5*7; // 315
-	//	private static final int K_MULT = 3*7*17; // 315
-	//	private static final int K_MULT = 5*11*13; // 315
-	//	private static final int K_MULT = 45;
+	//	private static final int K_MULT = 1155;
 	//	private static final int K_MULT = 1; // 315
 
 	/** Size of arrays this is around 4*n^1/3.
@@ -83,17 +83,25 @@ public class Hart_FastT extends FactorAlgorithm {
 	private final TDiv63Inverse tdiv = new TDiv63Inverse(I_MAX);
 	private final Gcd63 gcdEngine = new Gcd63();
 
+	private final int[] adjustA = new int[1024];
+
 	/**
 	 * Full constructor.
 	 * @param doTDivFirst If true then trial division is done before the Lehman loop.
 	 * This is recommended if arguments N are known to have factors < cbrt(N) frequently.
 	 */
-	public Hart_FastT(boolean doTDivFirst) {
+	public Hart_FastAdjustMap(boolean doTDivFirst) {
 		this.doTDivFirst = doTDivFirst;
 		// Precompute sqrts for all k < I_MAX
 		sqrt = new double[I_MAX];
 		for (int i=1; i<I_MAX; i++) {
 			sqrt[i] = Math.sqrt(i*K_MULT);
+		}
+		for (int kNPlus1=0; kNPlus1<32; kNPlus1++) {
+			for (int a=0; a<32; a++) {
+				final int index = (kNPlus1 << 5) +  a;
+				adjustA[index] = (byte) adjustA(kNPlus1, a);
+			}
 		}
 	}
 
@@ -125,11 +133,19 @@ public class Hart_FastT extends FactorAlgorithm {
 		final double sqrt4N = Math.sqrt(fourN);
 		long a, b, test, gcd;
 		int k = K_MULT;
+		int knPlus1 = (int) (((k*N+1) & 31) << 5);
+		final int nMod32 = (int) ((2 * K_MULT * N & 31) << 5);
 		try {
 			for (int i=1; ;i++, k += K_MULT) {
 				// calculating the sqrt here is 5 times slower then storing it
 				a = (long) (sqrt4N * sqrt[i] + ROUND_UP_DOUBLE);
-				a = adjustA(N, a, k);
+				//				long				a1 = adjustA(N, a, k);
+				//				final int knPlus1Mod32 = (int) (((k*N+1) & 31) << 5);
+				//				assertEquals(knPlus1Mod32, knPlus1);
+				final int aMod32 = (int) (a & 31);
+				final int index = knPlus1 |  aMod32 ;
+				a += adjustA[index];
+				//				assertEquals(a1, a);
 				test = a*a - k * fourN;
 				b = (long) Math.sqrt(test);
 				if (b*b == test) {
@@ -137,6 +153,26 @@ public class Hart_FastT extends FactorAlgorithm {
 						return gcd;
 					}
 				}
+				i++; k += K_MULT;
+				a = (long) (sqrt4N * sqrt[i] + ROUND_UP_DOUBLE);
+				//				a1 = adjustA(N, a, k);
+				a |= 1;
+				//				assertEquals(a1, a);
+				//				knPlus1 += nMod32;
+				//				if (knPlus1 >= 1024)
+				//					knPlus1 -= 1024;
+				//				assertEquals(a1, a);
+				test = a*a - k * fourN;
+				b = (long) Math.sqrt(test);
+				if (b*b == test) {
+					if ((gcd = gcdEngine.gcd(a+b, N))>1 && gcd<N) {
+						return gcd;
+					}
+				}
+				//								knPlus1 += nMod32;
+				//				if (knPlus1 >= 1024)
+				//					knPlus1 -= 1024;
+				knPlus1 = (knPlus1 + nMod32) & 1023;
 			}
 		} catch (final ArrayIndexOutOfBoundsException e) {
 			LOG.error("Hart_Fast: Failed to factor N=" + N + ". Either it has factors < cbrt(N) needing trial division, or the arrays are too small.");
@@ -160,13 +196,48 @@ public class Hart_FastT extends FactorAlgorithm {
 	 * @param k
 	 * @return
 	 */
+	private long adjustA(long kNp1, long x) {
+		if ((kNp1 & 1)==1)
+			return (x&1) ^ 1;
+		if ((kNp1 & 3) == 0)
+		{
+			return ((kNp1 - x) & 7);
+		}
+		else if ((kNp1 & 7) == 2) {
+			final long adjust1 = ( kNp1 - x) & 15;
+			final long adjust2 = (-kNp1 - x) & 15;
+			final long diff = adjust1<adjust2 ? adjust1 : adjust2;
+			return diff;
+		}
+		final long adjust1 = ( kNp1 - x) & 31;
+		final long adjust2 = (-kNp1 - x) & 31;
+		return (adjust1<adjust2 ? adjust1 : adjust2);
+	}
+	/**
+	 * Increases x to return the next possible solution for x for x^2 - 4kn = b^2.
+	 * Due to performance reasons we give back solutions for this equations modulo a
+	 * power of 2, since we can determine the solutions just by additions and binary
+	 * operations.
+	 *
+	 * if k is even x must be odd.
+	 * if k*n == 3 mod 4 -> x = k*n+1 mod 8
+	 * if k*n == 1 mod 8 -> x = k*n+1 mod 16 or -k*n+1 mod 16
+	 * if k*n == 5 mod 8 -> x = k*n+1 mod 32 or -k*n+1 mod 32
+	 *
+	 * @param N
+	 * @param x
+	 * @param k
+	 * @return
+	 */
 	private long adjustA(long N, long x, int k) {
 		if ((k&1)==0)
 			return x | 1;
 		final long kNp1 = k*N+1;
+		final long knMod32 = kNp1 % 32;
 		if ((kNp1 & 3) == 0)
 		{
-			return x + ((kNp1 - x) & 7);
+			final long l = (kNp1 - x) & 7;
+			return x + l;
 		}
 		else if ((kNp1 & 7) == 2) {
 			final long adjust1 = ( kNp1 - x) & 15;

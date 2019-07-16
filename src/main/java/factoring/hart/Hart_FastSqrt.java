@@ -57,17 +57,15 @@ import de.tilman_neumann.jml.gcd.Gcd63;
  *
  * @authors Thilo Harich & Tilman Neumann
  */
-public class Hart_FastT extends FactorAlgorithm {
-	private static final Logger LOG = Logger.getLogger(Hart_FastT.class);
+public class Hart_FastSqrt extends FactorAlgorithm {
+	private static final Logger LOG = Logger.getLogger(Hart_FastSqrt.class);
 
 	/**
 	 * We only test k-values that are multiples of this constant.
 	 * Best values for performance are 315, 45, 105, 15 and 3, in that order.
 	 */
 	private static final int K_MULT = 3*3*5*7; // 315
-	//	private static final int K_MULT = 3*7*17; // 315
-	//	private static final int K_MULT = 5*11*13; // 315
-	//	private static final int K_MULT = 45;
+	//	private static final int K_MULT = 1155;
 	//	private static final int K_MULT = 1; // 315
 
 	/** Size of arrays this is around 4*n^1/3.
@@ -80,6 +78,7 @@ public class Hart_FastT extends FactorAlgorithm {
 
 	private final boolean doTDivFirst;
 	private final double[] sqrt;
+	private final double[] sqrt4Add;
 	private final TDiv63Inverse tdiv = new TDiv63Inverse(I_MAX);
 	private final Gcd63 gcdEngine = new Gcd63();
 
@@ -88,12 +87,15 @@ public class Hart_FastT extends FactorAlgorithm {
 	 * @param doTDivFirst If true then trial division is done before the Lehman loop.
 	 * This is recommended if arguments N are known to have factors < cbrt(N) frequently.
 	 */
-	public Hart_FastT(boolean doTDivFirst) {
+	public Hart_FastSqrt(boolean doTDivFirst) {
 		this.doTDivFirst = doTDivFirst;
 		// Precompute sqrts for all k < I_MAX
 		sqrt = new double[I_MAX];
+		sqrt4Add = new double[I_MAX];
 		for (int i=1; i<I_MAX; i++) {
-			sqrt[i] = Math.sqrt(i*K_MULT);
+			final int k = i*K_MULT;
+			sqrt[i] = Math.sqrt(k);
+			sqrt4Add[i] = Math.sqrt(1 + (0.0 + K_MULT)/k) - 1;
 		}
 	}
 
@@ -123,20 +125,31 @@ public class Hart_FastT extends FactorAlgorithm {
 
 		final long fourN = N<<2;
 		final double sqrt4N = Math.sqrt(fourN);
-		long a, b, test, gcd;
+		long b, test, gcd;
 		int k = K_MULT;
+		long aCeil = (long) (sqrt4N * sqrt[1] + ROUND_UP_DOUBLE);
+		double aOrig = sqrt4N * sqrt[1];
+
 		try {
 			for (int i=1; ;i++, k += K_MULT) {
-				// calculating the sqrt here is 5 times slower then storing it
-				a = (long) (sqrt4N * sqrt[i] + ROUND_UP_DOUBLE);
-				a = adjustA(N, a, k);
-				test = a*a - k * fourN;
+				//				final long a3 = (long) (aOrig + ROUND_UP_DOUBLE);
+				//				assertEquals(a3, a);
+				final long aAdjust = adjustA(N, aCeil, k);
+
+				test = aAdjust*aAdjust - k * fourN;
 				b = (long) Math.sqrt(test);
 				if (b*b == test) {
-					if ((gcd = gcdEngine.gcd(a+b, N))>1 && gcd<N) {
+					if ((gcd = gcdEngine.gcd(aAdjust+b, N))>1 && gcd<N) {
 						return gcd;
 					}
 				}
+				// sqrt(4(k+m)n) = sqrt(4n * k) * sqrt((k+m)/k)
+				// sqrt(4(k+m)n) = sqrt(4n * k) * sqrt(1 + m/k)
+				// sqrt(4(k+m)n) = sqrt(4n * k) * (1 + (sqrt(1 + m/k) - 1)
+				// sqrt(4(k+m)n) = sqrt(4n * k) + sqrt(4n * k) * (sqrt(1 + m/k) - 1)
+				// a += a * (sqrt(1 + 1/k) - 1)
+				aOrig += aOrig * sqrt4Add[i];
+				aCeil = (long) (aOrig + ROUND_UP_DOUBLE);
 			}
 		} catch (final ArrayIndexOutOfBoundsException e) {
 			LOG.error("Hart_Fast: Failed to factor N=" + N + ". Either it has factors < cbrt(N) needing trial division, or the arrays are too small.");

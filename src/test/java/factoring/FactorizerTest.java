@@ -19,22 +19,21 @@ import static de.tilman_neumann.jml.base.BigIntConstants.I_1;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.SortedMap;
 import java.util.TreeMap;
 
 import org.apache.log4j.Logger;
 
-import de.tilman_neumann.jml.factor.FactorAlgorithm;
-import de.tilman_neumann.jml.factor.TestMode;
-import de.tilman_neumann.jml.factor.TestNumberNature;
-import de.tilman_neumann.jml.factor.TestsetGenerator;
 import de.tilman_neumann.jml.factor.hart.Hart_Fast;
+import de.tilman_neumann.jml.factor.hart.Hart_FastT;
 import de.tilman_neumann.jml.factor.hart.Hart_TDiv_Race;
 import de.tilman_neumann.jml.factor.hart.Hart_TDiv_Race_Unsafe;
+import de.tilman_neumann.jml.factor.lehman.Lehman_CustomKOrder;
 import de.tilman_neumann.jml.factor.lehman.Lehman_Fast;
-import de.tilman_neumann.jml.factor.lehman.Lehman_Fast2;
-import de.tilman_neumann.jml.factor.lehman.Lehman_Fast3;
 import de.tilman_neumann.jml.factor.pollardRho.PollardRhoBrentMontgomeryR64Mul63;
+import de.tilman_neumann.jml.factor.squfof.SquFoF31Preload;
+import de.tilman_neumann.jml.factor.squfof.SquFoF63;
+import de.tilman_neumann.jml.factor.tdiv.TDiv31Inverse;
+import de.tilman_neumann.jml.primes.probable.BPSWTest;
 import de.tilman_neumann.util.ConfigUtil;
 import de.tilman_neumann.util.SortedMultiset;
 import de.tilman_neumann.util.SortedMultiset_BottomUp;
@@ -48,6 +47,8 @@ import de.tilman_neumann.util.TimeUtil;
 public class FactorizerTest {
 	private static final Logger LOG = Logger.getLogger(FactorizerTest.class);
 
+	private static final boolean DEBUG = false;
+
 	// algorithm options
 	/** number of test numbers */
 	private static final int N_COUNT = 100000;
@@ -60,9 +61,11 @@ public class FactorizerTest {
 	/** each algorithm is run REPEATS times for each input in order to reduce GC influence on timings */
 	private static final int REPEATS = 1;
 	/** Nature of test numbers */
-	private static final TestNumberNature TEST_NUMBER_NATURE = TestNumberNature.QUITE_HARD_SEMIPRIMES;
+	private static final TestNumberNature TEST_NUMBER_NATURE = TestNumberNature.MODERATE_SEMIPRIMES;
 	/** Test mode */
 	private static final TestMode TEST_MODE = TestMode.FIRST_FACTOR;
+
+	private final BPSWTest bpsw = new BPSWTest();
 
 	/**
 	 * Algorithms to compare. Non-static to permit to use Loggers in the algorithm constructors.
@@ -75,31 +78,23 @@ public class FactorizerTest {
 				// Trial division
 				//new TDiv31(),
 				//new TDiv31Preload(),
-				//			new TDiv31Inverse(), // Fastest algorithm for N <= 24 bit
-				//			new TDiv31Inverse_NoDoubleCheck(),
-				//			new TDiv31Inverse_NoDoubleCheck_Unroll(),
+				new TDiv31Inverse(), // Fastest algorithm for N <= 24 bit
 				//			new TDiv63Inverse(1<<21),
-				//			new TDiv63Inverse_NoDoubleCheck(1<<21),
-				//			new TDiv63Inverse_NoDoubleCheck_Unroll(1<<21), // very good trial division algorithm
 
 				// Hart's one line factorizer
 				//new Hart_Simple(),
-				new Hart_Fast(false), // best algorithm for hard semiprimes
+				new Hart_FastT(false), // best algorithm for semiprimes not having factors < cbrt(N), N<40 bit
+				new Hart_Fast(false), // best algorithm for semiprimes not having factors < cbrt(N), N<40 bit
 				//			new Hart_Fast(true),
-				new Hart_TDiv_Race(), // best safe algorithm for any N with 25 to 49 bits, best for moderate semiprimes <= 44 bit
-				new Hart_TDiv_Race_Unsafe(), // best algorithm for moderate semiprimes >= 45 bit (but fails for some N having small factors)
-
-				new factoring.hart.Hart_TDiv_Race2(),
-				new factoring.hart.Hart_FastT(false),
-				new factoring.hart.Hart_FastT2(false),
+				new Hart_TDiv_Race(), // good for any kind of numbers < 50 bit
+				new Hart_TDiv_Race_Unsafe(), // quite good for moderate semiprimes >= 45 bit, but fails for some N having small factors
 
 				// Lehman
 				//new Lehman_Simple(false),
 				//new Lehman_Smith(false),
 				new Lehman_Fast(false), // the variant implemented by bsquared
 				//			new Lehman_Fast(true),
-				new Lehman_Fast2(false), // best Lehman for moderate semiprimes
-				new Lehman_Fast3(false), // best Lehman for hard semiprimes
+				new Lehman_CustomKOrder(false), // best for moderate semiprimes from 40 to 50 bit
 
 				// PollardRho
 				//new PollardRho(),
@@ -116,9 +111,9 @@ public class FactorizerTest {
 				// * SquFoF31 works until 52 bit and is faster there than SquFoF63
 				// * best multiplier sequence = 1680 * {squarefree sequence}
 				// * best stopping criterion = O(5.th root(N))
-				//			new SquFoF63(),
+				new SquFoF63(),
 				//new SquFoF31(),
-				//			new SquFoF31Preload(),
+				new SquFoF31Preload(),
 
 				// CFrac
 				// * never the best algorithm: SquFoF63 is better for N <= 65 bit, SIQS is better for N >= 55 bits
@@ -180,14 +175,34 @@ public class FactorizerTest {
 		};
 	}
 
+	@SuppressWarnings("unchecked")
 	private void testRange(int bits) {
 		final BigInteger N_min = I_1.shiftLeft(bits-1);
 		// Compute test set
 		final BigInteger[] testNumbers = TestsetGenerator.generate(N_COUNT, bits, TEST_NUMBER_NATURE);
-		final BigInteger[] factors = new BigInteger[N_COUNT];
-		@SuppressWarnings("unchecked")
-		final
-		SortedMultiset<BigInteger>[] factorSetArray = new SortedMultiset_BottomUp[N_COUNT];
+
+		// TEST_MODE=FIRST_FACTOR needs factors, TEST_MODE=PRIME_FACTORIZATION needs factorSetArray
+		BigInteger[] factors = null;
+		SortedMultiset<BigInteger>[] factorSetArray = null;
+		SortedMultiset<BigInteger>[] correctFactorSets = null;
+		if (TEST_MODE==TestMode.FIRST_FACTOR) {
+			factors = new BigInteger[N_COUNT];
+		} else {
+			// TEST_MODE==TestMode.PRIME_FACTORIZATION
+			correctFactorSets = new SortedMultiset_BottomUp[N_COUNT];
+			for (int j=0; j<N_COUNT; j++) {
+				final BigInteger N = testNumbers[j];
+				// get factors from verification factorizer and test them for absolute correctness
+				final SortedMultiset<BigInteger> correctFactors = FactorAlgorithm.DEFAULT.factor(N);
+				for (final BigInteger factor : correctFactors.keySet()) {
+					if (!bpsw.isProbablePrime(factor)) {
+						LOG.error("The verification factor algorithm failed to factor N=" + N + " = " + correctFactors + " correctly! Factor " + factor + " is not prime.");
+					}
+				}
+				correctFactorSets[j] = correctFactors;
+			}
+			factorSetArray = new SortedMultiset_BottomUp[N_COUNT];
+		}
 
 		LOG.info("Test N with " + bits + " bits, i.e. N >= " + N_min);
 
@@ -204,7 +219,6 @@ public class FactorizerTest {
 				if (bits>60 && algName.startsWith("Lehman")) continue;
 				if (bits>31 && algName.startsWith("TDiv31")) continue; // int implementation
 				if (bits>31 && algName.startsWith("PollardRho31")) continue; // long implementation
-				if (bits>42 && algName.startsWith("TDiv63Inverse")) continue; // not enough primes stored
 
 				System.gc(); // create equal conditions for all algorithms
 
@@ -262,28 +276,14 @@ public class FactorizerTest {
 					duration = endTimeMillis - startTimeMillis; // duration in ms
 					//LOG.debug("algorithm " + algName + " finished test set with " + bits + " bits");
 
-					// verify
+					// compare results of current algorithm with verification factorizer
 					for (int j=0; j<N_COUNT; j++) {
 						final BigInteger N = testNumbers[j];
-						final SortedMap<BigInteger, Integer> factorSet = factorSetArray[j];
-						// test correctness
-						if (factorSet!=null) {
-							for (final BigInteger factor : factorSet.keySet()) {
-								if (factor==null || factor.equals(I_0) || factor.equals(I_1) || factor.mod(N).equals(I_0)) {
-									//LOG.error("FactorAlgorithm " + algorithm.getName() + " did not find a factor of N=" + N + ", it returned " + factor);
-									failExample = N;
-									failCount++;
-								} else {
-									// not null, not trivial -> test division
-									final BigInteger[] test = N.divideAndRemainder(factor);
-									if (!test[1].equals(I_0)) {
-										//LOG.error("FactorAlgorithm " + algorithm.getName() + " returned " + factor + ", but this is not a factor of N=" + N);
-										failExample = N;
-										failCount++;
-									}
-								}
-							}
-						} else {
+						final SortedMultiset<BigInteger> correctFactors = correctFactorSets[j];
+						final SortedMultiset<BigInteger> factorSet = factorSetArray[j];
+						if (!correctFactors.equals(factorSet)) {
+							if (DEBUG) LOG.error("FactorAlgorithm " + algorithm.getName() + " did not find all factors of N=" + N + ". Correct factors=" + correctFactors + ", found factors=" + factorSet);
+							failExample = N;
 							failCount++;
 						}
 					}

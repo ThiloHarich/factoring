@@ -22,52 +22,19 @@ import de.tilman_neumann.jml.factor.tdiv.TDiv63Inverse;
 import de.tilman_neumann.jml.gcd.Gcd63;
 
 /**
- * Pretty simple yet fast variant of Hart's one line factorizer.
- * This implementations introduces some improvements that make it the fastest factoring algorithm
- * for numbers with more then 20? and less then 50 bit.
- * It avoids the complexity of calculating the square root when factoring multiple numbers,
- * by storing the square roots of k in the main loop.
- * It uses an optimized trial division algorithm to factorize small numbers.
- * It uses a well chosen multiplier m = 3*3*5*7 which is odd.
- * After calculating a number 'a' above sqrt(4*m*k) a will be adjusted to satisfy
- * some modulus a power of 2 argument.
- * It reuses the idea of rounding up by adding a well choosen constant (Warren D. Smith)
- *
- * It tires to find solutions for a^2 - 4*m*i*n = b^2 from fermat we then know that
- * gcd(a+b, n) and gcd(a-b, n) are divisors of n.
- *
- * This is done by one simple loop over k were we generate numbers a = sqrt(4*m*k*n).
- * By storing sqrt(k) in an array this can be calculated fast.
- *
- * Compared with the regular Lehman algorithm, the Hart algorithm does not
- * need a second loop to iterate over the numbers 'a' for a given 'k' in the equation a^2 - 4kn.
- * So the upper bound for this does not has to be calculated. For each k the value sqrt(k) in order
- * to determine a = ceil(sqrt(4kn))
- * will be calculated only once and then stored in an array. This speeds up the sieving buy
- * a big factor since calculating the sqrt is expensive.
- * We choose k to be a multiple of 315 = 3*3*5*7 this causes that
- * a^2 - 4kn = b^2 mod 3*3*5*7 which increases the chance to find a solution a^2 - 4kn = b^2 pretty much.
- * After selecting 'a' we ensure that a^2 - 4kn = b^2 mod 64 by increasing 'a' at most by 8.
- *
- *
- * With doTDivFirst=false, this implementation is pretty fast for hard semiprimes.
- * But the smaller possible factors get, it will become slower and slower.
- *
- * For any kind of test numbers except very hard semiprimes, Hart_TDiv_Race will be faster.
- *
+ * Here we try to not only use the smallest a' > a which fulfills a mod 32 Argument. We also
+ * use the next a'' > a'
  * @authors Thilo Harich & Tilman Neumann
  */
-public class Hart_FastT extends FactorAlgorithm {
-	private static final Logger LOG = Logger.getLogger(Hart_FastT.class);
+public class Hart_FastNarrow extends FactorAlgorithm {
+	private static final Logger LOG = Logger.getLogger(Hart_FastNarrow.class);
 
 	/**
 	 * We only test k-values that are multiples of this constant.
 	 * Best values for performance are 315, 45, 105, 15 and 3, in that order.
 	 */
 	private static final int K_MULT = 3*3*5*7; // 315
-	//	private static final int K_MULT = 3*7*17; // 315
-	//	private static final int K_MULT = 5*11*13; // 315
-	//	private static final int K_MULT = 45;
+	//	private static final int K_MULT = 1155;
 	//	private static final int K_MULT = 1; // 315
 
 	/** Size of arrays this is around 4*n^1/3.
@@ -77,6 +44,8 @@ public class Hart_FastT extends FactorAlgorithm {
 
 	/** This constant is used for fast rounding of double values to long. */
 	private static final double ROUND_UP_DOUBLE = 0.9999999665;
+
+	private static final long MAX_STEP = 2;
 
 	private final boolean doTDivFirst;
 	private final double[] sqrt;
@@ -88,7 +57,7 @@ public class Hart_FastT extends FactorAlgorithm {
 	 * @param doTDivFirst If true then trial division is done before the Lehman loop.
 	 * This is recommended if arguments N are known to have factors < cbrt(N) frequently.
 	 */
-	public Hart_FastT(boolean doTDivFirst) {
+	public Hart_FastNarrow(boolean doTDivFirst) {
 		this.doTDivFirst = doTDivFirst;
 		// Precompute sqrts for all k < I_MAX
 		sqrt = new double[I_MAX];
@@ -126,17 +95,39 @@ public class Hart_FastT extends FactorAlgorithm {
 		long a, b, test, gcd;
 		int k = K_MULT;
 		try {
-			for (int i=1; ;i++, k += K_MULT) {
-				// calculating the sqrt here is 5 times slower then storing it
-				a = (long) (sqrt4N * sqrt[i] + ROUND_UP_DOUBLE);
-				a = adjustA(N, a, k);
-				test = a*a - k * fourN;
-				b = (long) Math.sqrt(test);
-				if (b*b == test) {
-					if ((gcd = gcdEngine.gcd(a+b, N))>1 && gcd<N) {
-						return gcd;
+			for(int range = 1; ; range *= 2)
+			{
+				for (int i=range; i < range * 2;i++, k+= K_MULT) {
+					//					k = i*K_MULT;
+					// calculating the sqrt here is 5 times slower then storing it
+					a = (long) (sqrt4N * sqrt[i] + ROUND_UP_DOUBLE);
+					//					a = adjustA(N, a, k, true);
+					a = adjustA(N, a, k);
+					if (a > 0) {
+						test = a*a - k * fourN;
+						b = (long) Math.sqrt(test);
+						if (b*b == test) {
+							if ((gcd = gcdEngine.gcd(a+b, N))>1 && gcd<N) {
+								return gcd;
+							}
+						}
 					}
 				}
+				//				for (int i=range; i < range * 2;i+=2) {
+				//					k = i*K_MULT;
+				//					// calculating the sqrt here is 5 times slower then storing it
+				//					a = (long) (sqrt4N * sqrt[i] + ROUND_UP_DOUBLE);
+				//					a = adjustA(N, a, k, false);
+				//					if (a > 0) {
+				//						test = a*a - k * fourN;
+				//						b = (long) Math.sqrt(test);
+				//						if (b*b == test) {
+				//							if ((gcd = gcdEngine.gcd(a+b, N))>1 && gcd<N) {
+				//								return gcd;
+				//							}
+				//						}
+				//					}
+				//				}
 			}
 		} catch (final ArrayIndexOutOfBoundsException e) {
 			LOG.error("Hart_Fast: Failed to factor N=" + N + ". Either it has factors < cbrt(N) needing trial division, or the arrays are too small.");
@@ -144,22 +135,6 @@ public class Hart_FastT extends FactorAlgorithm {
 			return 1;
 		}
 	}
-	/**
-	 * Increases x to return the next possible solution for x for x^2 - 4kn = b^2.
-	 * Due to performance reasons we give back solutions for this equations modulo a
-	 * power of 2, since we can determine the solutions just by additions and binary
-	 * operations.
-	 *
-	 * if k is even x must be odd.
-	 * if k*n == 3 mod 4 -> x = k*n+1 mod 8
-	 * if k*n == 1 mod 8 -> x = k*n+1 mod 16 or -k*n+1 mod 16
-	 * if k*n == 5 mod 8 -> x = k*n+1 mod 32 or -k*n+1 mod 32
-	 *
-	 * @param N
-	 * @param x
-	 * @param k
-	 * @return
-	 */
 	private long adjustA(long N, long x, int k) {
 		if ((k&1)==0)
 			return x | 1;
@@ -172,11 +147,38 @@ public class Hart_FastT extends FactorAlgorithm {
 			final long adjust1 = ( kNp1 - x) & 15;
 			final long adjust2 = (-kNp1 - x) & 15;
 			final long diff = adjust1<adjust2 ? adjust1 : adjust2;
+			//					final int xMod = (int) ((x) % 16);
+			//					final int resMod = (int) ((x+ diff) % 16);
 			return x + diff;
 		}
 		final long adjust1 = ( kNp1 - x) & 31;
 		final long adjust2 = (-kNp1 - x) & 31;
 		return x + (adjust1<adjust2 ? adjust1 : adjust2);
+	}
+
+	private long adjustA(long N, long x, int k, boolean narrow) {
+		if ((k&1)==0)
+			return narrow  ? x | 1 : (x | 1) +2;
+		final long kNp1 = k*N+1;
+		if ((kNp1 & 3) == 0)
+		{
+			final long step = (kNp1 - x) & 7;
+			return narrow ? x + step : x + step + 8;
+		}
+		else if ((kNp1 & 7) == 2) {
+			final long adjust1 = ( kNp1 - x) & 15;
+			final long adjust2 = (-kNp1 - x) & 15;
+			if (adjust1<adjust2)
+				return narrow ? x + adjust1 : x + adjust2;
+			else
+				return narrow ? x + adjust2 : x + adjust1;
+		}
+		final long adjust1 = ( kNp1 - x) & 31;
+		final long adjust2 = (-kNp1 - x) & 31;
+		if (adjust1<adjust2)
+			return narrow ? x + adjust1 : x + adjust2;
+		else
+			return narrow ? x + adjust2 : x + adjust1;
 	}
 
 }

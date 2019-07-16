@@ -15,8 +15,6 @@ package factoring.hart;
 
 import java.math.BigInteger;
 
-import org.apache.log4j.Logger;
-
 import de.tilman_neumann.jml.factor.FactorAlgorithm;
 import de.tilman_neumann.jml.factor.tdiv.TDiv63Inverse;
 import de.tilman_neumann.jml.gcd.Gcd63;
@@ -31,9 +29,7 @@ import de.tilman_neumann.jml.gcd.Gcd63;
  *
  * @authors Thilo Harich & Tilman Neumann
  */
-public class Hart_FastT4 extends FactorAlgorithm {
-	private static final Logger LOG = Logger.getLogger(Hart_FastT4.class);
-
+public class Hart_FastTMod11 extends FactorAlgorithm {
 	/**
 	 * We only test k-values that are multiples of this constant.
 	 * Best values for performance are 315, 45, 105, 15 and 3, in that order.
@@ -42,7 +38,7 @@ public class Hart_FastT4 extends FactorAlgorithm {
 	//	private static final int K_MULT = 1; // 315
 
 	/** Size of arrays */
-	private static final int I_MAX = 1<<20;
+	private static final int I_MAX = 1<<18;
 
 	/** This constant is used for fast rounding of double values to long. */
 	private static final double ROUND_UP_DOUBLE = 0.9999999665;
@@ -51,15 +47,21 @@ public class Hart_FastT4 extends FactorAlgorithm {
 	private final double[] sqrt;
 	private final TDiv63Inverse tdiv = new TDiv63Inverse(I_MAX);
 	private final Gcd63 gcdEngine = new Gcd63();
+	private boolean[] sqares11;
+
+	private final double inv11 = 1/ 11.0;
+
+	public static int [] ks = new int[I_MAX];
 
 	/**
 	 * Full constructor.
 	 * @param doTDivFirst If true then trial division is done before the Lehman loop.
 	 * This is recommended if arguments N are known to have factors < cbrt(N) frequently.
 	 */
-	public Hart_FastT4(boolean doTDivFirst) {
+	public Hart_FastTMod11(boolean doTDivFirst) {
 		this.doTDivFirst = doTDivFirst;
 		// Precompute sqrts for all k < I_MAX
+		// sqrt ((1 - 1 * 2^-12)) /13)
 		sqrt = new double[I_MAX];
 		for (int i=1; i<I_MAX; i++) {
 			sqrt[i] = Math.sqrt(i*K_MULT);
@@ -88,6 +90,13 @@ public class Hart_FastT4 extends FactorAlgorithm {
 			tdiv.setTestLimit((int) Math.cbrt(N));
 			if ((factor = tdiv.findSingleFactor(N))>1) return factor;
 		}
+		else {
+			// at least do trial division by multiplier factors
+			if ((N%3)==0) return 3;
+			if ((N%5)==0) return 5;
+			if ((N%7)==0) return 7;
+		}
+
 		final long fourN = N<<2;
 		final double sqrt4N = Math.sqrt(fourN);
 		long a, b, test, gcd;
@@ -95,26 +104,30 @@ public class Hart_FastT4 extends FactorAlgorithm {
 		try {
 			for (int i=1; ;i++, k += K_MULT) {
 				// odd k -> adjust a mod 8
-				final long aOrig = (long) (sqrt4N * sqrt[i] + ROUND_UP_DOUBLE);
-				a = adjustA(N, aOrig, k);
-				//				a = adjustA(N, aOrig, k, 27);
-				final long fourKN = k * fourN;
-				test = a*a - fourKN;
-				//				final long testMod = test % 27;
-				b = (long) Math.sqrt(test);
-				if (b*b == test) {
-					if ((gcd = gcdEngine.gcd(a+b, N))>1 && gcd<N) {
-						//						final long knMod8 = (k*N) % 8;
-						//						if (knMod8 == 1) {
-						final long mod = 16;
-						//							final int step = (int) ((a-aOrig) % mod );
-						final int aMod = (int) (a % mod);
-						final int knMod = (int) ((k*N) % 8);
-						//							final int diff = (int) ((aMod - knMod) % mod);
-						//							System.out.print(aMod + ",");
-						//							//						System.out.print((k*N) % 8);
-						//						}
-						return gcd;
+				// calculating the sqrt here is 5 times slower then storing it
+				a = (long) (sqrt4N * sqrt[i] + ROUND_UP_DOUBLE);
+				if ((i & 1) == 0)
+					a |= 1;
+				else {
+					final long kPlusN = k + N;
+					if ((kPlusN & 3) == 0) {
+						a += ((kPlusN - a) & 7);
+					} else {
+						final long adjust1 = (kPlusN - a) & 15;
+						final long adjust2 = (-kPlusN - a) & 15;
+						a += adjust1<adjust2 ? adjust1 : adjust2;
+					}
+				}
+				test = a*a - k * fourN;
+				final int testMod11 = (int) (test - (long) (test*inv11)*11);
+				if (sqares11[testMod11]) {
+					b = (long) Math.sqrt(test);
+					if (b*b == test) {
+						if ((gcd = gcdEngine.gcd(a+b, N))>1 && gcd<N) {
+							//						System.out.print("," + i );
+							//						System.out.print("," + i % 9 + ";" + a % 9);
+							return gcd;
+						}
 					}
 				}
 			}
@@ -126,33 +139,4 @@ public class Hart_FastT4 extends FactorAlgorithm {
 	}
 
 
-	private long adjustA(long N, long x, int k) {
-		if ((k&1)==0)
-			return x | 1;
-		final long kNp1 = k*N+1;
-		if ((kNp1 & 3) == 0)
-		{
-			return x + ((kNp1 - x) & 7);
-		}
-		else if ((kNp1 & 7) == 2) {
-			final long adjust1 = ( kNp1 - x) & 15;
-			final long adjust2 = (-kNp1 - x) & 15;
-			final long diff = adjust1<adjust2 ? adjust1 : adjust2;
-			//					final int xMod = (int) ((x) % 16);
-			//					final int resMod = (int) ((x+ diff) % 16);
-			return x + diff;
-		}
-		final long adjust1 = ( kNp1 - x) & 31;
-		final long adjust2 = (-kNp1 - x) & 31;
-		return x + (adjust1<adjust2 ? adjust1 : adjust2);
-	}
-
-	private long adjustA(long N, long x, int k, int mod) {
-		final long kNp1 = k*N+1;
-		final long adjust1 = Math.floorMod( kNp1 - x, mod);
-		final long adjust2 = Math.floorMod(-kNp1 - x, mod);
-		return x + (adjust1<adjust2 ? adjust1 : adjust2);
-	}
 }
-
-

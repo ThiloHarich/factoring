@@ -57,17 +57,15 @@ import de.tilman_neumann.jml.gcd.Gcd63;
  *
  * @authors Thilo Harich & Tilman Neumann
  */
-public class Hart_FastT extends FactorAlgorithm {
-	private static final Logger LOG = Logger.getLogger(Hart_FastT.class);
+public class Hart_FastFmaSimple extends FactorAlgorithm {
+	private static final Logger LOG = Logger.getLogger(Hart_FastFmaSimple.class);
 
 	/**
 	 * We only test k-values that are multiples of this constant.
 	 * Best values for performance are 315, 45, 105, 15 and 3, in that order.
 	 */
 	private static final int K_MULT = 3*3*5*7; // 315
-	//	private static final int K_MULT = 3*7*17; // 315
-	//	private static final int K_MULT = 5*11*13; // 315
-	//	private static final int K_MULT = 45;
+	//	private static final int K_MULT = 1155;
 	//	private static final int K_MULT = 1; // 315
 
 	/** Size of arrays this is around 4*n^1/3.
@@ -88,7 +86,7 @@ public class Hart_FastT extends FactorAlgorithm {
 	 * @param doTDivFirst If true then trial division is done before the Lehman loop.
 	 * This is recommended if arguments N are known to have factors < cbrt(N) frequently.
 	 */
-	public Hart_FastT(boolean doTDivFirst) {
+	public Hart_FastFmaSimple(boolean doTDivFirst) {
 		this.doTDivFirst = doTDivFirst;
 		// Precompute sqrts for all k < I_MAX
 		sqrt = new double[I_MAX];
@@ -128,7 +126,8 @@ public class Hart_FastT extends FactorAlgorithm {
 		try {
 			for (int i=1; ;i++, k += K_MULT) {
 				// calculating the sqrt here is 5 times slower then storing it
-				a = (long) (sqrt4N * sqrt[i] + ROUND_UP_DOUBLE);
+				//				a = (long) (sqrt4N * sqrt[i] + ROUND_UP_DOUBLE);
+				a = (long) Math.fma(sqrt4N, sqrt[i], ROUND_UP_DOUBLE);
 				a = adjustA(N, a, k);
 				test = a*a - k * fourN;
 				b = (long) Math.sqrt(test);

@@ -23,22 +23,6 @@ import de.tilman_neumann.jml.gcd.Gcd63;
 
 /**
  * Pretty simple yet fast variant of Hart's one line factorizer.
- * This implementations introduces some improvements that make it the fastest factoring algorithm
- * for numbers with more then 20? and less then 50 bit.
- * It avoids the complexity of calculating the square root when factoring multiple numbers,
- * by storing the square roots of k in the main loop.
- * It uses an optimized trial division algorithm to factorize small numbers.
- * It uses a well chosen multiplier m = 3*3*5*7 which is odd.
- * After calculating a number 'a' above sqrt(4*m*k) a will be adjusted to satisfy
- * some modulus a power of 2 argument.
- * It reuses the idea of rounding up by adding a well choosen constant (Warren D. Smith)
- *
- * It tires to find solutions for a^2 - 4*m*i*n = b^2 from fermat we then know that
- * gcd(a+b, n) and gcd(a-b, n) are divisors of n.
- *
- * This is done by one simple loop over k were we generate numbers a = sqrt(4*m*k*n).
- * By storing sqrt(k) in an array this can be calculated fast.
- *
  * Compared with the regular Lehman algorithm, the Hart algorithm does not
  * need a second loop to iterate over the numbers 'a' for a given 'k' in the equation a^2 - 4kn.
  * So the upper bound for this does not has to be calculated. For each k the value sqrt(k) in order
@@ -57,17 +41,15 @@ import de.tilman_neumann.jml.gcd.Gcd63;
  *
  * @authors Thilo Harich & Tilman Neumann
  */
-public class Hart_FastT extends FactorAlgorithm {
-	private static final Logger LOG = Logger.getLogger(Hart_FastT.class);
+public class Hart_FastKN extends FactorAlgorithm {
+	private static final Logger LOG = Logger.getLogger(Hart_FastKN.class);
 
 	/**
 	 * We only test k-values that are multiples of this constant.
 	 * Best values for performance are 315, 45, 105, 15 and 3, in that order.
 	 */
 	private static final int K_MULT = 3*3*5*7; // 315
-	//	private static final int K_MULT = 3*7*17; // 315
-	//	private static final int K_MULT = 5*11*13; // 315
-	//	private static final int K_MULT = 45;
+	//	private static final int K_MULT = 1155;
 	//	private static final int K_MULT = 1; // 315
 
 	/** Size of arrays this is around 4*n^1/3.
@@ -88,7 +70,7 @@ public class Hart_FastT extends FactorAlgorithm {
 	 * @param doTDivFirst If true then trial division is done before the Lehman loop.
 	 * This is recommended if arguments N are known to have factors < cbrt(N) frequently.
 	 */
-	public Hart_FastT(boolean doTDivFirst) {
+	public Hart_FastKN(boolean doTDivFirst) {
 		this.doTDivFirst = doTDivFirst;
 		// Precompute sqrts for all k < I_MAX
 		sqrt = new double[I_MAX];
@@ -129,14 +111,16 @@ public class Hart_FastT extends FactorAlgorithm {
 			for (int i=1; ;i++, k += K_MULT) {
 				// calculating the sqrt here is 5 times slower then storing it
 				a = (long) (sqrt4N * sqrt[i] + ROUND_UP_DOUBLE);
-				a = adjustA(N, a, k);
-				test = a*a - k * fourN;
+				final long k4N = k*fourN;
+				a = adjustA(a, k, k4N);
+				test = a*a - k4N;
 				b = (long) Math.sqrt(test);
 				if (b*b == test) {
 					if ((gcd = gcdEngine.gcd(a+b, N))>1 && gcd<N) {
 						return gcd;
 					}
 				}
+
 			}
 		} catch (final ArrayIndexOutOfBoundsException e) {
 			LOG.error("Hart_Fast: Failed to factor N=" + N + ". Either it has factors < cbrt(N) needing trial division, or the arrays are too small.");
@@ -144,26 +128,23 @@ public class Hart_FastT extends FactorAlgorithm {
 			return 1;
 		}
 	}
-	/**
-	 * Increases x to return the next possible solution for x for x^2 - 4kn = b^2.
-	 * Due to performance reasons we give back solutions for this equations modulo a
-	 * power of 2, since we can determine the solutions just by additions and binary
-	 * operations.
-	 *
-	 * if k is even x must be odd.
-	 * if k*n == 3 mod 4 -> x = k*n+1 mod 8
-	 * if k*n == 1 mod 8 -> x = k*n+1 mod 16 or -k*n+1 mod 16
-	 * if k*n == 5 mod 8 -> x = k*n+1 mod 32 or -k*n+1 mod 32
-	 *
-	 * @param N
-	 * @param x
-	 * @param k
-	 * @return
-	 */
-	private long adjustA(long N, long x, int k) {
+	//	private long adjustA(long N, long x, int k) {
+	//		if ((k&1)==0) {
+	//			x |= 1;
+	//		} else {
+	//			final long kPlusN = k + N;
+	//			if ((kPlusN & 3) == 0) {
+	//				x += ((kPlusN - x) & 7);
+	//			} else {
+	//				x += ((kPlusN - x) & 3);
+	//			}
+	//		}
+	//		return x;
+	//	}
+	private long adjustA(long x, int k, long k4N) {
 		if ((k&1)==0)
 			return x | 1;
-		final long kNp1 = k*N+1;
+		final long kNp1 = (k4N >> 2)+1;
 		if ((kNp1 & 3) == 0)
 		{
 			return x + ((kNp1 - x) & 7);

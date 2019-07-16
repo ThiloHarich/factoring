@@ -31,8 +31,8 @@ import de.tilman_neumann.jml.gcd.Gcd63;
  *
  * @authors Thilo Harich & Tilman Neumann
  */
-public class Hart_FastT4 extends FactorAlgorithm {
-	private static final Logger LOG = Logger.getLogger(Hart_FastT4.class);
+public class Hart_FastAdjust extends FactorAlgorithm {
+	private static final Logger LOG = Logger.getLogger(Hart_FastAdjust.class);
 
 	/**
 	 * We only test k-values that are multiples of this constant.
@@ -57,7 +57,7 @@ public class Hart_FastT4 extends FactorAlgorithm {
 	 * @param doTDivFirst If true then trial division is done before the Lehman loop.
 	 * This is recommended if arguments N are known to have factors < cbrt(N) frequently.
 	 */
-	public Hart_FastT4(boolean doTDivFirst) {
+	public Hart_FastAdjust(boolean doTDivFirst) {
 		this.doTDivFirst = doTDivFirst;
 		// Precompute sqrts for all k < I_MAX
 		sqrt = new double[I_MAX];
@@ -90,30 +90,45 @@ public class Hart_FastT4 extends FactorAlgorithm {
 		}
 		final long fourN = N<<2;
 		final double sqrt4N = Math.sqrt(fourN);
-		long a, b, test, gcd;
+		long a;
+		long b, test, gcd, adjust1, adjust2;
 		int k = K_MULT;
 		try {
 			for (int i=1; ;i++, k += K_MULT) {
 				// odd k -> adjust a mod 8
 				final long aOrig = (long) (sqrt4N * sqrt[i] + ROUND_UP_DOUBLE);
+				if (((k*N) & 3) == 1) {
+					final long kNp1 = k*N+1;
+					if ((kNp1 & 7) == 2) {
+						adjust1 = ( kNp1 - aOrig) & 15;
+						adjust2 = (-kNp1 - aOrig) & 15;
+					}
+					else {
+						adjust1 = ( kNp1 - aOrig) & 31;
+						adjust2 = (-kNp1 - aOrig) & 31;
+					}
+					a = aOrig + adjust1;
+					test = a*a - k * fourN;
+					b = (long) Math.sqrt(test);
+					if (b*b == test) {
+						if ((gcd = gcdEngine.gcd(a+b, N))>1 && gcd<N) {
+							return gcd;
+						}
+					}
+					a = aOrig + adjust2;
+					test = a*a - k * fourN;
+					b = (long) Math.sqrt(test);
+					if (b*b == test) {
+						if ((gcd = gcdEngine.gcd(a+b, N))>1 && gcd<N) {
+							return gcd;
+						}
+					}
+				}
 				a = adjustA(N, aOrig, k);
-				//				a = adjustA(N, aOrig, k, 27);
-				final long fourKN = k * fourN;
-				test = a*a - fourKN;
-				//				final long testMod = test % 27;
+				test = a*a - k * fourN;
 				b = (long) Math.sqrt(test);
 				if (b*b == test) {
 					if ((gcd = gcdEngine.gcd(a+b, N))>1 && gcd<N) {
-						//						final long knMod8 = (k*N) % 8;
-						//						if (knMod8 == 1) {
-						final long mod = 16;
-						//							final int step = (int) ((a-aOrig) % mod );
-						final int aMod = (int) (a % mod);
-						final int knMod = (int) ((k*N) % 8);
-						//							final int diff = (int) ((aMod - knMod) % mod);
-						//							System.out.print(aMod + ",");
-						//							//						System.out.print((k*N) % 8);
-						//						}
 						return gcd;
 					}
 				}
@@ -125,34 +140,62 @@ public class Hart_FastT4 extends FactorAlgorithm {
 		}
 	}
 
-
+	//	private long adjustA(long N, long x, int k) {
+	//		if ((k&1)==0)
+	//			return x | 1;
+	//		final long knMod = k*N & 3;
+	//		if (knMod == 1) {
+	//			return (((x)>>2)<<2) | 2;
+	//		}
+	//		final long xMod16 = x & 15;
+	//		if (((k*N) & 7) == 3) {
+	//			if (xMod16 > 12)
+	//				return x + (18 - xMod16);
+	//			return (((x)>>3)<<3) | 4;
+	//		}
+	//		if (xMod16 > 8)
+	//			return x + (16 - xMod16);
+	//		final long l = (((x)>>3)<<3) | 8;
+	//		return l;
+	//	}
 	private long adjustA(long N, long x, int k) {
 		if ((k&1)==0)
 			return x | 1;
-		final long kNp1 = k*N+1;
-		if ((kNp1 & 3) == 0)
-		{
-			return x + ((kNp1 - x) & 7);
-		}
-		else if ((kNp1 & 7) == 2) {
-			final long adjust1 = ( kNp1 - x) & 15;
-			final long adjust2 = (-kNp1 - x) & 15;
-			final long diff = adjust1<adjust2 ? adjust1 : adjust2;
-			//					final int xMod = (int) ((x) % 16);
-			//					final int resMod = (int) ((x+ diff) % 16);
-			return x + diff;
-		}
-		final long adjust1 = ( kNp1 - x) & 31;
-		final long adjust2 = (-kNp1 - x) & 31;
-		return x + (adjust1<adjust2 ? adjust1 : adjust2);
+		return x + ((k*N+1 - x) & 7);
 	}
 
-	private long adjustA(long N, long x, int k, int mod) {
-		final long kNp1 = k*N+1;
-		final long adjust1 = Math.floorMod( kNp1 - x, mod);
-		final long adjust2 = Math.floorMod(-kNp1 - x, mod);
-		return x + (adjust1<adjust2 ? adjust1 : adjust2);
+	private long adjustA1(long N, long x, int k, long kNp1) {
+		if ((kNp1 & 7) == 2) {
+			final long adjust = ( kNp1 - x) & 15;
+			return x + adjust;
+		}
+		final long adjust = ( kNp1 - x) & 31;
+		return x + adjust;
 	}
+
+	private long adjustA2(long N, long x, int k, long kNp1) {
+		if ((kNp1 & 7) == 2) {
+			final long adjust = (-kNp1 - x) & 15;
+			return x + adjust;
+		}
+		final long adjust = (-kNp1 - x) & 31;
+		return x + adjust;
+	}
+
+
+	//	private long adjustA(long N, long x, int k) {
+	//		if ((k&1)==0) {
+	//			x |= 1;
+	//		} else {
+	//			final long kPlusN = k + N;
+	//			if ((kPlusN & 3) == 0) {
+	//				x += ((kPlusN - x) & 7);
+	//			} else {
+	//				x += ((kPlusN - x) & 3);
+	//			}
+	//		}
+	//		return x;
+	//	}
 }
 
 

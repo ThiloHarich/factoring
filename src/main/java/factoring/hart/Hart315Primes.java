@@ -13,6 +13,8 @@
  */
 package factoring.hart;
 
+import static java.lang.Math.sqrt;
+
 import java.math.BigInteger;
 
 import org.apache.log4j.Logger;
@@ -22,43 +24,12 @@ import de.tilman_neumann.jml.factor.tdiv.TDiv63Inverse;
 import de.tilman_neumann.jml.gcd.Gcd63;
 
 /**
- * Pretty simple yet fast variant of Hart's one line factorizer.
- * This implementations introduces some improvements that make it the fastest factoring algorithm
- * for numbers with more then 20? and less then 50 bit.
- * It avoids the complexity of calculating the square root when factoring multiple numbers,
- * by storing the square roots of k in the main loop.
- * It uses an optimized trial division algorithm to factorize small numbers.
- * It uses a well chosen multiplier m = 3*3*5*7 which is odd.
- * After calculating a number 'a' above sqrt(4*m*k) a will be adjusted to satisfy
- * some modulus a power of 2 argument.
- * It reuses the idea of rounding up by adding a well choosen constant (Warren D. Smith)
- *
- * It tires to find solutions for a^2 - 4*m*i*n = b^2 from fermat we then know that
- * gcd(a+b, n) and gcd(a-b, n) are divisors of n.
- *
- * This is done by one simple loop over k were we generate numbers a = sqrt(4*m*k*n).
- * By storing sqrt(k) in an array this can be calculated fast.
- *
- * Compared with the regular Lehman algorithm, the Hart algorithm does not
- * need a second loop to iterate over the numbers 'a' for a given 'k' in the equation a^2 - 4kn.
- * So the upper bound for this does not has to be calculated. For each k the value sqrt(k) in order
- * to determine a = ceil(sqrt(4kn))
- * will be calculated only once and then stored in an array. This speeds up the sieving buy
- * a big factor since calculating the sqrt is expensive.
- * We choose k to be a multiple of 315 = 3*3*5*7 this causes that
- * a^2 - 4kn = b^2 mod 3*3*5*7 which increases the chance to find a solution a^2 - 4kn = b^2 pretty much.
- * After selecting 'a' we ensure that a^2 - 4kn = b^2 mod 64 by increasing 'a' at most by 8.
- *
- *
- * With doTDivFirst=false, this implementation is pretty fast for hard semiprimes.
- * But the smaller possible factors get, it will become slower and slower.
- *
- * For any kind of test numbers except very hard semiprimes, Hart_TDiv_Race will be faster.
+ * We only consider numbers k = 315 * k' * primes[i] , were primes = primes greater then 315 = 3^2 * 5 * 7 = 11,13,17
  *
  * @authors Thilo Harich & Tilman Neumann
  */
-public class Hart_FastT extends FactorAlgorithm {
-	private static final Logger LOG = Logger.getLogger(Hart_FastT.class);
+public class Hart315Primes extends FactorAlgorithm {
+	private static final Logger LOG = Logger.getLogger(Hart315Primes.class);
 
 	/**
 	 * We only test k-values that are multiples of this constant.
@@ -69,6 +40,10 @@ public class Hart_FastT extends FactorAlgorithm {
 	//	private static final int K_MULT = 5*11*13; // 315
 	//	private static final int K_MULT = 45;
 	//	private static final int K_MULT = 1; // 315
+
+	private final int [] primes = {11,13,17,19,23,29};
+	//	private final int [] primes = {11,13};
+	private final double [] sqrtPrimes = {sqrt(11),sqrt(13),sqrt(17),sqrt(19),sqrt(23),sqrt(29)};
 
 	/** Size of arrays this is around 4*n^1/3.
 	 * 2^21 should work for all number n up to 2^52
@@ -88,7 +63,7 @@ public class Hart_FastT extends FactorAlgorithm {
 	 * @param doTDivFirst If true then trial division is done before the Lehman loop.
 	 * This is recommended if arguments N are known to have factors < cbrt(N) frequently.
 	 */
-	public Hart_FastT(boolean doTDivFirst) {
+	public Hart315Primes(boolean doTDivFirst) {
 		this.doTDivFirst = doTDivFirst;
 		// Precompute sqrts for all k < I_MAX
 		sqrt = new double[I_MAX];
@@ -127,14 +102,19 @@ public class Hart_FastT extends FactorAlgorithm {
 		int k = K_MULT;
 		try {
 			for (int i=1; ;i++, k += K_MULT) {
-				// calculating the sqrt here is 5 times slower then storing it
-				a = (long) (sqrt4N * sqrt[i] + ROUND_UP_DOUBLE);
-				a = adjustA(N, a, k);
-				test = a*a - k * fourN;
-				b = (long) Math.sqrt(test);
-				if (b*b == test) {
-					if ((gcd = gcdEngine.gcd(a+b, N))>1 && gcd<N) {
-						return gcd;
+				for (int j=0; j < primes.length; j++) {
+					final int prime = primes[j];
+					final int kPrime = k * prime;
+					// calculating the sqrt here is 5 times slower then storing it
+					a = (long) (sqrt4N * sqrt[i] * sqrtPrimes[j] + ROUND_UP_DOUBLE);
+					//					a = (long) (sqrt4N * sqrt[i*prime] + ROUND_UP_DOUBLE);
+					a = adjustA(N, a, kPrime);
+					test = a*a - kPrime * fourN;
+					b = (long) Math.sqrt(test);
+					if (b*b == test) {
+						if ((gcd = gcdEngine.gcd(a+b, N))>1 && gcd<N) {
+							return gcd;
+						}
 					}
 				}
 			}

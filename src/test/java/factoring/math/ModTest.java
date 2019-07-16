@@ -106,19 +106,26 @@ public class ModTest {
 		final int range = 30000;
 
 		long start = System.currentTimeMillis();
-		mod255(rand, range);
+		final long prod = mod255(rand, range);
 		long end  = System.currentTimeMillis();
 		System.out.println(" time mod 255      : " + (end- start));
 
 		start = System.currentTimeMillis();
-		mod255MultInt(rand, range);
+		final long prod2 = mod255MultInt(rand, range);
 		end  = System.currentTimeMillis();
 		System.out.println(" time mod 255 inv  : " + (end- start));
+		assertEquals(prod, prod2);
 
 		start = System.currentTimeMillis();
-		mod255Jones (rand, range);
+		final long prod3 = mod255Jones (rand, range);
 		end  = System.currentTimeMillis();
 		System.out.println(" time mod 255 jones: " + (end- start));
+		assertEquals(prod, prod2);
+
+		start = System.currentTimeMillis();
+		mod256 (rand, range);
+		end  = System.currentTimeMillis();
+		System.out.println(" time mod 256      : " + (end- start));
 	}
 	private long mod255 (Random rand, int range) {
 		long prod = 1;
@@ -127,6 +134,17 @@ public class ModTest {
 			final long sqrtN = (long) Math.sqrt(n);
 			for (long j = sqrtN; j < range + sqrtN; j++) {
 				prod += j % 255;
+			}
+		}
+		return prod;
+	}
+	private long mod256 (Random rand, int range) {
+		long prod = 1;
+		for (long i = 1; i < range; i++) {
+			final long g = i;
+			final long sqrtN = (long) Math.sqrt(n);
+			for (long j = sqrtN; j < range + sqrtN; j++) {
+				prod += j >> 8;
 			}
 		}
 		return prod;
@@ -206,8 +224,10 @@ public class ModTest {
 	}
 
 	private long mod255MultInt(long x) {
-		final long q = (inv255 * x) >> BITS;
-			return x - q * 3;
+		final long q = (inv255 * x);
+		final long xMod255 = x - q * 255;
+		assertEquals(x % 255, xMod255);
+		return xMod255;
 	}
 
 	private long doBrrett(Random rand, int range) {
