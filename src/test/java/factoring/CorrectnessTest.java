@@ -15,8 +15,12 @@ import com.google.common.collect.TreeMultiset;
 
 import de.tilman_neumann.jml.factor.FactorAlgorithm;
 import de.tilman_neumann.util.SortedMultiset;
+import factoring.hart.Hart24Fact;
 import factoring.hart.Hart315Primes;
-import factoring.hart.Hart_FastT;
+import factoring.hart.HartSqrtArray;
+import factoring.hart.HartTwoSieves;
+import factoring.hart.Hart_TDiv_Race;
+import factoring.hart.sieve.HartSieve;
 import factoring.rho.PollardRhoBrentDouble52;
 import factoring.shift.ErrorShiftFact;
 import factoring.trial.variant.TrialFact;
@@ -44,17 +48,17 @@ public class CorrectnessTest {
 	public void testCorrect() {
 		final int bits = 40;
 
-		final long begin = (1L << bits) +7;
-		//		begin = 6387l;
+		 long begin = (1L << bits) +7;
+				begin = 6387l;
 		//		begin = 1073741835L;
 		//		final LehmanFactorFinder factorizer1 = new LehmanFactorFinder(50, 1, false);
 		//		final FactorAlgorithm factorizer2 = new SquFoF31();
 		//		final FactorAlgorithm factorizer1 = new LehmanMultiplier6_5_7(true);
 		//		final FactorAlgorithm factorizer2 = new Lehman_CustomKOrderTh(false);
 		//		final FactorAlgorithm factorizer1 = new Hart_FastAdjustMap(false);
-		final FactorAlgorithm factorizer1 = new Hart315Primes(false);
+		final FactorAlgorithm factorizer1 = new HartTwoSieves(false);
 		//		final FactorAlgorithm factorizer2 = new HartMod8(true);
-		final FactorAlgorithm factorizer2 = new Hart_FastT(false);
+		final FactorAlgorithm factorizer2 = new HartSieve(false);
 		//		final FactorAlgorithm factorizer1 = new Hart_TDiv_Race();
 		//		final FactorAlgorithm factorizer1 = new LehmanMidRange7(0,1);
 		//		final FactorAlgorithm factorizer1 = new factoring.hart.Hart_TDiv_Race();
@@ -115,28 +119,31 @@ public class CorrectnessTest {
 		final int numPrimes = 1634;
 		final int loop = 20;
 		final int smallFactorBits = bits / 3;
-		final long[] semiprimes = PerformanceTest.makeSemiPrimesList(bits, smallFactorBits, numPrimes);
+//		final long[] semiprimes = PerformanceTest.makeSemiPrimesList(bits, smallFactorBits, numPrimes);
 
 
-		long begin = (1L << bits) +1;
-		final FactorizationOfLongs factorizer2 = new PollardRhoBrentDouble52();
-		factorizer2.setMaxFactor(1 << smallFactorBits);
-		final FactorizationOfLongs factorizer1 = new TrialFact();
+//		long begin = (1L << bits) +1;
+		long begin = 57410188984551071L;
+//		final FactorizationOfLongs factorizer2 = new PollardRhoBrentDouble52();
+		final FactorAlgorithm factorizer1 = new Hart_TDiv_Race();
+//		factorizer2.setMaxFactor(1 << smallFactorBits);
+		final FactorAlgorithm factorizer2 = new HartTwoSieves(false);
 		//		final FactorAlgorithm factorizer2 = new CombinedFactorAlgorithm(1, false);
 
 
-		for (int i = 0; i < loop; i++) {
+		for (long k = begin; k < begin + loop; k++) {
 
-		}
-		{
-			for (final long k : semiprimes) {
-				final Collection<Long> factors = factorizer1.factorization(k);
-				System.out.println(k + ": " + factorizer1.printFactorization(k));
-				//			Collection<Integer> factors = factorizer1.findAllPrimeFactors(i);
-				final Collection<Long> factors2 = factorizer2.factorization(k);
-				System.out.println(k + ": " + factorizer2.printFactorization(k));
-				//				final SortedMultiset<BigInteger> factors2 = factorizer2.factor(BigInteger.valueOf(i));
-				//				System.out.println(i + ": " + factors2);
+//		}
+//		{
+//			for (final long k : semiprimes) {
+//				final Collection<Long> factors = factorizer1.factorization(k);
+//				System.out.println(k + ": " + factorizer1.printFactorization(k));
+			SortedMultiset<BigInteger> factors = factorizer1.factor(BigInteger.valueOf(k));
+			System.out.println(k + ": " + factors);
+//				final Collection<Long> factors2 = factorizer2.factorization(k);
+//				System.out.println(k + ": " + factorizer2.printFactorization(k));
+								final SortedMultiset<BigInteger> factors2 = factorizer2.factor(BigInteger.valueOf(k));
+								System.out.println(k + ": " + factors2);
 
 				if (factors.size()!=factors2.size())
 					System.out.println();
@@ -148,8 +155,8 @@ public class CorrectnessTest {
 				//					factors) {
 				//					assertTrue("Test failed for " + i, factorsSet.contains(factor));
 				//				}
-			}
-			begin = begin + begin;
+//			}
+//			begin = begin + begin;
 		}
 
 	}

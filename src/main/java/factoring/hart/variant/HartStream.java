@@ -11,9 +11,11 @@
  * You should have received a copy of the GNU General Public License along with this program;
  * if not, see <http://www.gnu.org/licenses/>.
  */
-package factoring.hart;
+package factoring.hart.variant;
 
 import java.math.BigInteger;
+import java.util.OptionalInt;
+import java.util.stream.IntStream;
 
 import org.apache.log4j.Logger;
 
@@ -22,43 +24,15 @@ import de.tilman_neumann.jml.factor.tdiv.TDiv63Inverse;
 import de.tilman_neumann.jml.gcd.Gcd63;
 
 /**
- * Pretty simple yet fast variant of Hart's one line factorizer.
- * This implementations introduces some improvements that make it the fastest factoring algorithm
- * for numbers with more then 20? and less then 50 bit.
- * It avoids the complexity of calculating the square root when factoring multiple numbers,
- * by storing the square roots of k in the main loop.
- * It uses an optimized trial division algorithm to factorize small numbers.
- * It uses a well chosen multiplier m = 3*3*5*7 which is odd.
- * After calculating a number 'a' above sqrt(4*m*k) a will be adjusted to satisfy
- * some modulus a power of 2 argument.
- * It reuses the idea of rounding up by adding a well choosen constant (Warren D. Smith)
+ * A hart lehman factoring algorithm which uses a Lambda approach.
+ * It has half the speed of a iterative implementation.
+ * Since we precalculate the sqrt of the k we can use a stream of the
+ * sqrt's.
  *
- * It tires to find solutions for a^2 - 4*m*i*n = b^2 from fermat we then know that
- * gcd(a+b, n) and gcd(a-b, n) are divisors of n.
- *
- * This is done by one simple loop over k were we generate numbers a = sqrt(4*m*k*n).
- * By storing sqrt(k) in an array this can be calculated fast.
- *
- * Compared with the regular Lehman algorithm, the Hart algorithm does not
- * need a second loop to iterate over the numbers 'a' for a given 'k' in the equation a^2 - 4kn.
- * So the upper bound for this does not has to be calculated. For each k the value sqrt(k) in order
- * to determine a = ceil(sqrt(4kn))
- * will be calculated only once and then stored in an array. This speeds up the sieving buy
- * a big factor since calculating the sqrt is expensive.
- * We choose k to be a multiple of 315 = 3*3*5*7 this causes that
- * a^2 - 4kn = b^2 mod 3*3*5*7 which increases the chance to find a solution a^2 - 4kn = b^2 pretty much.
- * After selecting 'a' we ensure that a^2 - 4kn = b^2 mod 64 by increasing 'a' at most by 8.
- *
- *
- * With doTDivFirst=false, this implementation is pretty fast for hard semiprimes.
- * But the smaller possible factors get, it will become slower and slower.
- *
- * For any kind of test numbers except very hard semiprimes, Hart_TDiv_Race will be faster.
- *
- * @authors Thilo Harich & Tilman Neumann
+ * @authors Thilo Harich
  */
-public class Hart_FastOddFirst extends FactorAlgorithm {
-	private static final Logger LOG = Logger.getLogger(HartSqrtArray.class);
+public class HartStream extends FactorAlgorithm {
+	private static final Logger LOG = Logger.getLogger(HartStream.class);
 
 	/**
 	 * We only test k-values that are multiples of this constant.
@@ -86,7 +60,7 @@ public class Hart_FastOddFirst extends FactorAlgorithm {
 	 * @param doTDivFirst If true then trial division is done before the Lehman loop.
 	 * This is recommended if arguments N are known to have factors < cbrt(N) frequently.
 	 */
-	public Hart_FastOddFirst(boolean doTDivFirst) {
+	public HartStream(boolean doTDivFirst) {
 		this.doTDivFirst = doTDivFirst;
 		// Precompute sqrts for all k < I_MAX
 		sqrt = new double[I_MAX];
@@ -105,6 +79,21 @@ public class Hart_FastOddFirst extends FactorAlgorithm {
 		return BigInteger.valueOf(findSingleFactor(N.longValue()));
 	}
 
+	public boolean hasSquare (double sqrt, double sqrt4n, long n, int k) {
+		long a = (long) (sqrt4n * sqrt + ROUND_UP_DOUBLE);
+		a = adjustA(n, a, k);
+		final long fourN = n<<2;
+		final long test = a*a - k * fourN;
+		final long b = (long) Math.sqrt(test);
+		if (b*b == test) {
+			long gcd;
+			if ((gcd = gcdEngine.gcd(a+b, n))>1 && gcd<n) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	/**
 	 * Find a factor of long N.
 	 * @param N
@@ -121,59 +110,39 @@ public class Hart_FastOddFirst extends FactorAlgorithm {
 
 		final long fourN = N<<2;
 		final double sqrt4N = Math.sqrt(fourN);
-		long a, b, test, gcd;
-		int k = K_MULT;
-		final int oddLimit = (int) (0.1 * Math.cbrt(N));
-		try {
-			final int mult2 = 2*K_MULT;
 
-			k = mult2;
-			for (int i=2; i < oddLimit;i+=2, k += mult2) {
-				// calculating the sqrt here is 5 times slower then storing it
-				a = (long) (sqrt4N * sqrt[i] + ROUND_UP_DOUBLE) | 1;
-				//				a = adjustA(N, a, k);
-				test = a*a - k * fourN;
-				b = (long) Math.sqrt(test);
-				if (b*b == test) {
-					if ((gcd = gcdEngine.gcd(a+b, N))>1 && gcd<N) {
-						return gcd;
-					}
-				}
-			}
 
-			k = K_MULT;
-			for (int i=1; i < oddLimit; i+=2, k += mult2) {
-				// calculating the sqrt here is 5 times slower then storing it
-				a = (long) (sqrt4N * sqrt[i] + ROUND_UP_DOUBLE);
-				a = adjustA(N, a, k);
-				test = a*a - k * fourN;
-				b = (long) Math.sqrt(test);
-				if (b*b == test) {
-					if ((gcd = gcdEngine.gcd(a+b, N))>1 && gcd<N) {
-						return gcd;
-					}
-				}
-			}
-
-			k = oddLimit*K_MULT;
-			for (int i=oddLimit; ;i++, k += K_MULT) {
-				// calculating the sqrt here is 5 times slower then storing it
-				a = (long) (sqrt4N * sqrt[i] + ROUND_UP_DOUBLE);
-				a = adjustA(N, a, k);
-				test = a*a - k * fourN;
-				b = (long) Math.sqrt(test);
-				if (b*b == test) {
-					if ((gcd = gcdEngine.gcd(a+b, N))>1 && gcd<N) {
-						return gcd;
-					}
-				}
-			}
-		} catch (final ArrayIndexOutOfBoundsException e) {
-			LOG.error("Hart_Fast: Failed to factor N=" + N + ". Either it has factors < cbrt(N) needing trial division, or the arrays are too small.");
-			// TODO Or N is square
-			return 1;
+		final OptionalInt goodIndex = IntStream.range(0, sqrt.length) // .parallel().unordered() is ~ 20 times slower then the sequential stream
+				.filter(i -> hasSquare(sqrt[i], sqrt4N, N, i*K_MULT)) // .mapToLong(i -> getFactor(sqrt[i], sqrt4N, N, i*K_MULT)) is 50% slower
+				.findAny(); // .findFirst() makes no difference
+		if (goodIndex.isPresent()) {
+			final int i = goodIndex.getAsInt();
+			long a = (long) (sqrt4N * sqrt[i] + ROUND_UP_DOUBLE);
+			final int k = i*K_MULT;
+			a = adjustA(N, a, k);
+			final long test = a*a - k * fourN;
+			final long b = (long) Math.sqrt(test);
+			final long gcd = gcdEngine.gcd(a+b, N);
+			return gcd;
 		}
+
+		//		final OptionalLong factor = IntStream.range(0, sqrt.length)
+		//				.filter(i -> hasSquare(sqrt[i], sqrt4N, N, i*K_MULT)).mapToLong(i -> getFactor(sqrt[i], sqrt4N, N, i*K_MULT)).findAny();
+		//
+		//		if (factor.isPresent())
+		//			return factor.getAsLong();
+		return 1;
 	}
+	private long getFactor(double sqrt, double sqrt4n, long n, int k) {
+		long a = (long) (sqrt4n * sqrt + ROUND_UP_DOUBLE);
+		a = adjustA(n, a, k);
+		final long fourN = n<<2;
+		final long test = a*a - k * fourN;
+		final long b = (long) Math.sqrt(test);
+		final long gcd = gcdEngine.gcd(a+b, n);
+		return gcd;
+	}
+
 	/**
 	 * Increases x to return the next possible solution for x for x^2 - 4kn = b^2.
 	 * Due to performance reasons we give back solutions for this equations modulo a

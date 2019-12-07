@@ -57,7 +57,7 @@ import de.tilman_neumann.jml.gcd.Gcd63;
  *
  * @authors Thilo Harich & Tilman Neumann
  */
-public class Hart_FastOddFirst extends FactorAlgorithm {
+public class HartSqrtArray extends FactorAlgorithm {
 	private static final Logger LOG = Logger.getLogger(HartSqrtArray.class);
 
 	/**
@@ -65,8 +65,6 @@ public class Hart_FastOddFirst extends FactorAlgorithm {
 	 * Best values for performance are 315, 45, 105, 15 and 3, in that order.
 	 */
 	private static final int K_MULT = 3*3*5*7; // 315
-	//	private static final int K_MULT = 1155;
-	//	private static final int K_MULT = 1; // 315
 
 	/** Size of arrays this is around 4*n^1/3.
 	 * 2^21 should work for all number n up to 2^52
@@ -86,12 +84,12 @@ public class Hart_FastOddFirst extends FactorAlgorithm {
 	 * @param doTDivFirst If true then trial division is done before the Lehman loop.
 	 * This is recommended if arguments N are known to have factors < cbrt(N) frequently.
 	 */
-	public Hart_FastOddFirst(boolean doTDivFirst) {
+	public HartSqrtArray(boolean doTDivFirst) {
 		this.doTDivFirst = doTDivFirst;
 		// Precompute sqrts for all k < I_MAX
 		sqrt = new double[I_MAX];
 		for (int i=1; i<I_MAX; i++) {
-			sqrt[i] = Math.sqrt(i*K_MULT);
+			sqrt[i] = Math.sqrt(i * (double)K_MULT);
 		}
 	}
 
@@ -101,77 +99,36 @@ public class Hart_FastOddFirst extends FactorAlgorithm {
 	}
 
 	@Override
-	public BigInteger findSingleFactor(BigInteger N) {
-		return BigInteger.valueOf(findSingleFactor(N.longValue()));
+	public BigInteger findSingleFactor(BigInteger n) {
+		return BigInteger.valueOf(findSingleFactor(n.longValue()));
 	}
 
 	/**
 	 * Find a factor of long N.
-	 * @param N
+	 * @param n
 	 * @return factor of N
 	 */
-	public long findSingleFactor(long N) {
+	public long findSingleFactor(long n) {
 		if (doTDivFirst) {
 			// do trial division before the Hart loop
-			tdiv.setTestLimit((int) Math.cbrt(N));
-			final long factor = tdiv.findSingleFactor(N);
+			tdiv.setTestLimit((int) Math.cbrt(n));
+			final long factor = tdiv.findSingleFactor(n);
 			if (factor > 1) return factor;
 		}
 
-
-		final long fourN = N<<2;
+		final long fourN = n<<2;
 		final double sqrt4N = Math.sqrt(fourN);
-		long a, b, test, gcd;
 		int k = K_MULT;
-		final int oddLimit = (int) (0.1 * Math.cbrt(N));
-		try {
-			final int mult2 = 2*K_MULT;
-
-			k = mult2;
-			for (int i=2; i < oddLimit;i+=2, k += mult2) {
-				// calculating the sqrt here is 5 times slower then storing it
-				a = (long) (sqrt4N * sqrt[i] + ROUND_UP_DOUBLE) | 1;
-				//				a = adjustA(N, a, k);
-				test = a*a - k * fourN;
-				b = (long) Math.sqrt(test);
-				if (b*b == test) {
-					if ((gcd = gcdEngine.gcd(a+b, N))>1 && gcd<N) {
-						return gcd;
-					}
-				}
+		for (int i=1; ;i++, k += K_MULT) {
+			// calculating the sqrt here is 5 times slower then storing it
+			long a = (long) (sqrt4N * sqrt[i] + ROUND_UP_DOUBLE);
+			a = adjustA(n, a, k);
+			final long test = a*a - k * fourN;
+			final long b = (long) Math.sqrt(test);
+			long gcd;
+			if (b*b == test && (gcd = gcdEngine.gcd(a+b, n))>1 && gcd<n) {
+				return gcd;
 			}
-
-			k = K_MULT;
-			for (int i=1; i < oddLimit; i+=2, k += mult2) {
-				// calculating the sqrt here is 5 times slower then storing it
-				a = (long) (sqrt4N * sqrt[i] + ROUND_UP_DOUBLE);
-				a = adjustA(N, a, k);
-				test = a*a - k * fourN;
-				b = (long) Math.sqrt(test);
-				if (b*b == test) {
-					if ((gcd = gcdEngine.gcd(a+b, N))>1 && gcd<N) {
-						return gcd;
-					}
-				}
-			}
-
-			k = oddLimit*K_MULT;
-			for (int i=oddLimit; ;i++, k += K_MULT) {
-				// calculating the sqrt here is 5 times slower then storing it
-				a = (long) (sqrt4N * sqrt[i] + ROUND_UP_DOUBLE);
-				a = adjustA(N, a, k);
-				test = a*a - k * fourN;
-				b = (long) Math.sqrt(test);
-				if (b*b == test) {
-					if ((gcd = gcdEngine.gcd(a+b, N))>1 && gcd<N) {
-						return gcd;
-					}
-				}
-			}
-		} catch (final ArrayIndexOutOfBoundsException e) {
-			LOG.error("Hart_Fast: Failed to factor N=" + N + ". Either it has factors < cbrt(N) needing trial division, or the arrays are too small.");
-			// TODO Or N is square
-			return 1;
 		}
 	}
 	/**
@@ -185,15 +142,15 @@ public class Hart_FastOddFirst extends FactorAlgorithm {
 	 * if k*n == 1 mod 8 -> x = k*n+1 mod 16 or -k*n+1 mod 16
 	 * if k*n == 5 mod 8 -> x = k*n+1 mod 32 or -k*n+1 mod 32
 	 *
-	 * @param N
+	 * @param n
 	 * @param x
 	 * @param k
 	 * @return
 	 */
-	private long adjustA(long N, long x, int k) {
+	private long adjustA(long n, long x, int k) {
 		if ((k&1)==0)
 			return x | 1;
-		final long kNp1 = k*N+1;
+		final long kNp1 = k*n+1;
 		if ((kNp1 & 3) == 0)
 		{
 			return x + ((kNp1 - x) & 7);

@@ -60,7 +60,7 @@ import de.tilman_neumann.jml.gcd.Gcd63;
  * @authors Thilo Harich & Tilman Neumann
  */
 public class Hart_FastAdjustMap extends FactorAlgorithm {
-	private static final Logger LOG = Logger.getLogger(Hart_FastT.class);
+	private static final Logger LOG = Logger.getLogger(HartSqrtArray.class);
 
 	/**
 	 * We only test k-values that are multiples of this constant.

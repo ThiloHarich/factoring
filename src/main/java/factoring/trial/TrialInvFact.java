@@ -43,17 +43,17 @@ public class TrialInvFact implements FactorizationOfLongs {
 		primesInv = new double [maxPrimeIndex]; //the 6542 primesInv up to 65536=2^16, then sentinel 65535 at end
 		primes = new int [maxPrimeIndex]; //the 6542 primesInv up to 65536=2^16, then sentinel 65535 at end
 		int primeIndex = 0;
-		final boolean [] noPrimes = new boolean [maxFactor];
+		final boolean [] noPrimes = new boolean [maxFactor+1];
 		for (int i = 2; i <= Math.sqrt(maxFactor); i++) {
 			if (!noPrimes[i]) {
 				primes[primeIndex] = i;
 				primesInv[primeIndex++] = 1.0 / i;
 			}
-			for (int j = i * i; j < maxFactor; j += i) {
+			for (int j = i * i; j <= maxFactor; j += i) {
 				noPrimes[j] = true;
 			}
 		}
-		for (int i = (int) (Math.sqrt(maxFactor)+1); i < maxFactor; i++) {
+		for (int i = (int) (Math.sqrt(maxFactor)+1); i <= maxFactor; i++) {
 			if (!noPrimes[i]) {
 				primes[primeIndex] = i;
 				primesInv[primeIndex++] = 1.0 / i;

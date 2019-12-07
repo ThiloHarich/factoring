@@ -82,9 +82,9 @@ public interface FactorizationOfLongs extends FactorFinder {
 		final long remainder = getImpl(n).findFactors(n, primes);
 		// if we do not find a trivial divisor add it; this should only be the case if n
 		// without the powers of 2 is a prime
-		if (remainder != 1){
-			primes.add(remainder);
-		}
+//		if (remainder != 1){
+//			primes.add(remainder);
+//		}
 		return primes;
 	}
 

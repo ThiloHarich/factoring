@@ -1146,6 +1146,7 @@ public class PrimeMath {
 	 * @return
 	 */
 	public static long mod(long number, long modulus, final double modulusInv) {
+		final double DISCRIMINATOR = 1.0/(1<<10);
 		final double numberDivMod = number * modulusInv;
 		final long divRounded = (long)numberDivMod;
 		final long remainder = number - modulus * divRounded;

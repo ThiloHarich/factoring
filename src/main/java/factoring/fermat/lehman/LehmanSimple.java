@@ -5,7 +5,7 @@ import java.math.BigInteger;
 
 import org.apache.log4j.Logger;
 
-import de.tilman_neumann.jml.factor.FactorAlgorithmBase;
+import de.tilman_neumann.jml.factor.FactorAlgorithm;
 import de.tilman_neumann.jml.gcd.Gcd63;
 import factoring.trial.TrialMultiply;
 
@@ -21,8 +21,8 @@ import factoring.trial.TrialMultiply;
  *
  * We can not ensure that this algorithm always finds a factor.
  */
-public class LehmanSimple extends FactorAlgorithmBase {
-	private static final Logger LOG = Logger.getLogger(Lehman_TillSimple.class);
+public class LehmanSimple extends FactorAlgorithm {
+	private static final Logger LOG = Logger.getLogger(LehmanSimple.class);
 
 	/** This is a constant that is below 1 for rounding up double values to long. */
 	private static final double ROUND_UP_DOUBLE = 0.9999999665;

@@ -3,10 +3,31 @@
   <groupId>factoring</groupId>
   <artifactId>factoring</artifactId>
   <version>0.0.1-SNAPSHOT</version>
-
+  
   <build>
- 
-    <plugins>
+	<plugins>
+		<plugin>
+			<groupId>org.apache.maven.plugins</groupId>
+			<artifactId>maven-shade-plugin</artifactId>
+			<version>3.2.0</version>
+			<executions>
+				<execution>
+					<phase>package</phase>
+					<goals>
+						<goal>shade</goal>
+					</goals>
+					<configuration>
+						<finalName>benchmarks</finalName>
+						<transformers>
+							<transformer
+									implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+								<mainClass>org.openjdk.jmh.Main</mainClass>
+							</transformer>
+						</transformers>
+					</configuration>
+				</execution>
+			</executions>
+		</plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
@@ -20,7 +41,17 @@
 
 
   <dependencies>
-	  <dependency>
+  	  <dependency>
+    	<groupId>org.openjdk.jmh</groupId>
+    	<artifactId>jmh-core</artifactId>
+    	<version>1.21</version>
+	  </dependency>
+      <dependency>
+        <groupId>org.openjdk.jmh</groupId>
+        <artifactId>jmh-generator-annprocess</artifactId>
+        <version>1.21</version>
+      </dependency>
+      <dependency>
 	    <groupId>junit</groupId>
 	    <artifactId>junit</artifactId>
 	    <version>4.12</version>
@@ -45,14 +76,14 @@
 	    <artifactId>commons-math3</artifactId>
 	    <version>3.6.1</version>
 	</dependency>
-      <!--  
+ <!--      
       <dependency>
           <groupId>de.tilman_neumann</groupId>
-          <artifactId>factor</artifactId>
-          <version>1.0</version>
+          <artifactId>java-math-library</artifactId>
+          <version>0.9.10</version>
           <scope>system</scope>
           <systemPath>${project.basedir}/src/main/resources/psiqs4.0.jar</systemPath>
       </dependency>
-      -->
+ -->       
   </dependencies>
 </project>
