@@ -20,36 +20,36 @@ public class SquareTest {
             s.perf();
         }
 
-    @Test
-    public void xArrayBigTest()
-    {
-        int mod = 256;
-        QuadraticDiophantineModBig squaresBig = new QuadraticDiophantineModBig(mod);
-        SquaresModBitSet squaresBit = new SquaresModBitSet(mod);
-//        QuadraticDiophantineModBit squaresBit2 = new QuadraticDiophantineModBit(mod2);
-
-        for (int k = 0; k < mod; k++) {
-            System.out.print(k + " : ");
-            int nMod = PrimeMath.mod(k, mod);
-//            int nMod64 = PrimeMath.mod2Pow(-k, 64);
-            int[] xCandidatesModBit = squaresBit.xArray(nMod);
-            List<Integer> list = Ints.asList(xCandidatesModBit);
-            int[] actual = list.stream().limit(list.indexOf(Integer.valueOf("-1"))).mapToInt(Integer::intValue).toArray();
-
-            int[] xCandidatesModBig = squaresBig.xArray(nMod);
-            List<Integer> list3 = Ints.asList(xCandidatesModBig);
-            int[] listBig = list3.stream().limit(list3.indexOf(Integer.valueOf("-1"))).mapToInt(Integer::intValue).toArray();
-            Arrays.stream(listBig).forEach(e -> System.out.print(e + ","));
-            System.out.print("\n" + k + " : ");
-            Arrays.stream(actual).forEach(e -> System.out.print(e + ","));
-            System.out.println();
-            assertTrue(Arrays.equals(listBig, actual));
-//            128 -> 10
-//            256 -> 32
-//            4*3*5= 60 -> 8
-//            4*3*5*7= 420 -> 16
-        }
-    }
+//    @Test
+//    public void xArrayBigTest()
+//    {
+//        int mod = 256;
+//        QuadraticDiophantineModBig squaresBig = new QuadraticDiophantineModBig(mod);
+//        SquaresModBitSet squaresBit = new SquaresModBitSet(mod);
+////        QuadraticDiophantineModBit squaresBit2 = new QuadraticDiophantineModBit(mod2);
+//
+//        for (int k = 0; k < mod; k++) {
+//            System.out.print(k + " : ");
+//            int nMod = PrimeMath.mod(k, mod);
+////            int nMod64 = PrimeMath.mod2Pow(-k, 64);
+//            int[] xCandidatesModBit = squaresBit.xArray(nMod);
+//            List<Integer> list = Ints.asList(xCandidatesModBit);
+//            int[] actual = list.stream().limit(list.indexOf(Integer.valueOf("-1"))).mapToInt(Integer::intValue).toArray();
+//
+//            int[] xCandidatesModBig = squaresBig.xArray(nMod);
+//            List<Integer> list3 = Ints.asList(xCandidatesModBig);
+//            int[] listBig = list3.stream().limit(list3.indexOf(Integer.valueOf("-1"))).mapToInt(Integer::intValue).toArray();
+//            Arrays.stream(listBig).forEach(e -> System.out.print(e + ","));
+//            System.out.print("\n" + k + " : ");
+//            Arrays.stream(actual).forEach(e -> System.out.print(e + ","));
+//            System.out.println();
+//            assertTrue(Arrays.equals(listBig, actual));
+////            128 -> 10
+////            256 -> 32
+////            4*3*5= 60 -> 8
+////            4*3*5*7= 420 -> 16
+//        }
+//    }
 //    @Test
 //    public void mergeMultipleTest()
 //    {
@@ -181,57 +181,57 @@ public class SquareTest {
             System.out.println("Time split: " + (t1-t2+0.0)/1000);
         }
     }
-    @Test
-    public void mergePerfPow2()
-    {
-        int mod = 256;
-        QuadraticDiophantineModBit squaresBit1 = new QuadraticDiophantineModBit(mod);
-        int bound = 100000;
-
-        for (int i=0; i< 10; i++) {
-            long t1 = System.currentTimeMillis();
-            for (int k = 0; k < bound; k++) {
-                QuadraticDiophantineModBit squaresBit = new QuadraticDiophantineModBit(mod);
-                int nMod = PrimeMath.mod(-k, mod);
-                int[] xCandidatesModBit = squaresBit.xArray(nMod);
-            }
-            long t2 = System.currentTimeMillis();
-
-            System.out.println("Time bit    : " + (t2-t1+0.0)/1000);
-
-            for (int k = 0; k < bound; k++) {
-                SquaresModBitSet squaresBit = new SquaresModBitSet(mod);
-                int nMod = PrimeMath.mod(-k, mod);
-                int[] xCandidatesModBit = squaresBit.xArray(nMod);
-            }
-            t1 = System.currentTimeMillis();
-            System.out.println("Time bitSet : " + (t1-t2+0.0)/1000);
-        }
-    }
-    @Test
-    public void correct() {
-        int mod =81;
-        for (int k = 0; k < mod; k++) {
-            SquaresModBitSet squares = new SquaresModBitSet(mod);
-
-            int nMod =  PrimeMath.mod(-k, mod);
-            int[] xCandidatesMod = squares.xArray(nMod);
-            List<Integer> list =  Ints.asList(xCandidatesMod);
-            int[] expected = list.stream().limit(list.indexOf(Integer.valueOf("-1"))).mapToInt(Integer::intValue).toArray();
-            Arrays.sort(expected);
-
-            FermatResiduesRecursive squaresBit = new FermatResiduesRecursive(mod);
-
-            squaresBit.initX(nMod);
-            int[] xCandidatesModBit = squaresBit.xArray;
-            list =  Ints.asList(xCandidatesModBit);
-            int[] actual = list.stream().limit(list.indexOf(Integer.valueOf("-1"))).mapToInt(Integer::intValue).toArray();
-            Arrays.sort(actual);
-
-            assertTrue(Arrays.equals(expected, actual));
-        }
-
-    }
+//    @Test
+//    public void mergePerfPow2()
+//    {
+//        int mod = 256;
+//        QuadraticDiophantineModBit squaresBit1 = new QuadraticDiophantineModBit(mod);
+//        int bound = 100000;
+//
+//        for (int i=0; i< 10; i++) {
+//            long t1 = System.currentTimeMillis();
+//            for (int k = 0; k < bound; k++) {
+//                QuadraticDiophantineModBit squaresBit = new QuadraticDiophantineModBit(mod);
+//                int nMod = PrimeMath.mod(-k, mod);
+//                int[] xCandidatesModBit = squaresBit.xArray(nMod);
+//            }
+//            long t2 = System.currentTimeMillis();
+//
+//            System.out.println("Time bit    : " + (t2-t1+0.0)/1000);
+//
+//            for (int k = 0; k < bound; k++) {
+//                SquaresModBitSet squaresBit = new SquaresModBitSet(mod);
+//                int nMod = PrimeMath.mod(-k, mod);
+//                int[] xCandidatesModBit = squaresBit.xArray(nMod);
+//            }
+//            t1 = System.currentTimeMillis();
+//            System.out.println("Time bitSet : " + (t1-t2+0.0)/1000);
+//        }
+//    }
+//    @Test
+//    public void correct() {
+//        int mod =81;
+//        for (int k = 0; k < mod; k++) {
+//            SquaresModBitSet squares = new SquaresModBitSet(mod);
+//
+//            int nMod =  PrimeMath.mod(-k, mod);
+//            int[] xCandidatesMod = squares.xArray(nMod);
+//            List<Integer> list =  Ints.asList(xCandidatesMod);
+//            int[] expected = list.stream().limit(list.indexOf(Integer.valueOf("-1"))).mapToInt(Integer::intValue).toArray();
+//            Arrays.sort(expected);
+//
+//            FermatResiduesRecursive squaresBit = new FermatResiduesRecursive(mod);
+//
+//            squaresBit.initX(nMod);
+//            int[] xCandidatesModBit = squaresBit.xArray;
+//            list =  Ints.asList(xCandidatesModBit);
+//            int[] actual = list.stream().limit(list.indexOf(Integer.valueOf("-1"))).mapToInt(Integer::intValue).toArray();
+//            Arrays.sort(actual);
+//
+//            assertTrue(Arrays.equals(expected, actual));
+//        }
+//
+//    }
     @Test
     public void perf() {
 

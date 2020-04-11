@@ -14,6 +14,7 @@
 package factoring;
 
 import static de.tilman_neumann.jml.base.BigIntConstants.I_1;
+import static de.tilman_neumann.jml.factor.TestNumberNature.RANDOM_COMPOSITES;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -179,7 +180,7 @@ public class Lehman_Analyzer3 extends FactorAlgorithm {
 		final BigInteger N_min = I_1.shiftLeft(bits-1);
 		// find N-set for square tests
 		//ArrayList NSet = TestsetGenerator.generate(bits, N_COUNT);
-		final ArrayList<BigInteger> NSet = TestsetGenerator.generate(bits, N_COUNT);
+		final BigInteger[] NSet = TestsetGenerator.generate(bits, N_COUNT, RANDOM_COMPOSITES);
 		LOG.info("Test N with " + bits + " bits, i.e. N >= " + N_min);
 
 		for (final BigInteger N : NSet) {

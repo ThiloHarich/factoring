@@ -118,7 +118,7 @@ public class HartSmooth extends FactorAlgorithm {
 		if (floorSqrtN*floorSqrtN == N) return floorSqrtN;
 
 		final long fourN = N<<2;
-		SmoothNumbers smooth = new SmoothNumbers();
+		SmoothNumbers smooth = new SmoothNumbers(2,3,5,7,11,13,17,19,23,29,31,37);
 		int smoothCount = 0;
 		final double sqrt4N = sqrtN*2;
 		long a;

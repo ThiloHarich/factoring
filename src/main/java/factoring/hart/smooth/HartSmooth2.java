@@ -26,7 +26,7 @@ import de.tilman_neumann.util.SortedMultiset;
  * Investigates in numbers ceil(sqrt(k*n))^2 - k*n < 2 * sqrt(n)
  * This  can be checked fast by computing sqrt[k]* sqrt(n).
  * But 
- * - unfortunately the resulting numbers are not as smoooth as the
+ * - unfortunately the resulting numbers are not as smooth as the
  * random numbers with this size. 
  * - Due to different 'k' we have no sieving
  * and calculating the smooth factors is expensive 

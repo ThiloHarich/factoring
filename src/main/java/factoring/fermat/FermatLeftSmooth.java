@@ -1,33 +1,28 @@
-package factoring.smooth;
+package factoring.fermat;
 
-import factoring.PerformanceHard;
-import factoring.sieve.triple.HartTripleLookupSieve;
-import factoring.sieve.triple.TripleLookupSieve;
-import org.junit.Test;
+import de.tilman_neumann.jml.factor.FactorAlgorithm;
+import de.tilman_neumann.jml.factor.tdiv.TDiv63Inverse;
+import de.tilman_neumann.util.SortedMultiset;
+import factoring.FactorizationOfLongs;
+import factoring.math.PrimeMath;
 
-import org.openjdk.jmh.annotations.*;
-import org.openjdk.jmh.runner.Runner;
-import org.openjdk.jmh.runner.RunnerException;
-import org.openjdk.jmh.runner.options.Options;
-import org.openjdk.jmh.runner.options.OptionsBuilder;
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
-import com.google.common.collect.TreeMultiset;
+import static org.junit.Assert.assertTrue;
 
-import static java.lang.Math.cbrt;
-import static java.lang.Math.ceil;
-import static org.junit.Assert.assertEquals;
+/**
+ * x_1*x_2  = y_1*y_2 mod n
+ * x_3*x_4  = y_3*y_4 mod n
+ *
+ * x^2 = x_1*x_2*x_3*x_4
+ * Created by Thilo Harich on 02.03.2017.
+ */
+public class FermatLeftSmooth  extends FactorAlgorithm implements FactorizationOfLongs {
 
-import java.util.Arrays;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.IntStream;
-import java.util.stream.LongStream;
 
-import factoring.trial.TrialInvFact;
-import junit.framework.TestFailure;
-
-public class SmoothNumbersTest {
-	
-    private static final int _100000 = 10000;
 	static int [] primes = {2,3,5,7,11,13,17,19,23,29,31,37,41,43,47,53,59,61,67,71,73,79,83,89,97,101,
 			103,107,109,113,127,131,137,139,149,151,157,163,167,173,179,181,191,193,197,
 			199,211,223,227,229,233,239,241,251,257,263,269,271,277,281,283,293,307,311,
@@ -36,7 +31,7 @@ public class SmoothNumbersTest {
 			563,569,571,577,587,593,599,601,607,613,617,619,631,641,643,647,653,659,661,
 			673,677,683,691,701,709,719,727,733,739,743,751,757,761,769,773,787,797,809,
 			811,821,823,827,829,839,853,857,859,863,877,881,883,887,907,911,919,929,937,
-			941,947,953,967,971,977,983,991,997,1009,1013,1019,1021,1031,1033,1039,1049,/*
+			941,947,953,967,971,977,983,991,997,1009,1013,1019,1021,1031,1033,1039,1049,
 			1051,1061,1063,1069,1087,1091,1093,1097,1103,1109,1117,1123,1129,1151,1153,
 			1163,1171,1181,1187,1193,1201,1213,1217,1223,1229,1231,1237,1249,1259,1277,
 			1279,1283,1289,1291,1297,1301,1303,1307,1319,1321,1327,1361,1367,1373,1381,
@@ -45,7 +40,7 @@ public class SmoothNumbersTest {
 			1601,1607,1609,1613,1619,1621,1627,1637,1657,1663,1667,1669,1693,1697,1699,
 			1709,1721,1723,1733,1741,1747,1753,1759,1777,1783,1787,1789,1801,1811,1823,
 			1831,1847,1861,1867,1871,1873,1877,1879,1889,1901,1907,1913,1931,1933,1949,
-			1951,1973,1979,1987,1993,1997,1999,2003,2011,2017,2027,2029,2039,2053,2063,
+			1951,1973,1979,1987,1993,1997,1999,2003,2011,2017,2027,2029,2039,2053,2063/*,
 			2069,2081,2083,2087,2089,2099,2111,2113,2129,2131,2137,2141,2143,2153,2161,
 			2179,2203,2207,2213,2221,2237,2239,2243,2251,2267,2269,2273,2281,2287,2293,
 			2297,2309,2311,2333,2339,2341,2347,2351,2357,2371,2377,2381,2383,2389,2393,
@@ -109,162 +104,56 @@ public class SmoothNumbersTest {
 			9829,9833,9839,9851,9857,9859,9871,9883,9887,9901,9907,9923,9929,9931,9941,
 			9949,9967,9973,10007,10009,10037,10039,10061,10067,10069,10079,10091,10093*/};
 
-	public static void main(String[] args) {
-    	for (int i = 0; i< 10; i++)
-    	{
-    		long start = System.currentTimeMillis();
-    		testSmooth3();
-    		long end = System.currentTimeMillis();
-    		System.out.println("Time testSmooth3 : " + (end - start));
-    		start = System.currentTimeMillis();
-    		testSmoothInv();
-    		end = System.currentTimeMillis();
-    		System.out.println("Time testSmoothI : " + (end - start));
-    		start = System.currentTimeMillis();
-    		testSmoothByFactor1();
-    		end = System.currentTimeMillis();
-    		System.out.println("Time testfactor1 : " + (end - start));
-//    		start = System.currentTimeMillis();
-//    		testSmoothByFactor();
-//    		end = System.currentTimeMillis();
-//    		System.out.println("Time testSmoothF : " + (end - start));
-    	}
-    	
-    }
+	private static final double ROUND_UP_DOUBLE = 0.9999999665;
 
-    @Test
-	public void testCreateSmooth (){
-		long[] semiPrimes = PerformanceHard.makeSemiPrimesList(40, 10);
-
-		SmoothNumbers smooth = new SmoothNumbers();
-		TripleLookupSieve tls = new TripleLookupSieve(40);
-		for (long semiPrime:
-				semiPrimes) {
-			long nPowOneTenth = (long) ceil(Math.pow(semiPrime, 1.0 / 14.0));
-//			long smoothX = smooth.createSmooth(semiPrime, primes);
-//			long smoothX = smooth.createSmoothFromSquare(semiPrime, primes);
-			tls.findSingleFactor(semiPrime);
-		}
-	}
-	@Test
-	public void testSmall (){
-		int bits = 15;
-		long[] semiPrimes = PerformanceHard.makeSemiPrimesList(bits, 10);
-
-		SmoothNumbers smooth = new SmoothNumbers();
-		TripleLookupSieve tls = new TripleLookupSieve(bits);
-		for (long semiPrime:
-				semiPrimes) {
-			long nPowOneTenth = (long) ceil(Math.pow(semiPrime, 1.0 / 14.0));
-//			long smoothX = smooth.createSmooth(semiPrime, primes);
-//			long smoothX = smooth.createSmoothFromSquare(semiPrime, primes);
-			tls.findSingleFactor(semiPrime);
-		}
-	}
-	@Test
-	public void testSmooth(){
-		final long PRIMORIAL = 2l*3l*5l*7l*11l*13l*17l*19l*23l*29l*31l*37l; 
-		
-		int smoothCount = 0;
-		int maybeSmoothCount = 0;
-		
-		SmoothNumbers smooth = new SmoothNumbers();
-		TrialInvFact fact = new TrialInvFact(37);
-
-		for (long i = (1l << 29) + 13; maybeSmoothCount < 1000; i++) {
-			TreeMultiset<Long> factors = fact.factorization(i);
-			long prod = factors.stream().reduce(1l, (a,b) -> a * b);
-			smoothCount += prod == i ? 1 : 0;
-			boolean isSmooth = smooth.isSmoothBy3Inv(i, PRIMORIAL);
-//			isSmooth = smooth.factorizeIfSmooth(i, 37) > 0;
-//			int[] primeFactors = smooth.factorizeIfSmooth1(i, 37);
-			int[] primeFactors = smooth.factorizeIfSmooth2(i, 37);
-//			boolean isSmooth = primeFactors[primeFactors.length-1] > 0;
-			maybeSmoothCount += isSmooth ? 1 : 0;
-			
-			if (isSmooth)
-				assertEquals("i : " + i, prod == i, isSmooth);	
-//				final long multiplyPrimeFactors = LongStream.range(0, primeFactors.length-1)
-//						.filter(j -> primeFactors[(int)j] > 0).reduce(1l, (a,b) -> a * (long)Math.pow(SmoothNumbers.primes[(int)b], primeFactors[(int)b]));
-//				assertEquals("factoring " + i, prod, multiplyPrimeFactors);
-		}
-		System.out.println("smooth Fraction : " + (0.0 + smoothCount)/ maybeSmoothCount);
+	// TODO take smallFactors[smallFactors.lenght - 1]
+	public FermatLeftSmooth()
+	{
 	}
 
-	public static int testSmooth3(){
-		final long PRIMORIAL = 2l*3l*5l*7l*11l*13l*17l*19l*23l*29l*31l*37l; 
-		SmoothNumbers smooth = new SmoothNumbers();
-
-		int count = 0;
-		int smoothCount = 0;
-		
-		for (long i = 1l << 29; count  < _100000; i++) {
-			boolean isSmooth = smooth.isSmoothBy3Modulus(i, PRIMORIAL);
-			smoothCount += isSmooth ? 1 : 0;
-			count++;
-		}
-		return smoothCount;
-	}
-	public static int testSmoothInv(){
-		final long PRIMORIAL = 2l*3l*5l*7l*11l*13l*17l*19l*23l*29l*31l*37l; 
-		SmoothNumbers smooth = new SmoothNumbers();
-
-		int count = 0;
-		int smoothCount = 0;
-		
-		for (long i = 1l << 29; count  < _100000; i++) {
-			boolean isSmooth = smooth.isSmoothBy3Inv(i, PRIMORIAL);
-			smoothCount += isSmooth ? 1 : 0;
-			count++;
-		}
-		return smoothCount;
-	}
-	public static int testSqrt(){
-		final long PRIMORIAL = 2l*3l*5l*7l*11l*13l*17l*19l*23l*29l*31l*37l; 
-		SmoothNumbers smooth = new SmoothNumbers();
-
-		int count = 0;
-		int sqrts = 0;
-		for (long i = 1l << 29; count  < _100000; i++) {
-			long sqrt = (long)Math.sqrt(i);
-			long sqrtSqare = sqrt * sqrt;
-			if (sqrtSqare == i)
-				sqrts++;
-//			smoothCount += isSmooth ? 1 : 0;
-			count++;
-		}
-		return sqrts;
+	@Override
+	public String getName() {
+		return null;
 	}
 
-	public static void testSmooth5(){
-		final long PRIMORIAL = 2l*3l*5l*7l*11l*13l*17l*19l*23l*29l*31l*37l; 
-		SmoothNumbers smooth = new SmoothNumbers();
-
-		int smoothCount = 0;
-		for (long i = 1l << 29; smoothCount  < _100000; i++) {
-			boolean isSmooth = smooth.isSmoothBy5Modulus(i, PRIMORIAL);
-			smoothCount += isSmooth ? 1 : 0;
-		}
+	@Override
+	public BigInteger findSingleFactor(BigInteger N) {
+		return BigInteger.valueOf(findFactors(N.longValue(), null));
 	}
 
-	public static void testSmoothByFactor(){
-		TrialInvFact fact = new TrialInvFact(37);
+	@Override
+	public long findFactors(long n, Collection<Long> factors) {
 
-		int smoothCount = 0;
-		for (long i = 1l << 29; smoothCount < _100000; i++) {
-			TreeMultiset<Long> factors = fact.factorization(i);
-			Long prod = factors.stream().reduce(1l, (a,b) -> a * b);
-			smoothCount += prod == i ? 1 : 0;
+		int searchInterval = primes[primes.length-1] * 10;
+		int[] numberLength = new int [searchInterval];
+		long beginInterval = n - (searchInterval >> 1);
+		// sieve the numbers on the left side of equation x_i - n = y_i were we want to get x^2 - n = y^2
+		for (int i = primes.length -1; i > 0; i--) {
+			long beginPos = ((beginInterval / primes[i])+ 1) * primes[i];
+			int primeLength = 31 - Integer.numberOfLeadingZeros(primes[i]);
+			for (long pos = beginPos - beginInterval; pos < searchInterval; pos += primes[i]){
+				numberLength [(int) pos] -= primeLength;
+				assertTrue((pos + beginInterval) % primes[i] == 0);
+			}
 		}
-	}
-	public static void testSmoothByFactor1(){
-		SmoothNumbers smooth = new SmoothNumbers();
+//		List<Long> smoothX = new ArrayList<>();
+		final TDiv63Inverse tdiv = new TDiv63Inverse(primes[primes.length -1]);
 
-		int smoothCount = 0;
-		for (long i = 1l << 29; smoothCount < _100000; i++) {
-			int[] factors = smooth.factorizeIfSmooth1(i, 37);
-			smoothCount += factors[factors.length-1] > 0 ? 1 : 0;
+		int lengthThreshold = 63 - Long.numberOfLeadingZeros(n);
+		for (int i=0; i < numberLength.length; i++){
+			if (numberLength[i] < -lengthThreshold + 5){
+				long smoothX = (long) (i + beginInterval);
+				SortedMultiset<BigInteger> factorX = tdiv.factor(BigInteger.valueOf(smoothX));
+				System.out.print(factorX + " - n = ");
+				long right = smoothX - n;
+				SortedMultiset<BigInteger> factorSet = tdiv.factor(BigInteger.valueOf(Math.abs(right)));
+				System.out.println(factorSet);
+				long test = (long) Math.sqrt(right);
+				if (test * test == right){
+					System.out.println("SQUARE");
+				}
+			}
 		}
+		return 0;
 	}
-
 }
