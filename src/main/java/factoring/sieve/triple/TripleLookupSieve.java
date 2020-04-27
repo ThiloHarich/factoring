@@ -2,9 +2,12 @@ package factoring.sieve.triple;
 
 import com.google.common.collect.HashMultiset;
 import com.google.common.collect.Multiset;
+import com.google.common.collect.Multiset.Entry;
+
 import de.tilman_neumann.jml.factor.FactorAlgorithm;
 import de.tilman_neumann.jml.factor.tdiv.TDiv63Inverse;
 import de.tilman_neumann.util.SortedMultiset;
+import factoring.math.Column;
 import factoring.math.SquareFinder;
 import factoring.smooth.SmoothNumbers;
 import org.apache.commons.math3.util.Pair;
@@ -20,17 +23,24 @@ import static org.junit.Assert.assertTrue;
 
 /**
  * This is a variant of the quadratic sieve.
- * It tries to reduce the size of th number(s) to be sieved on.
+ * It tries to reduce the size of the number(s) to be sieved.
  * Where the quadratic sieve uses squares x^2 on the left side, subtracts n and then
- * sieve on the right side over y = x^2 - n. The numbers are bigger then n^1/2.
- * Here we have to sieve over 3 numbers each of size n^(3/8 + epsilon) < n^.376
- * This variant gives up on using squares on the left side. It splits x in a smooth part s
- * and a part p x=s*p then we use a correction term to reduce the size of the numbers after
- * subtracting n. We use x(s,i) = s^2*(p-i)*(p+i) = s^2 (p^2 - i^2) = s^2*p^2 - s^2*i^2
- * = x^2 - s^2 * i^2
- * we consider x = ceil(sqrt(k*n))
+ * sieve on the right side over y = x^2 - n. The generated numbers y are usually greater then
+ * n^1/2. 
+ * This variant reduces the size of the generated numbers y to n^3/8.
+ * It gives up on using squares on the left side. It splits the left side in a 
+ * square and a non square. The non square has to be smooth. 
+ * The square is of size is n^2/8. 
+ * We consider x' > sqrt(kn). 
+ * We find a factor s (of size ~ n ^1/8) out of x' and a (maybe non smooth) part p = x'/s. 
+ * Taking (s*p)^2 -n = (x')^2 - n does not gives any benefit.
+ * Instead We use x_{kn,s,p}(i) = s^2*(p-i)*(p+i) = s^2 (p^2 - i^2) = s^2*p^2 - s^2*i^2
+ * = x'^2 - s^2 * i^2
+ * since s is of size n^2/8 -> p ~ n^3/8. We limiting the range of i,
+ * For given kn and s we have to sieve/find over 3 numbers (p-i),(p+i) and y = x_{kn,s,p}(i) - n each of size n^(3/8 + epsilon) < n^.376
+ * Remember that y is a polyomial in i
  * We find find s in the order of n^1/8 by sieving with primes smaller then n^1/8 and multiplying the primes.
- * -> p = x / s
+ * -> p = x' / s
  * for s and p we calculate p-i, p+i, x(s,i) - k*n
  * By choosing s ~ n^1/8 the 3 numbers above have size ~ n^3/8
  * With a pre calculated Lookup table of size a little bit bigger then n^3/8 we can easily iterate over
@@ -235,7 +245,7 @@ public class TripleLookupSieve extends FactorAlgorithm {
                     // here we found k dividing x
                     long x = j + sqrtNCeil;
                     System.out.println("x : " + x);
-                    int xDiv = (int) x;
+//                    int xDiv = (int) x;
                     Set<Integer> smooth = new HashSet<>();
                     // this ensures that y is lower then smoothBond in the hole searchIntervalP
                     double sBest = nPowOneDivEight;
@@ -321,8 +331,8 @@ public class TripleLookupSieve extends FactorAlgorithm {
                 }
             }
         }
-        List<SquareFinder.Column> smoothMatrix = finder.initMatrix();
-        List<SquareFinder.Column> reducedMatrix = finder.reduceMatrix(smoothMatrix);
+        List<Column> smoothMatrix = finder.initMatrix();
+        List<Column> reducedMatrix = finder.reduceMatrix(smoothMatrix);
         do {
             smoothMatrix = reducedMatrix;
             reducedMatrix = finder.reduceMatrix(smoothMatrix);
@@ -336,6 +346,25 @@ public class TripleLookupSieve extends FactorAlgorithm {
     public static long multiply(Multiset<Integer> factors) {
         return factors.stream().reduce(1, (a,b)-> a*b);
     }
+    public static BigInteger multiplyBig(Multiset<Integer> factors) {
+        return factors.stream().map(BigInteger::valueOf).reduce(BigInteger.ONE, (a,b)-> a.multiply(b));
+    }
+    public static long multiplySqrtModStream(Multiset<Integer> factors, long n) {
+        return factors.entrySet().stream().map(e -> powMod(e.getElement(), e.getCount()/2, n)).reduce(1l, (a,b)-> (a*b) % n);
+    }
+    public static long powMod(int base, int exp, long n) {
+    	long powMod = base;
+    	for (int i = 1; i < exp; powMod = (powMod*base) % n, i++);
+    	return powMod;
+    }
+    public static long multiplySqrtMod(Multiset<Integer> factors, long n) {
+    	long prod = 1;
+    	for (Entry<Integer> e : factors.entrySet()) {
+    		prod = (prod * powMod(e.getElement(), e.getCount()/2, n)) % n;			
+		}
+        return prod;
+    }
+
     public static long multiplyMod(Multiset<Integer> factors, long n) {
         return factors.stream().map(i -> (long) i).reduce(1l, (a,b)-> a*b % n);
     }

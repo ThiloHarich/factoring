@@ -6,21 +6,20 @@ import java.util.Random;
 import de.tilman_neumann.jml.factor.FactorAlgorithm;
 import de.tilman_neumann.jml.factor.hart.Hart_Fast;
 import de.tilman_neumann.jml.factor.tdiv.TDiv63Inverse;
-<<<<<<< Upstream, based on branch 'master' of https://github.com/ThiloHarich/factoring.git
 import factoring.fermat.FermatXSquareMultiplied;
 import factoring.fermat.FermatXSquareShift;
-=======
+
 import factoring.fermat.FermatXNonSquare;
 import factoring.hart.HartTwoSieves;
 import factoring.hart.HartTwoSievesSkip;
 import factoring.hart.Hart_Fast2MultOrig;
+import factoring.hart.Hart_FastFmaSimple;
 import factoring.hart.sieve.HartSieve;
 import factoring.hart.sieve.HartSieveBitSet;
 import factoring.hart.sieve.HartSieveDynamic;
 import factoring.hart.sieve.HartSieveDynamic2;
 import factoring.hart.sieve.HartSieveFindK;
 import factoring.hart.smooth.HartSmooth2;
->>>>>>> 47f8398 test
 import factoring.math.PrimeMath;
 
 //import de.tilman_neumann.math.factor.CombinedFactorAlgorithm;
@@ -81,22 +80,14 @@ public class PerformanceHard {
 		//		final FactorAlgorithm factorizer1 = new HartTraining(false, false);
 		//		final FactorAlgorithm factorizer1 = new HartTraining(false, false);
 		final FactorAlgorithm factorizer2 = new Hart_Fast(false);
-		//		final FactorAlgorithm factorizer1 = new Hart_FastFmaSimple(false);
+				final FactorAlgorithm factorizer1 = new Hart_FastFmaSimple(false);
 		//		final FactorAlgorithmBase factorizer1 = new LehmanHart(0);
 		//		final FactorAlgorithmBase factorizer1 = new LehmanHart2();
 		//		final FactorAlgorithm factorizer1 = new Hart_FastNo9(false);
 		//		final FactorAlgorithm factorizer1 = new Hart_FastAdjustMap(false);
 		//		final FactorAlgorithm factorizer1 = new Hart_FastOdd(false);
-<<<<<<< Upstream, based on branch 'master' of https://github.com/ThiloHarich/factoring.git
-		final FactorAlgorithm factorizer1 = new FermatXSquareMultiplied(false);
-		//		final FactorAlgorithm factorizer1 = new Hart_Fast2MultOdd(false);
-=======
-		//		final FactorAlgorithm factorizer2 = new Hart_Fast2Mult(false);
-		final FactorAlgorithm factorizer2 = new Hart_Fast2Mult(false);
-		final FactorAlgorithm factorizer1 = new FermatXNonSquare();
-//		final FactorAlgorithm factorizer1 = new HartTwoSieves(false);
-		//		final FactorAlgorithm factorizer1 = new HartOneSieve(false);
->>>>>>> 47f8398 test
+
+
 		//		final FactorAlgorithm factorizer1 = new Hart_FastTRound(false);
 		//		final FactorAlgorithm factorizer1 = new HartSimple4();
 		//		final FactorAlgorithm factorizer1 = new HartSimpleMin();
@@ -267,11 +258,6 @@ public class PerformanceHard {
 		Random rnd = new Random(872);
 		for (int i=0; i< numPrimes; i++)
 		{
-<<<<<<< Upstream, based on branch 'master' of https://github.com/ThiloHarich/factoring.git
-			Random rnd = new Random();
-=======
->>>>>>> 47f8398 test
-			//			final int smallFactorBits = (bits / 4 )  +  rnd.nextInt(bits / 4) + 4;
 			final int smallFactorBits = (bits / 2 );
 			//			final int smallFactorBits = (bits / 3) - 2;
 

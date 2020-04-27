@@ -1,13 +1,11 @@
 package factoring.math;
 
-import com.google.common.collect.HashMultiset;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Multiset;
 import factoring.sieve.triple.TripleLookupSieve;
 import org.apache.commons.math3.util.Pair;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 
@@ -73,9 +71,7 @@ public class SquareFinder {
                 matrix.set(i, pivot);
                 for (int col = pivotIndex+1; col < matrix.size(); col++) {
                     if (matrix.get(col).entries.get(i)) {
-                        matrix.get(col).entries.xor(pivot.entries);
-                        // bookkeeping of columns
-                        matrix.get(col).columns.set(pivot.id);
+                    	matrix.get(col).xor(pivot);
                     }
                 }
             }
@@ -105,8 +101,7 @@ public class SquareFinder {
                 if (rows4Column.size() == 2) {
                     final Integer index = rows4Column.get(1);
                     final Integer index0 = rows4Column.get(0);
-                    matrix.get(index).entries.xor(matrix.get(index0).entries);
-                    matrix.get(index).columns.set(index0);
+                    matrix.get(index).xor(matrix.get(index0));
 //                    checkForSquare(matrix.get(index));
                 }
                 if (rows4Column.size() > 0)
@@ -115,6 +110,7 @@ public class SquareFinder {
         }
         System.out.print("rows to delete : ");
         deleteRowsSet.stream().map(i -> i + ",").forEach(System.out::print);
+        System.out.println();
         List<Column> reducedMatrix = new ArrayList<>();
         for (int row = 0; row < matrix.size(); row++) {
             if (!deleteRowsSet.contains(row))
@@ -126,7 +122,7 @@ public class SquareFinder {
     private void print(List<Column> matrix, int[] colCounts, List<List<Integer>> rows4Columns) {
         for (int j = 0; j < matrix.size(); j++) {
             BitSet row = matrix.get(j).entries;
-            String line = String.format("%02d", j);
+            String line = String.format("%02d %02d", j, matrix.get(j).id);
             for (int l = 0; l < 2 * factorBase.size(); l++) {
                 final boolean rowContainsPrime = row.get(l);
                 line += rowContainsPrime ? "o|" : " |";
@@ -135,18 +131,22 @@ public class SquareFinder {
                     colCounts[l]++;
                 }
             }
+            line += matrix.get(j).toString(factors, n);
             System.out.println(line);
         }
     }
 
     private void print(List<Column> matrix) {
+    	System.out.println();
         for (int j = 0; j < matrix.size(); j++) {
             BitSet row = matrix.get(j).entries;
-            String line = String.format("%02d", j);
+            String line = String.format("%02d %02d", j, matrix.get(j).id);
+            line += String.format(" %02d", matrix.get(j).id);
             for (int l = 0; l < 2 * factorBase.size(); l++) {
                 final boolean rowContainsPrime = row.get(l);
                 line += rowContainsPrime ? "o|" : " |";
             }
+            line += matrix.get(j).toString(factors, n);
             System.out.println(line);
         }
     }
@@ -156,12 +156,16 @@ public class SquareFinder {
             for (Column col2 : matrix) {
                 if (col1.id != col2.id && col1.entries.equals(col2.entries)){
                     System.out.println("two identical lines found");
-                    System.out.println(toString(col1));
-                    System.out.println(toString(col2));
+                    System.out.println(col1.toString(factors, n));
+                    System.out.println(col2.toString(factors, n));
+                    Column xor = col1.copy();
+                    xor.xor(col2);
+                    if (xor.gcd(factors, n) > 1)
+                    	return xor.gcd(factors, n);
                 }
             }
         }
-        return 0;
+        return -1;
     }
     private long checkForSquare(Column col) {
         if (col.entries.cardinality() == 0){
@@ -212,64 +216,6 @@ public class SquareFinder {
         System.out.println("colums non empty : " + (colCounts.length - colEmpty));
     }
 
-    public static class Column {
-        int id;
-        BitSet entries;
-        BitSet columns;
 
-        public static Column of(BitSet entries, int columnIndex) {
-            Column col = new Column();
-            col.entries = entries;
-            col.id = columnIndex;
-            col.columns = new BitSet();
-            col.columns.set(columnIndex);
-            return col;
-        }
-
-    }
-
-    public String toString(Column col) {
-        Multiset<Integer> factorsLeft = HashMultiset.create();
-        Multiset<Integer> factorsRight = HashMultiset.create();
-        BitSet bs = col.columns;
-        for (int column  = bs.nextSetBit(0); column >= 0; column = bs.nextSetBit(column+1)) {
-            final Multiset<Integer> leftFactors = factors.get(column).getFirst();
-            for (Multiset.Entry<Integer> entry :leftFactors.entrySet()) {
-                if (!factorsLeft.contains(entry.getElement())){
-                    factorsLeft.add(entry.getElement(), entry.getCount());
-                }
-                else{
-                    factorsLeft.setCount(entry.getElement(), entry.getCount() + factorsLeft.count(entry.getElement()));
-                }
-            }
-            final Multiset<Integer> rightFactors = factors.get(column).getSecond();
-            for (Multiset.Entry<Integer> entry :rightFactors.entrySet()) {
-                if (!factorsRight.contains(entry.getElement())){
-                    factorsRight.add(entry.getElement(), entry.getCount());
-                }
-                else{
-                    factorsRight.setCount(entry.getElement(), entry.getCount() + factorsLeft.count(entry.getElement()));
-                }
-            }
-            if (column == Integer.MAX_VALUE) {
-                break; // or (column+1) would overflow
-            }
-        }
-
-        String factorsL = factorsLeft.entrySet().stream().map(e -> e.getElement() + "^" + e.getCount()).collect(Collectors.joining("*"));
-        String factorsR = factorsRight.entrySet().stream().map(e -> e.getElement() + "^" + e.getCount()).collect(Collectors.joining("*"));
-        long prodLeft = factorsLeft.elementSet().stream().mapToLong(x -> x).reduce(1, (a, b) -> a * b % n);
-        long prodRight = factorsLeft.elementSet().stream().mapToLong(x -> x).reduce(1, (a, b) -> a * b % n);
-        assertEquals(prodLeft - n, prodRight);
-        return "Column{" +
-                "id=" + col.id +
-                ", entries=" + col.entries +
-                ", columns=" + col.columns +
-                ", factors left =" + factorsL +
-                ", factors right =" + factorsR +
-                ", x % n =" + prodLeft +
-                ", y % n =" + prodRight +
-                '}';
-    }
 
 }
