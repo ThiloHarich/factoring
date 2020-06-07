@@ -18,11 +18,16 @@ import static org.junit.Assert.assertTrue;
 
 /**
  * This is a variant of the quadratic sieve.
- * It tries to reduce the size of th number(s) to be sieved on.
+ * It tries to reduce the size of the number(s) to be sieved on.
  * Where the quadratic sieve uses squares x^2 on the left side, subtracts n and then
- * sieve on the right side over y = x^2 - n. The numbers are bigger then n^1/2.
+ * sieve on the right side over y = x^2 - n. The resulting numbers are bigger then n^1/2
+ * (by choosing x ~ sqrt(n)).
  * Here we have to sieve over 3 numbers each of size n^(3/8 + epsilon) < n^.376
- * This variant gives up on using squares on the left side. It splits x in a smooth part s
+ * This variant gives up on using squares on the left side. It uses a square s^2 and two
+ * smooth parts p_1 ans p_2. Such the resulting number on the right side is s^2 * p-1 * p_2 - n.
+ * It splits the numbers x > sqrt(n) from the quadratic sieve in a small 
+ * (and such usually smooth) number s and a bigger number p.
+ * Out of 
  * and a part p x=s*p then we use a correction term to reduce the size of the numbers after
  * subtracting n. We use x(s,i) = s^2*(p-i)*(p+i) = s^2 (p^2 - i^2) = s^2*p^2 - s^2*i^2
  * = x^2 - s^2 * i^2
