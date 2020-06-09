@@ -26,13 +26,19 @@ import static org.junit.Assert.assertTrue;
  * This variant gives up on using squares on the left side. It uses a square s^2 and two
  * smooth parts p_1 ans p_2. Such the resulting number on the right side is s^2 * p-1 * p_2 - n.
  * It splits the numbers x > sqrt(n) from the quadratic sieve in a small 
- * (and such usually smooth) number s and a bigger number p.
- * Out of 
- * and a part p x=s*p then we use a correction term to reduce the size of the numbers after
- * subtracting n. We use x(s,i) = s^2*(p-i)*(p+i) = s^2 (p^2 - i^2) = s^2*p^2 - s^2*i^2
+ * (and such usually smooth) number s and a bigger number p. x = s*p.
+ * The aim is to produce a smooth number near n.
+ * Like in the quadratic sieve x^2 - n will be of size n^1/2.
+ * we use a correction term to reduce the size of the numbers after
+ * subtracting n.
+ * Instead of x^2 = s^2 * p^2 we use 
+ * x(s,i) = s^2*(p-i)*(p+i) = s^2 (p^2 - i^2) = s^2*p^2 - s^2*i^2
  * = x^2 - s^2 * i^2
+ * x(s,i) - n = (x^2 - n) - s^2 * i^2
  * we consider x = ceil(sqrt(k*n))
- * We find find s in the order of n^1/8 by sieving with primes smaller then n^1/8 and multiplying the primes.
+ * We can find different s in the order of n^1/8 by sieving with primes smaller then n^1/8
+ * - or by a pre calculated lookup table of primes below n^1/2 -
+ * and multiplying the primes together.
  * -> p = x / s
  * for s and p we calculate p-i, p+i, x(s,i) - k*n
  * By choosing s ~ n^1/8 the 3 numbers above have size ~ n^3/8
@@ -40,6 +46,9 @@ import static org.junit.Assert.assertTrue;
  * the smooth numbers p-i and p+i (in common if we want) and lookup if
  * x(s,i) - k*n is prime. We choose the lookup table a little bigger then n^3/8 such that
  * there is an i such that a smooth p-i and p+i exist.
+ * 
+ * We have to ensure to generate only different x(s,i).
+ * Different s can lead to the same value x(s,i).
  *
  *  y(s,i,k) = x(s,i) - kn
  *  we choose i_opt such that x(s,i) - kn is minimal
@@ -223,7 +232,7 @@ public class TripleLookupAllSieve extends FactorAlgorithm {
             double sBest = smoothBound / (2 * searchIntervalP * sqrt(x * x - n));
             // sLower s -> higher p - less smooth values, bigger range for i
             int sHigher = Math.max((int) (sBest * 2), 2);
-            int[] factorList = getUniqueFactors(x, sHigher);
+            int[] factorList = getPrimeFactors(x, sHigher);
 //                    int[] factorArray = IntStream.of(factorListRaw).filter(i -> i >sLower).toArray(new int []);
             System.out.println(" s : " + factorList + " y : " + (x*x - n));
 //                    System.out.println(" s : " + factorArray + " y : " + (x*x - n));
@@ -321,7 +330,7 @@ public class TripleLookupAllSieve extends FactorAlgorithm {
         return i;
     }
 
-    private int[] getUniqueFactors(int xDiv, int upperBound) {
+    private int[] getPrimeFactors(int xDiv, int upperBound) {
         int[] factors = new int[smoothBits];
         int i = 0;
         int factor = Integer.MAX_VALUE;
@@ -336,7 +345,7 @@ public class TripleLookupAllSieve extends FactorAlgorithm {
         return factors;
     }
 
-    private List<Integer> getFactorList(int xDiv, int upperBound) {
+    private List<Integer> getPrimeFactorList(int xDiv, int upperBound) {
         List<Integer> factors = new ArrayList<>();
         while (maxFactor[xDiv] > 1){
             int factor = maxFactor[xDiv];
@@ -346,6 +355,22 @@ public class TripleLookupAllSieve extends FactorAlgorithm {
         }
         return factors;
     }
+
+    private List<Integer> getFactorList(int xDiv, int upperBound) {
+        List<Integer> primeFactors = getPrimeFactorList(xDiv, upperBound);
+        
+        powerSet(primeFactors, 0, new ArrayList<>(), upperBound, 1);      
+    }
+    public static void powerSet(List<Integer> numbers, int index, ArrayList<Integer> currentFactors, ArrayList<ArrayList<Integer>> result, int upperBound, int prod) {
+		if (index == numbers.size() && prod < upperBound)
+			result.add(currentFactors);
+		else {
+			powerSet(numbers, index + 1, currentFactors, result, upperBound, prod); //do not take the current number
+			ArrayList<Integer> withNewFactor = new ArrayList<>(currentFactors);
+			withNewFactor.add(numbers.get(index));
+			powerSet(numbers, index + 1, withNewFactor, result, upperBound, prod * numbers.get(index)); //take it
+		}
+	}
 
     private void findFactors(double lower, double higher, List<Integer> factorX, int prod, Set<Integer> shifts, int index) {
         if (lower < prod && prod < higher) {
