@@ -8,6 +8,7 @@ import de.tilman_neumann.jml.factor.FactorAlgorithm;
 import de.tilman_neumann.jml.factor.tdiv.TDiv63Inverse;
 import de.tilman_neumann.util.SortedMultiset;
 import factoring.math.Column;
+import factoring.math.PrimeMath;
 import factoring.math.SquareFinder;
 import factoring.smooth.SmoothNumbers;
 import org.apache.commons.math3.util.Pair;
@@ -23,24 +24,40 @@ import static org.junit.Assert.assertTrue;
 
 /**
  * This is a variant of the quadratic sieve.
- * It tries to reduce the size of the number(s) to be sieved.
+ * It tries to reduce the size of the number(s) to be sieved on.
  * Where the quadratic sieve uses squares x^2 on the left side, subtracts n and then
- * sieve on the right side over y = x^2 - n. The generated numbers y are usually greater then
- * n^1/2. 
- * This variant reduces the size of the generated numbers y to n^3/8.
- * It gives up on using squares on the left side. It splits the left side in a 
- * square and a non square. The non square has to be smooth. 
- * The square is of size is n^2/8. 
- * We consider x' > sqrt(kn). 
- * We find a factor s (of size ~ n ^1/8) out of x' and a (maybe non smooth) part p = x'/s. 
- * Taking (s*p)^2 -n = (x')^2 - n does not gives any benefit.
- * Instead We use x_{kn,s,p}(i) = s^2*(p-i)*(p+i) = s^2 (p^2 - i^2) = s^2*p^2 - s^2*i^2
- * = x'^2 - s^2 * i^2
- * since s is of size n^2/8 -> p ~ n^3/8. We limiting the range of i,
- * For given kn and s we have to sieve/find over 3 numbers (p-i),(p+i) and y = x_{kn,s,p}(i) - n each of size n^(3/8 + epsilon) < n^.376
- * Remember that y is a polyomial in i
- * We find find s in the order of n^1/8 by sieving with primes smaller then n^1/8 and multiplying the primes.
- * -> p = x' / s
+ * sieve on the right side over y = x^2 - n. Then the numbers y to be sieved on are bigger then n^1/2.
+ * The numbers on the right have to be smooth.
+ * In this variant we have to find 3 smooth numbers each of size n^(3/8 + epsilon) < n^.376
+ * This variant gives up on using squares on the left side. We have a product of a square s^2 and
+ * a smooth part. So we have more possible numbers on the left side. This reduces the size
+ * of the numbers on the right size. Unfortunately it is not clear how we can efficiently determine
+ * where all three numbers are smooth for bigger numbers.
+ * More detailed : The left site consist out of a square s^2 and two
+ * numbers r_1 and r_2. The r_i have to be smooth. If s^2 * r_1 * r_2 - k*n has to be smooth as well
+ * we can multiply together such kind of relations (like in the rational sieve).
+ * If we have more relations then factors in the factor base, we have a rather good chance
+ * to get a factor of n.
+ * we consider x = ceil(sqrt(k*n))
+ * We find s in the order of n^1/8 by sieving with primes smaller then n^1/8.
+ * the part p in x=s*p will be used a correction term to reduce the size of the numbers after
+ * subtracting n. We use r_1 = p-i, r_2 = p+i:
+ * x(s,i) = s^2*(p-i)*(p+i) = s^2 (p^2 - i^2) = s^2*p^2 - s^2*i^2
+ * = x^2 - s^2 * i^2
+ * = x^2 - (s*i)^2
+ * x(s,i) - k*n =
+ * x^2 - (s*i)^2 - k*n
+ * if x^2 = kn + s^2 * i^2 mod p <-> p divides  x^2 - (s*i)^2 - k*n
+ *   (x^2 - kn) * s^-2 = i^2 mod p
+ *   ((x/s)^2 - kn * s^-2) = i^2 mod p
+ * so if the sieve interval over i is greater then the biggest prime in the
+ * factor base we can determine if there is such a solution, and if so to find the two
+ * solutions.
+ *
+ * Runtime :
+ * instead of sieving over n^1/2 -> time T(n) = exp(sqrt(log(n) * log(log(n)))
+ * we have 3 sievings over n^3/8
+ * -> p = x / s
  * for s and p we calculate p-i, p+i, x(s,i) - k*n
  * By choosing s ~ n^1/8 the 3 numbers above have size ~ n^3/8
  * With a pre calculated Lookup table of size a little bit bigger then n^3/8 we can easily iterate over
@@ -127,11 +144,11 @@ public class TripleLookupSieve extends FactorAlgorithm {
             1601,1607,1609,1613,1619,1621,1627,1637,1657,1663,1667,1669,1693,1697,1699,
             1709,1721,1723,1733,1741,1747,1753,1759,1777,1783,1787,1789,1801,1811,1823,
             1831,1847,1861,1867,1871,1873,1877,1879,1889,1901,1907,1913,1931,1933,1949,
-            1951,1973,1979,1987,1993,1997,1999,2003,2011,2017,2027,2029,2039,2053,2063/*,
+            1951,1973,1979,1987,1993,1997,1999,2003,2011,2017,2027,2029,2039,2053,2063,
 			2069,2081,2083,2087,2089,2099,2111,2113,2129,2131,2137,2141,2143,2153,2161,
 			2179,2203,2207,2213,2221,2237,2239,2243,2251,2267,2269,2273,2281,2287,2293,
 			2297,2309,2311,2333,2339,2341,2347,2351,2357,2371,2377,2381,2383,2389,2393,
-			2399,2411,2417,2423,2437,2441,2447,2459,2467,2473,2477,2503,2521,2531,2539,
+			2399,2411,2417,2423,2437,2441,2447,2459,2467,2473,2477,2503,2521,2531,25397/*,
 			2543,2549,2551,2557,2579,2591,2593,2609,2617,2621,2633,2647,2657,2659,2663,
 			2671,2677,2683,2687,2689,2693,2699,2707,2711,2713,2719,2729,2731,2741,2749,
 			2753,2767,2777,2789,2791,2797,2801,2803,2819,2833,2837,2843,2851,2857,2861,
@@ -214,9 +231,9 @@ public class TripleLookupSieve extends FactorAlgorithm {
         final TDiv63Inverse tdiv = new TDiv63Inverse(factorBase[factorBase.length -1]);
         int nPowOneDivEight = (int) Math.pow(n, .125);
         System.out.println("n^1/8 : " + nPowOneDivEight);
-        int sieveInterval = 2* nPowOneDivEight;
+        int sMax = 2* nPowOneDivEight;
 //        int smoothBound = (int) Math.pow(n, 0.5);
-        int[] numberLengthSqrtN = new int [sieveInterval];
+        int[] numberLengthSqrtN = new int [sMax];
         int relations = 0;
         int xi = 0;
 
@@ -224,24 +241,30 @@ public class TripleLookupSieve extends FactorAlgorithm {
         SquareFinder finder = new SquareFinder(Arrays.asList(factorBaseArr), n);
         Set<Integer> xSet = new HashSet<>();
         final int relationsNeeded = 2 * factorBaseSize + 4;
-        for (int k = 1; relations < relationsNeeded; k++) {
+        // outer loop over k*n
+        for (int k = 1; relations < relationsNeeded; k++)
+        {
+            if (k != 1 && PrimeMath.isSquare(k))
+                continue;
             System.out.println("Next k : " + k);
             double sqrtN = sqrt(k*n);
             long sqrtNCeil = (long) Math.ceil(sqrtN);
+            // find the square s^2 in n by sieving
             // for small n we can just find the factors by maxFactor table -> need no sieve here
-            for (int i = 0; factorBase[i] < sieveInterval; i++) {
-                long beginPos = (int)Math.ceil((sqrtNCeil + 0.0) / factorBase[i]) * factorBase[i];
-                int primeLength = 32 - Integer.numberOfLeadingZeros(factorBase[i] - 1);
-                for (long pos = beginPos; pos < sieveInterval + sqrtNCeil; pos += factorBase[i]) {
-                    numberLengthSqrtN[(int) (pos - sqrtNCeil)] -= primeLength;
-                    assertTrue(pos % factorBase[i] == 0);
-                }
-            }
+//            for (int i = 0; factorBase[i] < sMax; i++) {
+//                long beginPos = (int)Math.ceil((sqrtNCeil + 0.0) / factorBase[i]) * factorBase[i];
+//                int primeLength = 32 - Integer.numberOfLeadingZeros(factorBase[i] - 1);
+//                for (long pos = beginPos; pos < sMax + sqrtNCeil; pos += factorBase[i]) {
+//                    numberLengthSqrtN[(int) (pos - sqrtNCeil)] -= primeLength;
+//                    assertTrue(pos % factorBase[i] == 0);
+//                }
+//            }
             int lengthThresholdX = 32 - Integer.numberOfLeadingZeros(nPowOneDivEight - 1);
-            for (int j = 0; j < sieveInterval && relations < relationsNeeded; j++) {
+            for (int j = 0; /*j < sieveInterval &&*/ relations < relationsNeeded; j++) {
                 int operations = 0;
                 int soothLength = -lengthThresholdX + 1;
-                if (numberLengthSqrtN[j] <= soothLength) {
+//                if (numberLengthSqrtN[j] <= soothLength)
+                {
                     // here we found k dividing x
                     long x = j + sqrtNCeil;
                     System.out.println("x : " + x);
@@ -360,7 +383,7 @@ public class TripleLookupSieve extends FactorAlgorithm {
     public static long multiplySqrtMod(Multiset<Integer> factors, long n) {
     	long prod = 1;
     	for (Entry<Integer> e : factors.entrySet()) {
-    		prod = (prod * powMod(e.getElement(), e.getCount()/2, n)) % n;			
+    		prod = (prod * powMod(e.getElement(), e.getCount()/2, n)) % n;
 		}
         return prod;
     }
@@ -384,13 +407,13 @@ public class TripleLookupSieve extends FactorAlgorithm {
         return i;
     }
 
-    private int[] getUniqueFactors(int xDiv, int upperBound) {
+    private int[] getUniqueFactors(int n, int upperBound) {
         int[] factors = new int[smoothBits];
         int i = 0;
         int factor = Integer.MAX_VALUE;
-        while (maxFactor[xDiv] > 1){
-            factor = maxFactor[xDiv];
-            xDiv = xDiv / factor;
+        while (maxFactor[n] > 1){
+            factor = maxFactor[n];
+            n = n / factor;
             // add only different factors.
             if ((i == 0 || factors[i-1] != factor) && factor <= upperBound )
                 factors[i++] = (short) factor;
@@ -399,18 +422,6 @@ public class TripleLookupSieve extends FactorAlgorithm {
         return factors;
     }
 
-    private int[] getFactors(int xDiv) {
-        int[] factors = new int[smoothBits];
-        int i = 0;
-        while (maxFactor[xDiv] > 1){
-            int factor = maxFactor[xDiv];
-            xDiv = xDiv / factor;
-            // add only different factors.
-            if (i == 0 || factors[i-1] != factor)
-                factors[i++] = (short) factor;
-        }
-        return factors;
-    }
 
     private List<Integer> getFactorList(int xDiv) {
         List<Integer> factors = new ArrayList<>();

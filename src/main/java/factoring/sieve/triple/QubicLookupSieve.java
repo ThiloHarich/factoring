@@ -1,72 +1,149 @@
 package factoring.sieve.triple;
 
+import com.google.common.collect.HashMultiset;
+import com.google.common.collect.Multiset;
+import com.google.common.collect.Multiset.Entry;
 import de.tilman_neumann.jml.factor.FactorAlgorithm;
 import de.tilman_neumann.jml.factor.tdiv.TDiv63Inverse;
 import de.tilman_neumann.util.SortedMultiset;
+import factoring.math.Column;
+import factoring.math.PrimeMath;
+import factoring.math.SquareFinder;
 
 import java.math.BigInteger;
 import java.util.*;
+import java.util.stream.IntStream;
 
 import static java.lang.Math.*;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
  * This is a variant of the quadratic sieve.
- * It tries to reduce the size of th number(s) to be sieved on.
+ * It tries to reduce the size of the number(s) to be sieved on.
  * Where the quadratic sieve uses squares x^2 on the left side, subtracts n and then
- * sieve on the right side over x^2 - n. The numbers are bigger then n^1/2.
- * Here we have to sieve over 3 numbers each of size n^(3/8 + epsilon) < n^.376
- * This variant gives up on using squares on the left side.
- * It tries to find a smooth number s' of size n^2/8.
- * We start with a (smooth) number s of size ~ n^1/8 for which
- * x = s * p = ceil(sqrt(n)) + l , l very small
- * x^2 - n = y This number usually can be constructed by sieving and multiplying the small smooth parts.
- * y = s^2 * p^2 - n
- * p^2 = (y + n) / s^2
- * we want s' * p^2 - n to small
- * -> s' * p^2 - n = 0
- * s' * (y+n) / s^2 = n
- * s' = n/(y+n) * s^2
- * s' = 1/(y/n+1) * s^2
- * s' ~ (1 - y/n) * s^2
- * s' ~ s^2 - s^2*y/n  , since s^2 ~ n^2/8 and y ~ n^4/8 -> s^2*y/n ~
- * for this number we compute p = sqrt(n / s), out of this we construct the equation
- * y(s,i,k) = s * (p+i) * (p-i) - k*n =
- * s * (p^2 - i^2) - n =
- * s*p^2 - n - i^2
+ * sieve on the right side over y = x^2 - n. Then the numbers y to be sieved on are bigger then n^1/2.
+ * The numbers on the right have to be smooth.
+ * In this variant we have to find 4 smooth numbers each of size n^(1/3 + epsilon).
+ * This variant gives up on using squares on the left side. We have a smooth number, which is a
+ * product of 3 numbers, which have nearly the same size. After subtracting n the number (again)
+ * is of size n^1/3.
+ * This will (hopefully) increase the likelihood of this number to be smooth.
+ * We can always find the three numbers x_1*x_2*x_3 on the left such that
+ *  x_1 * x_2 * x_3 - n <= n^1/3
+ * But these numbers do not have to be smooth.
+ * We take x_j = ceil(n^1/3) + i_j := x + i_j  this is x = ceil(n^1/3)
+ * where
+ * 1) i_1 = i_2 = 2 * i_3
+ * 2) i_3 < 0
+ * Then there is an i_3 in N such that
+ * prod x_i - n < n^1/3
+ * We have prod x_i = (x + i_1) * (x + i_2) * (x + i_3)
+ * = (x^2 + (i_1+i_2)x + i_1* i_2) * (x + i_3)
+ * = x^3 + (i_1+i_2)x^2 + i_1* i_2*x + x^2*i_3 + (i_1+i_2)i_3x + i_1* i_2* i_3)
+ * = x^3 + (i_1+i_2+i_3)x^2 + (i_1* i_2 + (i_1+i_2)i_3) x + i_1* i_2* i_3
+ * = x^3 + (i_1* i_2 + (i_1+i_2)i_3) x + i_1* i_2* i_3
+ * = x^3 + (i_1* i_2 + i_3^2) x + i_1* i_2* i_3
+ * if we chose i_1 = i_2 -> i_1* i_2 = -1/4 * i_3^2
+ *  prod x_i - n = x^3 + 3/4 * i_3^2 * x + i_3^3/4 - n
+ * = x^3 - 3/4 i_3^2 * x - 1/4 * i_3^3 - n
+ * There is an i_3 = sqrt((4+e)/3 (x^3 -  n)/x) in R such that
+ * prod x_i - n < n^1/3
+ * q(x, i_3) = prod x_i - n =  x^3 - 3/4 i_3^2 * x - 1/4 * i_3^3 - n =
+ * x^3 - 3/4 * (4+e)/3 (x^3 -  n) - 1/4 * ((4+e)/3 (x^3 -  n)/x)^(3/2) - n
+ * x^3 - (4+e)/4 (x^3 -  n) - 1/4 * ((4+e)/3 (x^3 -  n)/x)^(3/2)
+ * x^3 - n - (x^3 -  n) + e/4 (x^3 -  n) - 1/4 * ((4+e)/3 (x^3 -  n)/x)^(3/2)
+ * e/4 (x^3 -  n) - 1/4 * ((4+e)/3 (x^3 -  n)/x)^(3/2)
+ * e/4 (x^3 -  n) - 1/4 * (x^3 -  n) * ((4+e)/3)^(3/2) (x^3 -  n)^(1/3) * (1/x)^(3/2)
+ * (x^3 -  n) * (e/4 - 1/4 * ((4+e)/3)^(3/2) (x^3 -  n)^(1/3) * (1/x)^(3/2))
+ * (x^3 -  n) * (e/4 - 1/4 * ((4+e)/3)^(3/2) (n)^(2/9) * n^(-1/2))
+ * (n^(2/3)) * (e/4 - 1/4 * ((4+e)/3)^(3/2) (n)^(-5/18))
+ * the rational solutions can be written  as c*n^1/6.
+ * we have to show  q(x, c*n^1/6 + 1) -  q(x, c*n^1/6) < n^1/3
+ * q(x, c*n^1/6 + 1) = x^3 - 3/4 (c*n^1/6 + 1)^2 * x - 1/4 * (c*n^1/6 + 1)^3 - n
+ * = x^3 - 3/4 (c^2*n^2/6 + 2*c*n^1/6 +1)^2 * x - 1/4 * (c*n^1/6 + 1)^3 - n
  *
- * s*p^2 - n < s * 2p
- * and a part p x=s*p then we use a correction term to reduce the size of the numbers after
- * subtracting n. We use x(s,i) = s^2*(p-i)*(p+i) = s^2 (p^2 - i^2) = s^2*p^2 - s^2*i^2
+ *
+ * (n^1/6 + 1)^2 * (n^1/6 + 1)
+ * (n^2/6 + n^1/6 + 1 ) * (n^1/6 + 1)
+ * n^3/6 + n^2/6 + n^1/6  + n^2/6 + n^1/6 + 1  =
+ *
+ *  * 1+2 is -i_3 = i_2 + i_3
+ *  *
+ *  *  -> i_3 = O( n^1/6)
+ * is a e with i_3^2 == (3+e)/4x * (x^3 - n)
+ *
+ * ->
+ * prod x_i - n = x^3 + (i_1* i_2 + i_3^2) x + i_1* i_2* i_3 - n
+ * prod x_i - n = x^3 + (i_1* i_2 + i_3^2) x + i_1* i_2* i_3 - n
+
+ * Unfortunately it is not clear how we can efficiently determine
+ * where all three numbers are smooth for bigger numbers.
+ * More detailed : The left site consist out of a square s^2 and two
+ * numbers r_1 and r_2. The r_i have to be smooth. If s^2 * r_1 * r_2 - k*n has to be smooth as well
+ * we can multiply together such kind of relations (like in the rational sieve).
+ * If we have more relations then factors in the factor base, we have a rather good chance
+ * to get a factor of n.
+ * we consider x = ceil(sqrt(k*n))
+ * We find s in the order of n^1/8 by sieving with primes smaller then n^1/8.
+ * the part p in x=s*p will be used a correction term to reduce the size of the numbers after
+ * subtracting n. We use r_1 = p-i, r_2 = p+i:
+ * x(s,i) = s^2*(p-i)*(p+i) = s^2 (p^2 - i^2) = s^2*p^2 - s^2*i^2
  * = x^2 - s^2 * i^2
- * For x > sqrt(n) , x < sqrt(n) + m, where m is the sieve interval
- * We find find s < n^1/8 and s > n^(1/8-e) by sieving with primes smaller then n^1/8 and multiplying the primes.
- * -> p = n^1/2 / s
- * for s and p we calculate p-i, p+i, x' - n,
+ * = x^2 - (s*i)^2
+ * x(s,i) - k*n =
+ * x^2 - (s*i)^2 - k*n
+ * if x^2 = kn + s^2 * i^2 mod p <-> p divides  x^2 - (s*i)^2 - k*n
+ *   (x^2 - kn) * s^-2 = i^2 mod p
+ *   ((x/s)^2 - kn * s^-2) = i^2 mod p
+ * so if the sieve interval over i is greater then the biggest prime in the
+ * factor base we can determine if there is such a solution, and if so to find the two
+ * solutions.
+ *
+ * Runtime :
+ * instead of sieving over n^1/2 -> time T(n) = exp(sqrt(log(n) * log(log(n)))
+ * we have 3 sievings over n^3/8
+ * -> p = x / s
+ * for s and p we calculate p-i, p+i, x(s,i) - k*n
+ * By choosing s ~ n^1/8 the 3 numbers above have size ~ n^3/8
+ * With a pre calculated Lookup table of size a little bit bigger then n^3/8 we can easily iterate over
+ * the smooth numbers p-i and p+i (in common if we want) and lookup if
+ * x(s,i) - k*n is prime. We choose the lookup table a little bigger then n^3/8 such that
+ * there is an i such that a smooth p-i and p+i exist.
+ *
+ *  y(s,i,k) = x(s,i) - kn
+ *  we choose i_opt such that x(s,i) - kn is minimal
+ *  x(s,i) - kn = 0
+ *  x^2 - s^2 * i^2 - kn = 0
+ *  x^2 - kn  - s^2 * i^2 = 0
+ *  i^2  = (x^2 - kn)/s^2
+ *  i_opt  = sqrt(x^2 - kn)/s = sqrt(y)/s
+ *
+ *  = x^2 - n - s^2*(sqrt(x^2 - n)/s +/- t)^2 =
+ *  * x^2 - n - s^2*((sqrt(x^2 - n)/s)^2 +/- 2* sqrt(x^2 - n)/s * t +  t^2) =
+ *  * x^2 - n -  s^2((x^2-n)/s^2) +/- s^2*(2 * sqrt(x^2 - n)/s * t +  t^2) =
+ *  * x^2 - n -  (x^2-n) +/- (2 *s*t* sqrt(x^2 - n)  +  s^2 * t^2 =
+ *  * +/- (2+e) *s*t* sqrt(x^2 - n) , when s*t < e*sqrt(x^2 - n)
+ * for x=ceil(sqrt(kn)) = sqrt(kn) + e , e < 1
+ * sqrt(x^2 - kn)  =
+ * sqrt(sqrt(n) + l^2) <=
+ *  * sqrt((2+ e')*l)*n^1/4 , when l < e'*sqrt(n)
+ *  * ->
+ *  * y(s,t,l) < (2+e)*s*t * sqrt((2+ e')*l)*n^1/4  , for s*t*l < e'' * n
+ *  * y(s,t,l) < (sqrt(8)+e'')*s*t *l^1/2 *n^1/4
+ *  * y(s,t,l) < 3*s*t *l^1/2 *n^1/4
+ *  * we want p  = x(s,t,l)
+ *  * <-> n^1/2 / s = 3*s*t *l^1/2 *n^1/4
+ *  * s^2 = n^1/4 / (3*t * l^1/2)
+ *  * s ~ 0.6 * n^1/8 /(t^1/4 + l^1/4)
  * since x(s) - n = x^2 - s^2*i^2 - n = x^2 - n - s^2*i^2
  * for i = sqrt(x^2 - n)/s +/- t
- * y(s,t) = x(s) - n = x^2 - n - s^2*(sqrt(x^2 - n)/s +/- t)^2 =
- * x^2 - n - s^2*((sqrt(x^2 - n)/s)^2 +/- 2* sqrt(x^2 - n)/s * t +  t^2) =
- * x^2 - n -  s^2((x^2-n)/s^2) +/- s^2*(2 * sqrt(x^2 - n)/s * t +  t^2) =
- * x^2 - n -  (x^2-n) +/- (2 *s*t* sqrt(x^2 - n)  +  s^2 * t^2 =
- * +/- (2+e) *s*t* sqrt(x^2 - n) , when s*t < e*sqrt(x^2 - n)
  *
  * y(s,t) < (2+e)*s*t * sqrt(x^2 - n)  , for small t
  * We want y(s,t) < sieveBound
  * (2+e)*s*t * sqrt(x^2 - n)  < sieveBound
  * s > sieveBound / (2t * sqrt(x^2 - n))
- * for x=sqrt(n) + l we have
- * sqrt(x^2 - n)  =
- * sqrt(2l*sqrt(n) + l^2) <=
- * sqrt((2+ e')*l)*n^1/4 , when l < e'*sqrt(n)
- * ->
- * y(s,t,l) < (2+e)*s*t * sqrt((2+ e')*l)*n^1/4  , for s*t*l < e'' * n
- * y(s,t,l) < (sqrt(8)+e'')*s*t *l^1/2 *n^1/4
- * y(s,t,l) < 3*s*t *l^1/2 *n^1/4
- * we want p  = x(s,t,l)
- * <-> n^1/2 / s = 3*s*t *l^1/2 *n^1/4
- * s^2 = n^1/4 / (3*t * l^1/2)
- * s ~ 0.6 * n^1/8 /(t^1/4 + l^1/4)
+
  * -> p, y(s,t,l) ~ 1.7 * (t^1/4 + l^1/4) * n^3/8
  * we can choose s smaller as long as all values p + i = n^1/2 / s + sqrt(x^2 - n)/s are precalculated.
  * p + i < 1/s *(n^1/2 + sqrt((2+ e')*l)*n^1/4) <  1.8 * (t^1/4 + l^1/4) * n^3/8
@@ -113,11 +190,11 @@ public class QubicLookupSieve extends FactorAlgorithm {
             1601,1607,1609,1613,1619,1621,1627,1637,1657,1663,1667,1669,1693,1697,1699,
             1709,1721,1723,1733,1741,1747,1753,1759,1777,1783,1787,1789,1801,1811,1823,
             1831,1847,1861,1867,1871,1873,1877,1879,1889,1901,1907,1913,1931,1933,1949,
-            1951,1973,1979,1987,1993,1997,1999,2003,2011,2017,2027,2029,2039,2053,2063/*,
+            1951,1973,1979,1987,1993,1997,1999,2003,2011,2017,2027,2029,2039,2053,2063,
 			2069,2081,2083,2087,2089,2099,2111,2113,2129,2131,2137,2141,2143,2153,2161,
 			2179,2203,2207,2213,2221,2237,2239,2243,2251,2267,2269,2273,2281,2287,2293,
 			2297,2309,2311,2333,2339,2341,2347,2351,2357,2371,2377,2381,2383,2389,2393,
-			2399,2411,2417,2423,2437,2441,2447,2459,2467,2473,2477,2503,2521,2531,2539,
+			2399,2411,2417,2423,2437,2441,2447,2459,2467,2473,2477,2503,2521,2531,25397/*,
 			2543,2549,2551,2557,2579,2591,2593,2609,2617,2621,2633,2647,2657,2659,2663,
 			2671,2677,2683,2687,2689,2693,2699,2707,2711,2713,2719,2729,2731,2741,2749,
 			2753,2767,2777,2789,2791,2797,2801,2803,2819,2833,2837,2843,2851,2857,2861,
@@ -183,119 +260,233 @@ public class QubicLookupSieve extends FactorAlgorithm {
     double smoothExpHigher = .15;
     long maxN = 1l << 50;
     short[][] smoothPI;
+    private int smoothBits;
+    int bitsN = Integer.MAX_VALUE;
+
+    public QubicLookupSieve(int bitsN) {
+        this.bitsN = bitsN;
+    }
+
 
 
     public long findSingleFactor(long n) {
         initSmoothNumbers();
-        double sqrtN = sqrt(n);
-        long sqrtNCeil = (long) Math.ceil(sqrtN);
-        int factorBaseSize = (int) sqrt(exp(sqrt(log(n)*log(log(n)))));
+        int factorBaseSize = (int) factorBaseSize(n);
         int factorBase []= Arrays.copyOf(primes, factorBaseSize);
+        int factorBaseMax = factorBase [factorBaseSize-1];
         final TDiv63Inverse tdiv = new TDiv63Inverse(factorBase[factorBase.length -1]);
-        int sieveInterval = factorBase[factorBase.length -1]*4;
+        int nPowOneDivEight = (int) Math.pow(n, .125);
+        System.out.println("n^1/8 : " + nPowOneDivEight);
+        int sMax = 2* nPowOneDivEight;
 //        int smoothBound = (int) Math.pow(n, 0.5);
-        long beginInterval = sqrtNCeil - (sieveInterval >> 1);
-        int[] numberLengthSqrtN = new int [sieveInterval];
-        for (int i = factorBase.length -1; i >= 0; i--) {
-            long beginPos = ((beginInterval / factorBase[i])+ 1) * factorBase[i];
-            int primeLength = 32 - Integer.numberOfLeadingZeros(factorBase[i]-1);
-            for (long pos = beginPos - beginInterval; pos < sieveInterval; pos += factorBase[i]){
-                numberLengthSqrtN [(int) pos] -= primeLength;
-//                assertTrue((pos + beginInterval) % factorBase[i] == 0);
-            }
-        }
-        int nPowOneEigth = (int) Math.pow(n, .125);
-        long xi = 0;
-        int lengthThresholdX = 32 - Integer.numberOfLeadingZeros(nPowOneEigth-1);
+        int[] numberLengthSqrtN = new int [sMax];
         int relations = 0;
-        int operations = 0;
-        for (int j=sieveInterval / 2; j < sieveInterval && relations < factorBaseSize; j++) {
-            int soothLength = -lengthThresholdX + 3;
-            if (numberLengthSqrtN[j] < soothLength) {
-                // here we found j dividing x
-                long x = j + beginInterval;
-                SortedMultiset<BigInteger> factorX = tdiv.factor(BigInteger.valueOf(x));
-                List<Integer> factorList = new ArrayList<>();
-//				long s = 1;
-                for (Map.Entry<BigInteger, Integer> entry : factorX.entrySet()) {
-                    for (int i = 0; i < entry.getValue(); i++) {
-                        factorList.add(entry.getKey().intValue());
-//						s *= Math.pow(entry.getKey().intValue(), entry.getValue());
-                    }
-                }
-                Set<Integer> smooth = new HashSet<>();
-                int searchIntervalP = 20;
-                // this ensures that y is lower then smoothBond in the hole searchIntervalP
-                double sBest = smoothBound / (2 * searchIntervalP * sqrt(x * x - n));
-                // sLower s -> higher p - less smooth values, bigger range for i
-                int sLower = (int) sBest / 4;
-                // also p = x / s  < smoothBound -> s < x / smoothBound
-                int sLower2 = (int) (x / smoothBound);
-                sLower = Math.min(sLower, sLower2 + 1);
-                // higher s -> smaller p -> more smooth values, but smaller range
-                int sHigher = (int) (sBest * 4);
-                findFactors(sLower, sHigher, factorList, 1, smooth, 0);
-//                System.out.println(factorX);
-                for (int s : smooth) {
-                    long p = (int) (x / s);
-                    long y0 = (s * s * p * p - n) / (s*s);
-                    long iOpt = (long) sqrt(y0);
-                    long iRange = (smoothBound -y0)/ (s*s * 2 * iOpt) + 1;
-                    iRange = iRange < 0 ? 1 : iRange;
-                    long i = iOpt- iRange;
-                    i = i <0 ? 0 : i;
-                    long pPlusI = p + i;
-//                    int nextSetBit = smoothNumber.nextSetBit((int) pPlusI);
-//                    i = nextSetBit - p;
-                    short[] smoothI = smoothPI[(int) p];
-                    if (smoothI == null)
-                        System.out.println("can not find smooth values for p : " + p);
-                    else {
-                        int binarySearch = Arrays.binarySearch(smoothI, (short) i);
-                        int iIndex = binarySearch < 0 ? -binarySearch - 1 : binarySearch;
-                        i = smoothI[iIndex];
-                        while (i < iOpt + iRange) {
-//                        if (smoothNumber.get((int) (p - i))) {
-                            xi = s * s * (p - i) * (p + i);
-                            int y = Math.abs((int) (xi - n));
-//                            SortedMultiset<BigInteger> factorsXi = tdiv.factor(BigInteger.valueOf(xi));
-//                            System.out.println();
-                            SortedMultiset<BigInteger> factorsY = tdiv.factor(BigInteger.valueOf(y));
-//                            System.out.print("Found candidate " + i + " fact y " + factorsY);
-                            if (smoothNumber.get(Math.abs(y))) {
+        int xi = 0;
+
+        Integer[] factorBaseArr = IntStream.of(factorBase).boxed().toArray(Integer[]::new);
+        SquareFinder finder = new SquareFinder(Arrays.asList(factorBaseArr), n);
+        Set<Integer> xSet = new HashSet<>();
+        final int relationsNeeded = 2 * factorBaseSize + 4;
+        // outer loop over k*n
+        for (int k = 1; relations < relationsNeeded; k++)
+        {
+            if (k != 1 && PrimeMath.isSquare(k))
+                continue;
+            System.out.println("Next k : " + k);
+            double sqrtN = sqrt(k*n);
+            long sqrtNCeil = (long) Math.ceil(sqrtN);
+            // find the square s^2 in n by sieving
+            // for small n we can just find the factors by maxFactor table -> need no sieve here
+//            for (int i = 0; factorBase[i] < sMax; i++) {
+//                long beginPos = (int)Math.ceil((sqrtNCeil + 0.0) / factorBase[i]) * factorBase[i];
+//                int primeLength = 32 - Integer.numberOfLeadingZeros(factorBase[i] - 1);
+//                for (long pos = beginPos; pos < sMax + sqrtNCeil; pos += factorBase[i]) {
+//                    numberLengthSqrtN[(int) (pos - sqrtNCeil)] -= primeLength;
+//                    assertTrue(pos % factorBase[i] == 0);
+//                }
+//            }
+            int lengthThresholdX = 32 - Integer.numberOfLeadingZeros(nPowOneDivEight - 1);
+            for (int j = 0; /*j < sieveInterval &&*/ relations < relationsNeeded; j++) {
+                int operations = 0;
+                int soothLength = -lengthThresholdX + 1;
+//                if (numberLengthSqrtN[j] <= soothLength)
+                {
+                    // here we found k dividing x
+                    long x = j + sqrtNCeil;
+                    System.out.println("x : " + x);
+//                    int xDiv = (int) x;
+                    Set<Integer> smooth = new HashSet<>();
+                    // this ensures that y is lower then smoothBond in the hole searchIntervalP
+                    double sBest = nPowOneDivEight;
+//                    double sBest = smoothBound / (2 * searchIntervalP * sqrt(x * x - n));
+                    // sLower s -> higher p - less smooth values, bigger range for i
+                    int sLower = 2;
+
+                    int sHigher = (int) (sBest * 3);
+                    int[] factorListRaw = getUniqueFactors((int) x, sHigher);
+
+                    for (int l=0; factorListRaw[l] > 1; l++){
+                        System.out.print(factorListRaw[l] + ",");
+//                    for (int s : smooth) {
+                        List smoothY = new ArrayList();
+                        operations = 0;
+                        int relationsPerS = 0;
+                        int s = factorListRaw[l];
+                        long p = (int) (x / s);
+                        int y = (int) (s * s * p * p - k*n);
+                        long yDivSSquare = y / (s * s);
+//                        if (y == 0){
+//                            relations++;
+//                            relationsPerS++;
+//                            List<Integer> pFactors = getFactorList((int) p);
+//                            Multiset<Integer> factorsLeft = HashMultiset.create();
+//                            factorsLeft.add(s);
+//                            factorsLeft.addAll(pFactors);
+//                            assertEquals(s*s*p*p, multiply(factorsLeft));
+//                            finder.addFactors(factorsLeft, HashMultiset.create());
+//
+//                        } else
+                            {
+                            long iOpt = (long) sqrt(yDivSSquare);
+                            long iRange = iOpt == 0 ? 1 : (smoothBound - yDivSSquare) / (s * s * 2 * iOpt) + 1;
+//                        iRange /= 4;
+                            iRange = iRange <= 0 ? 1 : iRange;
+                            long i = iOpt - iRange;
+                            i = i < 0 ? 0 : i;
+                            i = nextSmoothI(factorBaseMax, p, i);
+//                    short[] smoothI = smoothPI[(int) p];
+//                    if (smoothI == null)
+//                        System.out.println("can not find smooth values for p : " + p);
+//                    else {
+//                        int binarySearch = Arrays.binarySearch(smoothI, (short) i);
+//                        int iIndex = binarySearch < 0 ? -binarySearch - 1 : binarySearch;
+//                        i = smoothI[iIndex];
+                            while (i <= iOpt + iRange && p-i > 0) {
+                                int pMinI = (int) (p - i);
+                                if (smoothNumber.get(pMinI) && maxFactor[pMinI] <= factorBaseMax) {
+                                    xi = (int) (s * s * (p - i) * (p + i));
+                                    y = Math.abs((int) (xi - k*n));
+                                    if (smoothNumber.get(y) && maxFactor[y] <= factorBaseMax && !xSet.contains(xi)) {
+                                        xSet.add(xi);
+                                        smoothY.add(y);
 //                                SortedMultiset<BigInteger> factorsY = tdiv.factor(BigInteger.valueOf(y));
 //                                System.out.print("Found candidate " + i + " fact y " + factorsY);
-                                System.out.println("s : " + s + " y : " + y);
-                                relations++;
-                                int[] pMinIFactors = findFactor((int) (p - i));
-                                int[] pPlusIFactors = findFactor((int) (p + i));
-                                int[] yFactors = findFactor(y);
-                                Arrays.stream(pMinIFactors).filter(f -> f > 0).forEach(f -> System.out.print(f + " * "));
-                                Arrays.stream(pPlusIFactors).filter(f -> f > 0).forEach(f -> System.out.print(f + " * "));
-                                System.out.println(" Right :");
-                                Arrays.stream(yFactors).filter(f -> f > 0).forEach(f -> System.out.print(f + " * "));
-                                System.out.println();
+//                                    System.out.println("s : " + s + " y : " + y);
+                                        relations++;
+                                        relationsPerS++;
+                                        List<Integer> pMinIFactors = getFactorList(pMinI);
+                                        List<Integer> pPlusIFactors = getFactorList((int) (p + i));
+                                        List<Integer> yFactors = getFactorList(y);
+                                        Multiset<Integer> factorsLeft = HashMultiset.create();
+                                        factorsLeft.add(s);
+                                        factorsLeft.add(s);
+                                        factorsLeft.addAll(pMinIFactors);
+                                        factorsLeft.addAll(pPlusIFactors);
+                                        Multiset<Integer> factorsRight = HashMultiset.create(yFactors);
+                                        assertEquals(s*s*(p+i)*(p-i), multiply(factorsLeft));
+                                        assertEquals(y, multiply(factorsRight));
+                                        finder.addFactors(factorsLeft, factorsRight);
+
+                                    }
+                                }
+                                operations++;
+//                            iIndex++;
+//                            i = smoothI[iIndex];
+                                i = nextSmoothI(factorBaseMax, p, i + 1);
                             }
-//                        }
-                            operations++;
-                            iIndex++;
-                            i = smoothI[iIndex];
-//                        i = smoothNumber.nextSetBit((int) (p + i + 1)) - p;
                         }
+                        System.out.println(" s : " + s + " relations : " + relationsPerS + " operations : " + operations + " rate : " + (0.0 + relationsPerS)/operations + " y's : " + smoothY);
                     }
                 }
             }
         }
-        return xi;
+        List<Column> smoothMatrix = finder.initMatrix();
+        List<Column> reducedMatrix = finder.reduceMatrix(smoothMatrix);
+        do {
+            smoothMatrix = reducedMatrix;
+            reducedMatrix = finder.reduceMatrix(smoothMatrix);
+        }
+        while (reducedMatrix.size() < smoothMatrix.size());
+        long factor = finder.doGaussElimination(reducedMatrix);
+
+        return factor;
     }
 
-    private int[] findFactor(int l) {
-        int [] factors = new int [15];
+    public static long multiply(Multiset<Integer> factors) {
+        return factors.stream().reduce(1, (a,b)-> a*b);
+    }
+    public static BigInteger multiplyBig(Multiset<Integer> factors) {
+        return factors.stream().map(BigInteger::valueOf).reduce(BigInteger.ONE, (a,b)-> a.multiply(b));
+    }
+    public static long multiplySqrtModStream(Multiset<Integer> factors, long n) {
+        return factors.entrySet().stream().map(e -> powMod(e.getElement(), e.getCount()/2, n)).reduce(1l, (a,b)-> (a*b) % n);
+    }
+    public static long powMod(int base, int exp, long n) {
+    	long powMod = base;
+    	for (int i = 1; i < exp; powMod = (powMod*base) % n, i++);
+    	return powMod;
+    }
+    public static long multiplySqrtMod(Multiset<Integer> factors, long n) {
+    	long prod = 1;
+    	for (Entry<Integer> e : factors.entrySet()) {
+    		prod = (prod * powMod(e.getElement(), e.getCount()/2, n)) % n;
+		}
+        return prod;
+    }
+
+    public static long multiplyMod(Multiset<Integer> factors, long n) {
+        return factors.stream().map(i -> (long) i).reduce(1l, (a,b)-> a*b % n);
+    }
+
+    private double factorBaseSize(long n) {
+        return 1 * sqrt(exp(sqrt(log(n) * log(log(n)))));
+    }
+
+    private long nextSmoothI(int factorBaseMax, long p, long i) {
+        int pPlusI = (int) (p + i);
+        // the smooth numbers are defined over a bigger factor base
+        pPlusI = smoothNumber.nextSetBit(pPlusI);
+        while (maxFactor[pPlusI] > factorBaseMax){
+            pPlusI = smoothNumber.nextSetBit(pPlusI + 1);
+        }
+        i = pPlusI - p;
+        return i;
+    }
+
+    private int[] getUniqueFactors(int n, int upperBound) {
+        int[] factors = new int[smoothBits];
         int i = 0;
-        while (l>1){
-            // TODO store inverse
-            factors[i++] = maxFactor[l];
-            l = l / maxFactor[l];
+        int factor = Integer.MAX_VALUE;
+        while (maxFactor[n] > 1){
+            factor = maxFactor[n];
+            n = n / factor;
+            // add only different factors.
+            if ((i == 0 || factors[i-1] != factor) && factor <= upperBound )
+                factors[i++] = (short) factor;
+        }
+        if (factors[0] == 0) factors [0] = factor;
+        return factors;
+    }
+
+    private int[] getFactors(int xDiv) {
+        int[] factors = new int[smoothBits];
+        int i = 0;
+        while (maxFactor[xDiv] > 1){
+            int factor = maxFactor[xDiv];
+            xDiv = xDiv / factor;
+            // add only different factors.
+            if (i == 0 || factors[i-1] != factor)
+                factors[i++] = (short) factor;
+        }
+        return factors;
+    }
+
+    private List<Integer> getFactorList(int xDiv) {
+        List<Integer> factors = new ArrayList<>();
+        while (maxFactor[xDiv] > 1){
+            int factor = maxFactor[xDiv];
+            xDiv = xDiv / factor;
+            factors.add(factor);
         }
         return factors;
     }
@@ -312,19 +503,27 @@ public class QubicLookupSieve extends FactorAlgorithm {
 
     private void initSmoothNumbers() {
         long n = 1l << 42;
-        smoothBound = 1 << 20;
+        // 23 bits is ~ 2 MB -> in best case usable for 61 Bit numbers
+        // 34 bits is ~ 4 GB -> in best case for 90 Bit numbers
+//        final int smoothBits = 28;
+        smoothBits = 24;
+        if (bitsN/2 + 4 < smoothBits)
+            smoothBits = bitsN/2 + 2;
+//        smoothBits = 21;
+        smoothBound = 1 << smoothBits;
+//        smoothBound = Integer.MAX_VALUE - 1;
         smoothNumber = new BitSet(smoothBound);
-        maxFactor = new short[smoothBound];
-        int[] numberLength = new int [smoothBound];
-        int factorBaseSize = (int) sqrt(exp(sqrt(log(n)*log(log(n)))));
+        // this is only temporary we might do it in different runs.
+//        byte[] numberLength = new byte [smoothBound];
+        byte[] numberLength = new byte [smoothBound];
+        int factorBaseSize = (int) (factorBaseSize(n));
         int factorBase []= Arrays.copyOf(primes, factorBaseSize);
+        // a power of 2, a little bit bigger then the smoothBound
+
         for (int i = 0; i < factorBaseSize; i++) {
-            int primeLength = 32 - Integer.numberOfLeadingZeros(factorBase[i]-1);
-            for (int pos = factorBase[i]; pos < smoothBound; pos += factorBase[i]){
-                if (pos == 58847)
-                    System.out.println();
-                numberLength [pos] -= primeLength;
-                maxFactor[pos] = (short) factorBase[i];
+            int primeLength = 32 - Integer.numberOfLeadingZeros(factorBase[i] - 1);
+            for (int pos = factorBase[i] ; pos < numberLength.length; pos += factorBase[i]) {
+                numberLength[pos] -= primeLength;
                 assertTrue((pos) % factorBase[i] == 0);
             }
         }
@@ -333,12 +532,28 @@ public class QubicLookupSieve extends FactorAlgorithm {
         for (int j=smoothBound-1; j > 0 ; j--){
             lengthThreshold = 32 - Integer.numberOfLeadingZeros(j-1);
             int soothLength = (int) (-lengthThreshold) + 8;
-            if (j== 58847)
-                System.out.println();
             if (numberLength[j] <= soothLength) {
                 smoothNumber.set(j);
             }
         }
+        System.out.println("smooth numbers : " + smoothNumber.cardinality());
+        System.out.println("ratio : " + ((double)smoothBound)/ smoothNumber.cardinality());
+        // around the same size as smooth numbers BitSet
+        maxFactor = new short [(int) smoothBound];
+        for (int i = 0; i < factorBaseSize; i++) {
+            for (int pos = factorBase[i] ; pos < numberLength.length; pos += factorBase[i]) {
+                // we only need the factors for numbers which have at least n^1/8
+//                if (smoothNumber.get((int) pos))
+                {
+                    maxFactor[pos] = (short) factorBase[i];
+                    assertTrue((pos) % factorBase[i] == 0);
+                }
+            }
+        }
+        System.out.println("initialization ready ");
+    }
+
+    private void initPMinPlusI(long n) {
         double nPow3Div8 = pow(n, .375);
         int nPow1Div8 = (int) pow(n, .125);
         int sqrtSearchIntervalX = 20;
