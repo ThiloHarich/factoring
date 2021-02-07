@@ -7,13 +7,10 @@ import com.google.common.collect.Multiset.Entry;
 import de.tilman_neumann.jml.factor.FactorAlgorithm;
 import de.tilman_neumann.jml.factor.tdiv.TDiv63Inverse;
 import de.tilman_neumann.util.SortedMultiset;
-import factoring.math.Column;
+import factoring.math.Row;
 import factoring.math.PrimeMath;
 import factoring.math.SquareFinder;
-import factoring.smooth.SmoothNumbers;
-import org.apache.commons.math3.util.Pair;
 
-import javax.management.AttributeList;
 import java.math.BigInteger;
 import java.util.*;
 import java.util.stream.IntStream;
@@ -145,10 +142,10 @@ public class TripleLookupSieve extends FactorAlgorithm {
             1709,1721,1723,1733,1741,1747,1753,1759,1777,1783,1787,1789,1801,1811,1823,
             1831,1847,1861,1867,1871,1873,1877,1879,1889,1901,1907,1913,1931,1933,1949,
             1951,1973,1979,1987,1993,1997,1999,2003,2011,2017,2027,2029,2039,2053,2063,
-			2069,2081,2083,2087,2089,2099,2111,2113,2129,2131,2137,2141,2143,2153,2161,
-			2179,2203,2207,2213,2221,2237,2239,2243,2251,2267,2269,2273,2281,2287,2293,
-			2297,2309,2311,2333,2339,2341,2347,2351,2357,2371,2377,2381,2383,2389,2393,
-			2399,2411,2417,2423,2437,2441,2447,2459,2467,2473,2477,2503,2521,2531,25397/*,
+            2069,2081,2083,2087,2089,2099,2111,2113,2129,2131,2137,2141,2143,2153,2161,
+            2179,2203,2207,2213,2221,2237,2239,2243,2251,2267,2269,2273,2281,2287,2293,
+            2297,2309,2311,2333,2339,2341,2347,2351,2357,2371,2377,2381,2383,2389,2393,
+            2399,2411,2417,2423,2437,2441,2447,2459,2467,2473,2477,2503,2521,2531,25397/*,
 			2543,2549,2551,2557,2579,2591,2593,2609,2617,2621,2633,2647,2657,2659,2663,
 			2671,2677,2683,2687,2689,2693,2699,2707,2711,2713,2719,2729,2731,2741,2749,
 			2753,2767,2777,2789,2791,2797,2801,2803,2819,2833,2837,2843,2851,2857,2861,
@@ -300,7 +297,7 @@ public class TripleLookupSieve extends FactorAlgorithm {
 //                            finder.addFactors(factorsLeft, HashMultiset.create());
 //
 //                        } else
-                            {
+                        {
                             long iOpt = (long) sqrt(yDivSSquare);
                             long iRange = iOpt == 0 ? 1 : (smoothBound - yDivSSquare) / (s * s * 2 * iOpt) + 1;
 //                        iRange /= 4;
@@ -354,8 +351,8 @@ public class TripleLookupSieve extends FactorAlgorithm {
                 }
             }
         }
-        List<Column> smoothMatrix = finder.initMatrix();
-        List<Column> reducedMatrix = finder.reduceMatrix(smoothMatrix);
+        List<Row> smoothMatrix = finder.initMatrix();
+        List<Row> reducedMatrix = finder.reduceMatrix(smoothMatrix);
         do {
             smoothMatrix = reducedMatrix;
             reducedMatrix = finder.reduceMatrix(smoothMatrix);
@@ -376,15 +373,15 @@ public class TripleLookupSieve extends FactorAlgorithm {
         return factors.entrySet().stream().map(e -> powMod(e.getElement(), e.getCount()/2, n)).reduce(1l, (a,b)-> (a*b) % n);
     }
     public static long powMod(int base, int exp, long n) {
-    	long powMod = base;
-    	for (int i = 1; i < exp; powMod = (powMod*base) % n, i++);
-    	return powMod;
+        long powMod = base;
+        for (int i = 1; i < exp; powMod = (powMod*base) % n, i++);
+        return powMod;
     }
     public static long multiplySqrtMod(Multiset<Integer> factors, long n) {
-    	long prod = 1;
-    	for (Entry<Integer> e : factors.entrySet()) {
-    		prod = (prod * powMod(e.getElement(), e.getCount()/2, n)) % n;
-		}
+        long prod = 1;
+        for (Entry<Integer> e : factors.entrySet()) {
+            prod = (prod * powMod(e.getElement(), e.getCount()/2, n)) % n;
+        }
         return prod;
     }
 

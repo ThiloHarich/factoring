@@ -1,9 +1,7 @@
 package factoring.math;
 
 import com.google.common.collect.HashMultiset;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Multiset;
-import factoring.sieve.triple.TripleLookupSieve;
 import org.apache.commons.math3.util.Pair;
 import org.junit.Assert;
 
@@ -15,7 +13,7 @@ public class SquareFinder {
     List<Pair<Multiset<Integer>, Multiset<Integer>>> factors;
     List<Integer> factorBase;
     Map<Integer, Integer> factorIndex = new HashMap<>();
-    List<Column> matrix = new ArrayList<>();
+    List<Row> matrix = new ArrayList<>();
     long n;
 
     public SquareFinder(List<Integer> factorBase, long n) {
@@ -49,13 +47,13 @@ public class SquareFinder {
         return true;
     }
 
-    public List<Column> initMatrix(){
+    public List<Row> initMatrix(){
         int columnIndex = 0;
         for (Pair<Multiset<Integer>, Multiset<Integer>> factorsOfRel: factors) {
             final BitSet factorsMod2 = new BitSet();
             fillMatrix(factorsMod2, factorsOfRel.getFirst(), 0);
             fillMatrix(factorsMod2, factorsOfRel.getSecond(), factorBase.size());
-            final Column col = Column.of(factorsMod2, columnIndex);
+            final Row col = Row.of(factorsMod2, columnIndex);
             matrix.add(col);
             columnIndex++;
             checkForSquare(col);
@@ -75,13 +73,13 @@ public class SquareFinder {
         }
     }
 
-    public long doGaussElimination(List<Column> matrix){
+    public long doGaussElimination(List<Row> matrix){
 //        List<Column> matrix = matrixOrig.stream().collect(Collectors.toList());
         int rowCount = matrix.get(0).entries.size();
         int pivotCount = 0;
         int colIndex = 0;
         for (int i = 0; i < rowCount; i++) {
-            Column pivot = null;
+            Row pivot = null;
             int pivotIndex = colIndex-1;
             for (; pivotIndex < matrix.size()-1 && pivot == null;) {
                 if (matrix.get(++pivotIndex).entries.get(i)) {
@@ -95,7 +93,7 @@ public class SquareFinder {
                 colIndex++;
                 for (int col = pivotIndex+1; col < matrix.size(); col++) {
                     if (matrix.get(col).entries.get(i)) {
-                    	matrix.get(col).xor(pivot);
+                        matrix.get(col).xor(pivot);
                     }
                 }
             }
@@ -110,7 +108,7 @@ public class SquareFinder {
         return -1;
     }
 
-    public List<Column> reduceMatrix(List<Column> matrix) {
+    public List<Row> reduceMatrix(List<Row> matrix) {
         int [] colCounts = new int [2 * factorBase.size()];
 
         List<List<Integer>> rows4Columns = new ArrayList<>();
@@ -136,7 +134,7 @@ public class SquareFinder {
         System.out.print("rows to delete : ");
         deleteRowsSet.stream().map(i -> i + ",").forEach(System.out::print);
         System.out.println();
-        List<Column> reducedMatrix = new ArrayList<>();
+        List<Row> reducedMatrix = new ArrayList<>();
         for (int row = 0; row < matrix.size(); row++) {
             if (!deleteRowsSet.contains(row))
                 reducedMatrix.add(matrix.get(row));
@@ -144,7 +142,7 @@ public class SquareFinder {
         return reducedMatrix;
     }
 
-    private void print(List<Column> matrix, int[] colCounts, List<List<Integer>> rows4Columns) {
+    private void print(List<Row> matrix, int[] colCounts, List<List<Integer>> rows4Columns) {
         for (int j = 0; j < matrix.size(); j++) {
             BitSet row = matrix.get(j).entries;
             String line = String.format("%02d %02d", j, matrix.get(j).id);
@@ -161,8 +159,8 @@ public class SquareFinder {
         }
     }
 
-    private void print(List<Column> matrix) {
-    	System.out.println();
+    private void print(List<Row> matrix) {
+        System.out.println();
         for (int j = 0; j < matrix.size(); j++) {
             BitSet row = matrix.get(j).entries;
             String line = String.format("%02d %02d", j, matrix.get(j).id);
@@ -176,23 +174,23 @@ public class SquareFinder {
         }
     }
 
-    private long checkForDuplicatedColumn(List<Column> matrix) {
-        for (Column col1 : matrix) {
-            for (Column col2 : matrix) {
+    private long checkForDuplicatedColumn(List<Row> matrix) {
+        for (Row col1 : matrix) {
+            for (Row col2 : matrix) {
                 if (col1.id != col2.id && col1.entries.equals(col2.entries)){
                     System.out.println("two identical lines found");
                     System.out.println(col1.toString(factors, n));
                     System.out.println(col2.toString(factors, n));
-                    Column xor = col1.copy();
+                    Row xor = col1.copy();
                     xor.xor(col2);
                     if (xor.gcd(factors, n) > 1)
-                    	return xor.gcd(factors, n);
+                        return xor.gcd(factors, n);
                 }
             }
         }
         return -1;
     }
-    private long checkForSquare(Column col) {
+    private long checkForSquare(Row col) {
         if (col.entries.cardinality() == 0){
             System.out.println("candidate found : " + col.toString(factors, n));
             long prodLeft = 1;

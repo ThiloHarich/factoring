@@ -4,7 +4,7 @@ import com.google.common.collect.HashMultiset;
 import com.google.common.collect.Multiset;
 import de.tilman_neumann.jml.factor.FactorAlgorithm;
 import de.tilman_neumann.util.SortedMultiset;
-import factoring.math.Column;
+import factoring.math.Row;
 import factoring.math.SquareFinder;
 
 import java.math.BigInteger;
@@ -24,7 +24,7 @@ import static org.junit.Assert.assertTrue;
  * Here we have to sieve over 3 numbers each of size n^(3/8 + epsilon) < n^.376
  * This variant gives up on using squares on the left side. It uses a square s^2 and two
  * smooth parts p_1 ans p_2. Such the resulting number on the right side is s^2 * p_1 * p_2 - n.
- * It splits the numbers x > sqrt(n) from the quadratic sieve in a small 
+ * It splits the numbers x > sqrt(n) from the quadratic sieve in a small
  * (and such usually smooth) number s and a bigger number p. x = s*p.
  * The aim is to produce a smooth number near n.
  * Like in the quadratic sieve x^2 - n will be of size n^1/2.
@@ -299,8 +299,8 @@ public class TripleLookupAllSieve extends FactorAlgorithm {
                 }
             }
         }
-        List<Column> smoothMatrix = finder.initMatrix();
-        List<Column> reducedMatrix = finder.reduceMatrix(smoothMatrix);
+        List<Row> smoothMatrix = finder.initMatrix();
+        List<Row> reducedMatrix = finder.reduceMatrix(smoothMatrix);
         do {
             smoothMatrix = reducedMatrix;
             reducedMatrix = finder.reduceMatrix(smoothMatrix);
@@ -382,11 +382,11 @@ public class TripleLookupAllSieve extends FactorAlgorithm {
         return factorsList;
     }
     public static void powerSet(List<Factor> numbers, int index, ArrayList<Integer> currentFactors, ArrayList<ArrayList<Integer>> result, int upperBound, int prod) {
-		if (index == numbers.size())
-			result.add(currentFactors);
-		else {
-		    if (prod < upperBound)
-			powerSet(numbers, index + 1, currentFactors, result, upperBound, prod); //do not take the current number
+        if (index == numbers.size())
+            result.add(currentFactors);
+        else {
+            if (prod < upperBound)
+                powerSet(numbers, index + 1, currentFactors, result, upperBound, prod); //do not take the current number
             if (prod * numbers.get(index).base < upperBound) {
                 Factor newFactor = numbers.get(index);
                 for (int exp = 0; exp < newFactor.exponent; exp++) {
@@ -397,11 +397,11 @@ public class TripleLookupAllSieve extends FactorAlgorithm {
                         newProd *= numbers.get(index).base;
                     }
                     if (newProd < upperBound)
-                    powerSet(numbers, index + 1, withNewFactor, result, upperBound, newProd); //take it
+                        powerSet(numbers, index + 1, withNewFactor, result, upperBound, newProd); //take it
                 }
             }
-		}
-	}
+        }
+    }
 
     private void findFactors(double lower, double higher, List<Integer> factorX, int prod, Set<Integer> shifts, int index) {
         if (lower < prod && prod < higher) {

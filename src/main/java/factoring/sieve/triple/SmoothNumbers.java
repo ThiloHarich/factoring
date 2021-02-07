@@ -7,7 +7,7 @@ import com.google.common.collect.Multiset;
 import de.tilman_neumann.jml.factor.FactorAlgorithm;
 import de.tilman_neumann.util.SortedMultiset;
 import de.tilman_neumann.util.SortedMultiset_BottomUp;
-import factoring.math.Column;
+import factoring.math.Row;
 import factoring.math.SquareFinder;
 import factoring.trial.TDiv31Barrett;
 
@@ -205,8 +205,8 @@ public class SmoothNumbers extends FactorAlgorithm {
             }
         }
         System.out.println("relations considered : " + allTries);
-        List<Column> smoothMatrix = finder.initMatrix();
-        List<Column> reducedMatrix = finder.reduceMatrix(smoothMatrix);
+        List<Row> smoothMatrix = finder.initMatrix();
+        List<Row> reducedMatrix = finder.reduceMatrix(smoothMatrix);
         do {
             smoothMatrix = reducedMatrix;
             reducedMatrix = finder.reduceMatrix(smoothMatrix);
@@ -453,16 +453,16 @@ public class SmoothNumbers extends FactorAlgorithm {
         // TODO directly use the iterator; do not use the List
         for (int smoothDist = smoothPosDistHash.nextSetBit(0); smoothDist >= 0; smoothDist = smoothPosDistHash.nextSetBit(smoothDist+1)) {
             int higherNumber = t + c - dist + smoothDist;
-                // since we do not use a hash at the moment this is always true.
-                if (smoothNumber.get(higherNumber) && smoothNumber.get(2 * t - higherNumber)) {
-                    bothSmooth.add(higherNumber-t);
-                }
-                else{
-                    misses++;
-                }
-                if (smoothDist == Integer.MAX_VALUE) {
-                    break; // or (i+1) would overflow
-                }
+            // since we do not use a hash at the moment this is always true.
+            if (smoothNumber.get(higherNumber) && smoothNumber.get(2 * t - higherNumber)) {
+                bothSmooth.add(higherNumber-t);
+            }
+            else{
+                misses++;
+            }
+            if (smoothDist == Integer.MAX_VALUE) {
+                break; // or (i+1) would overflow
+            }
         }
         return bothSmooth;
     }
@@ -496,7 +496,7 @@ public class SmoothNumbers extends FactorAlgorithm {
         boolean load = true;
         if (load) {
             // TODO just serialize the BitSet
-    //        File smoothNumbersFile = new File(SMOOTH_FILE_NAME + smoothBits + ".txt");
+            //        File smoothNumbersFile = new File(SMOOTH_FILE_NAME + smoothBits + ".txt");
             smoothNumber = (BitSet) readJavaObject(SMOOTH_FILE_NAME + smoothBits + ".dat");
             maxSmoothFactorIndex = (int[]) readJavaObject("smoothFactors" + smoothBits + ".dat");
 
@@ -539,34 +539,34 @@ public class SmoothNumbers extends FactorAlgorithm {
             maxSmoothFactorIndex[primes[i]] = (int) i;
         }
         maxSmoothFactorIndex[1] = 1;
-            int smoothCount = 0;
-            for (long j = 2; j < smoothBound; j++) {
-                double baseSize = factorBaseSize(j * j);
-                SortedMultiset<BigInteger> factors = new SortedMultiset_BottomUp<>();
+        int smoothCount = 0;
+        for (long j = 2; j < smoothBound; j++) {
+            double baseSize = factorBaseSize(j * j);
+            SortedMultiset<BigInteger> factors = new SortedMultiset_BottomUp<>();
 //                boolean isSmooth = smallFactoriser.factor((int) j, baseSize, factors);
-                // since we store the high factors for small numbers use the maximal factor base
-                int factorIndex = smallFactoriser.findSingleFactorIndex((int) j, baseSizeMax) + 1;
-                if (factorIndex > 0) {
-                    int jDivFactor = (int) (j / primes[factorIndex]);
+            // since we store the high factors for small numbers use the maximal factor base
+            int factorIndex = smallFactoriser.findSingleFactorIndex((int) j, baseSizeMax) + 1;
+            if (factorIndex > 0) {
+                int jDivFactor = (int) (j / primes[factorIndex]);
 //                    if (isSmooth != smoothNumber.get(jDivFactor)) {
 //                        System.out.println();
 //                    }
-                    int maxFactorIndex = maxFactorIndex(jDivFactor);
-                    maxFactorIndex = max(factorIndex, maxFactorIndex);
-                    maxSmoothFactorIndex[(int) j] = maxFactorIndex;
+                int maxFactorIndex = maxFactorIndex(jDivFactor);
+                maxFactorIndex = max(factorIndex, maxFactorIndex);
+                maxSmoothFactorIndex[(int) j] = maxFactorIndex;
 //                    if ((isSmooth && maxFactorIndex >= baseSize) || (!isSmooth && maxFactorIndex < baseSize) /*|| jDivFactor == 22801*/) {
 //                        maxFactorIndex = maxFactorIndex(jDivFactor);
 //                    }
 //                    maxSmoothFactorIndex[(int) j] = maxFactorIndex;
-                    if (/*isSmooth*/ maxFactorIndex < baseSize) {
-                        smoothNumber.set((int) j);
+                if (/*isSmooth*/ maxFactorIndex < baseSize) {
+                    smoothNumber.set((int) j);
 //                        if (factors.size() == 0)
 //                            System.out.println(" number " + j + " is smooth but has no factor");
-                    } else {
+                } else {
 //                        System.out.println(j + " is not smooth");
-                    }
                 }
             }
+        }
 //        }
 //        catch (IOException e) {
 //            e.printStackTrace();
@@ -614,12 +614,12 @@ public class SmoothNumbers extends FactorAlgorithm {
             return ois.readObject();
         } catch (IOException | ClassNotFoundException e) {
             if (! (e instanceof  FileNotFoundException))
-            e.printStackTrace();
+                e.printStackTrace();
         }
         return null;
     }
 
-        /**
+    /**
      * sqrt(exp(sqrt(log(n) * log(log(n))))) / 2
      * @param n
      * @return
