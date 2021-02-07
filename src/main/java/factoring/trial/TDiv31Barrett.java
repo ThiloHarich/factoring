@@ -20,15 +20,16 @@ import de.tilman_neumann.util.SortedMultiset_BottomUp;
 import org.apache.log4j.Logger;
 
 import java.math.BigInteger;
+import java.util.BitSet;
 
 import static de.tilman_neumann.jml.base.BigIntConstants.I_2;
 
 /**
  * Trial division using Barrett reduction,
- * see https://en.wikipedia.org/wiki/Barrett_reduction. 
- * 
+ * see https://en.wikipedia.org/wiki/Barrett_reduction.
+ *
  * Significantly faster than TDiv31Inverse.
- * 
+ *
  * @authors Tilman Neumann + Thilo Harich
  */
 public class TDiv31Barrett extends FactorAlgorithm {
@@ -39,7 +40,7 @@ public class TDiv31Barrett extends FactorAlgorithm {
 
 	private int[] primes;
 	private long[] pinv;
-	
+
 	public TDiv31Barrett() {
 		primes = new int[NUM_PRIMES_FOR_31_BIT_TDIV];
 		pinv = new long[NUM_PRIMES_FOR_31_BIT_TDIV];
@@ -49,7 +50,7 @@ public class TDiv31Barrett extends FactorAlgorithm {
 			pinv[i] = (1L<<32)/p;
 		}
 	}
-	
+
 	@Override
 	public String getName() {
 		return "TDiv31Barrett";
@@ -59,7 +60,7 @@ public class TDiv31Barrett extends FactorAlgorithm {
 	public SortedMultiset<BigInteger> factor(BigInteger Nbig) {
 		SortedMultiset<BigInteger> primeFactors = new SortedMultiset_BottomUp<>();
 		int N = Nbig.intValue();
-		
+
 		// Powers of 2 can be removed very fast.
 		// This is required also because the Barrett division does not work with p=2.
 		int lsb = Integer.numberOfTrailingZeros(N);
@@ -67,7 +68,7 @@ public class TDiv31Barrett extends FactorAlgorithm {
 			primeFactors.add(I_2, lsb);
 			N >>= lsb;
 		}
-		
+
 		// Test odd primes
 		int q;
 		for (int i=1; ; i++) {
@@ -85,7 +86,7 @@ public class TDiv31Barrett extends FactorAlgorithm {
 				break;
 			}
 		}
-		
+
 		if (N>1) {
 			// either N is prime, or we could not find all factors with p<=pLimit -> add the rest to the result
 			primeFactors.add(BigInteger.valueOf(N));
@@ -98,7 +99,7 @@ public class TDiv31Barrett extends FactorAlgorithm {
 		if (N.bitLength() > 31) throw new IllegalArgumentException("TDiv31Barrett.findSingleFactor() does not work for N>31 bit, but N=" + N);
 		return BigInteger.valueOf(findSingleFactor(N.intValue(), NUM_PRIMES_FOR_31_BIT_TDIV));
 	}
-	
+
 	public boolean factor(int N, int maxIndex, SortedMultiset<BigInteger> primeFactors) {
 //		SortedMultiset<BigInteger> primeFactors = new SortedMultiset_BottomUp<>();
 		if (N<0) N = -N; // sign does not matter
@@ -185,4 +186,110 @@ public class TDiv31Barrett extends FactorAlgorithm {
 		return -1;
 	}
 
+	/**
+	 * Here we calculate a representation of smooth
+	 * for the matrix step, which is using very very few memory.
+	 * This consinsts out of three parts:
+	 * <li>a bit set of the (odd) exponents below factor index splitIndex</li>
+	 * <li> the highest factor</li><br>
+	 * The first set is returned by the method and is essential for finding the solution of the matrix.
+	 * The second is needed to find the factor after solving the maxrix.
+	 * In oder to calculate the sqrt(x) and sqrt(y) for a relation  x^2 - n = y^2.
+	 * It is passed over as parameter factorCounts.
+	 * The representation allows fast multiplications of the representations.
+	 * It is represented by an array of longs, where some (8) bits per factor represents
+	 * the exponent of a factor of the prime representation.
+	 *
+	 * If the number is smooth over the factor bas up to factor with index maxIndex .
+	 *
+	 * @param factorCounts a bit set of the exponents mod 2
+	 * @param N
+	 * @param maxIndex
+	 * @return
+	 */
+	public ExponentsMaxFactor fillFactorCounts(int N, int maxIndex) {
+		BitSet factors = new BitSet();
+		if (N<0) N = -N; // sign does not matter
+
+		// if N is odd and composite then the loop runs maximally up to prime = floor(sqrt(N))
+		// unroll the loop
+		int number = N;
+		int maxFactorIndex = 0;
+
+		long exponent = 0l;
+		while ((number & 1) == 0){
+			number >>= 1;
+			exponent++;
+		}
+		if ((exponent & 1l) == 1l ) {
+			factors.set(1);
+			maxFactorIndex = 1;
+		}
+		int i=1;
+		for ( ; i<maxIndex && number > 1; i++) {
+			exponent = 0;
+			while ((1 + (int) ((number*pinv[i])>>32)) * primes[i] == number) {
+				number = 1 +  (int) ((number * pinv[i]) >> 32);
+				exponent++;
+			}
+			int primeIndex = i+1;
+			if ((exponent & 1l) == 1l )
+				factors.set(primeIndex);
+			maxFactorIndex = primeIndex;
+			// 8 = 2^3 bits per exponent -> epxonent per prime < 256 -> number > p^256 >= 2^256
+			// TODO dynamic bits ?
+//			final int longIndex = primeIndex >> 3;
+//			final int indexInWord = (primeIndex - (longIndex << 3)) << 3;
+//			factorCounts[longIndex] |= (exponent << indexInWord);
+		}
+		// if the number can not be factored (number > 1) adjust max factor index
+		maxFactorIndex = number == 1 ? maxFactorIndex : Short.MAX_VALUE;
+		// otherwise N is prime
+		ExponentsMaxFactor result = new ExponentsMaxFactor(factors, maxFactorIndex, number == 1);
+		return result;
+	}
+	public boolean fillFactorCounts(int N, int maxIndex, long [] factorCounts) {
+		BitSet factors = new BitSet();
+		if (N<0){
+			N = -N; // sign does not matter
+			factorCounts[0] += 1;
+		}
+		int number = N;
+
+		long exponent = 0l;
+		while ((number & 1) == 0){
+			number >>= 1;
+			exponent++;
+		}
+		factorCounts[0] += 256 * exponent;
+		int i=1;
+		for ( ; i<maxIndex-1 && number > 1; i++) {
+			exponent = 0;
+			while ((1 + (int) ((number*pinv[i])>>32)) * primes[i] == number) {
+				number = 1 +  (int) ((number * pinv[i]) >> 32);
+				exponent++;
+			}
+			int primeIndex = i+1;
+			// 8 = 2^3 bits per exponent -> epxonent per prime < 256 -> number > p^256 >= 2^256
+			// TODO dynamic bits ?
+			final int longIndex = primeIndex >> 3;
+//			final int indexInWord = primeIndex << 3;
+			final int indexInWord = (primeIndex - (longIndex << 3)) << 3;
+			factorCounts[longIndex] += (exponent << indexInWord);
+		}
+		// otherwise N is prime
+		return number == 1;
+	}
+
+	public class ExponentsMaxFactor {
+		public BitSet exponents;
+		public int maxFactorIndex;
+		public boolean isSmooth;
+
+		public ExponentsMaxFactor(BitSet factors, int maxFactorIndex, boolean smooth) {
+			this.exponents = factors;
+			this.maxFactorIndex = maxFactorIndex;
+			this.isSmooth = smooth;
+		}
+	}
 }

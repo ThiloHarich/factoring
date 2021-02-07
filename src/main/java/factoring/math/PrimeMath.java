@@ -202,6 +202,14 @@ public class PrimeMath {
 		return xMod;
 	}
 
+	public static long mod (long x, long mod)
+	{
+		long xMod = (x % mod);
+		if (xMod < 0)
+			xMod += mod;
+		return xMod;
+	}
+
 	public static boolean isSquareLong(long n)
 	{
 		final int nMod = (int) (n & (mod2Pow -1));
