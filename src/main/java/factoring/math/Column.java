@@ -86,8 +86,9 @@ public class Column {
 
             String factorsL = ImmutableSortedMultiset.copyOf(factorsLeft).entrySet().stream().map(e -> e.getElement() + "^" + e.getCount()).collect(Collectors.joining("*"));
             String factorsR = ImmutableSortedMultiset.copyOf(factorsRight).entrySet().stream().map(e -> e.getElement() + "^" + e.getCount()).collect(Collectors.joining("*"));
-            long prodLeft = factorsLeft.elementSet().stream().mapToLong(x -> x).reduce(1, (a, b) -> a * b % n);
-            long prodRight = factorsLeft.elementSet().stream().mapToLong(x -> x).reduce(1, (a, b) -> a * b % n);
+            // only works if all exponents are even
+            long prodLeft = factorsLeft.entrySet().stream().map(e -> (long)Math.pow(e.getElement(), e.getCount()/2)%n).reduce(1l, (a, b) -> (a * b) % n);
+            long prodRight = factorsRight.entrySet().stream().map(e -> (long)Math.pow(e.getElement(), e.getCount()/2)%n).reduce(1l, (a, b) -> (a * b) % n);
 //            assertEquals(prodLeft - n, prodRight);
             return "Column{" +
                     "id=" + id +

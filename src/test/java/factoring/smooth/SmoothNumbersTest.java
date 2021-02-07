@@ -2,6 +2,7 @@ package factoring.smooth;
 
 import factoring.PerformanceHard;
 import factoring.sieve.triple.HartTripleLookupSieve;
+import factoring.sieve.triple.TripleLookupAllSieve;
 import factoring.sieve.triple.TripleLookupSieve;
 import org.junit.Test;
 
@@ -152,7 +153,7 @@ public class SmoothNumbersTest {
 		long[] semiPrimes = PerformanceHard.makeSemiPrimesList(bits, 10);
 
 		SmoothNumbers smooth = new SmoothNumbers();
-		TripleLookupSieve tls = new TripleLookupSieve(bits);
+		TripleLookupAllSieve tls = new TripleLookupAllSieve(bits);
 		for (long semiPrime:
 				semiPrimes) {
 			long nPowOneTenth = (long) ceil(Math.pow(semiPrime, 1.0 / 14.0));

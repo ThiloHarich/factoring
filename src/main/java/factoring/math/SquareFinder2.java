@@ -1,24 +1,20 @@
 package factoring.math;
 
 import com.google.common.collect.HashMultiset;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Multiset;
-import factoring.sieve.triple.TripleLookupSieve;
 import org.apache.commons.math3.util.Pair;
 import org.junit.Assert;
 
 import java.util.*;
 
-import static org.junit.Assert.assertEquals;
-
-public class SquareFinder {
+public class SquareFinder2 {
     List<Pair<Multiset<Integer>, Multiset<Integer>>> factors;
     List<Integer> factorBase;
     Map<Integer, Integer> factorIndex = new HashMap<>();
     List<Column> matrix = new ArrayList<>();
     long n;
 
-    public SquareFinder(List<Integer> factorBase, long n) {
+    public SquareFinder2(List<Integer> factorBase, long n) {
         this.factorBase = factorBase;
         for (int i = 0; i < factorBase.size(); i++) {
             factorIndex.put(factorBase.get(i), i);
@@ -53,8 +49,8 @@ public class SquareFinder {
         int columnIndex = 0;
         for (Pair<Multiset<Integer>, Multiset<Integer>> factorsOfRel: factors) {
             final BitSet factorsMod2 = new BitSet();
-            fillMatrix(factorsMod2, factorsOfRel.getFirst(), 0);
-            fillMatrix(factorsMod2, factorsOfRel.getSecond(), factorBase.size());
+            fillMatrix(factorsMod2, factorsOfRel.getFirst());
+            fillMatrix(factorsMod2, factorsOfRel.getSecond());
             final Column col = Column.of(factorsMod2, columnIndex);
             matrix.add(col);
             columnIndex++;
@@ -63,24 +59,24 @@ public class SquareFinder {
         return matrix;
     }
 
-    private void fillMatrix(BitSet factorsMod2, Multiset<Integer> factors, int offset) {
+    private void fillMatrix(BitSet factorsMod2, Multiset<Integer> factors) {
         for (Multiset.Entry<Integer> entry : factors.entrySet()) {
             int factor = entry.getElement();
             if (entry.getCount() % 2 == 1) {
                 final Integer index = factorIndex.get(factor);
                 if(index == null)
                     System.out.println();
-                factorsMod2.set(offset + index);
+                factorsMod2.flip(index);
             }
         }
     }
 
     public long doGaussElimination(List<Column> matrix){
 //        List<Column> matrix = matrixOrig.stream().collect(Collectors.toList());
-        int rowCount = matrix.get(0).entries.size();
+        int rowCount = matrix.size();
         int pivotCount = 0;
         int colIndex = 0;
-        for (int i = 0; i < rowCount; i++) {
+        for (int i = 0; i < factorBase.size(); i++) {
             Column pivot = null;
             int pivotIndex = colIndex-1;
             for (; pivotIndex < matrix.size()-1 && pivot == null;) {
@@ -111,10 +107,10 @@ public class SquareFinder {
     }
 
     public List<Column> reduceMatrix(List<Column> matrix) {
-        int [] colCounts = new int [2 * factorBase.size()];
+        int [] colCounts = new int [factorBase.size()];
 
         List<List<Integer>> rows4Columns = new ArrayList<>();
-        for (int l = 0; l < 2 * factorBase.size(); l++) {
+        for (int l = 0; l < factorBase.size(); l++) {
             rows4Columns.add(new ArrayList<>());
         }
         print(matrix, colCounts, rows4Columns);
@@ -148,7 +144,7 @@ public class SquareFinder {
         for (int j = 0; j < matrix.size(); j++) {
             BitSet row = matrix.get(j).entries;
             String line = String.format("%02d %02d", j, matrix.get(j).id);
-            for (int l = 0; l < 2 * factorBase.size(); l++) {
+            for (int l = 0; l < factorBase.size(); l++) {
                 final boolean rowContainsPrime = row.get(l);
                 line += rowContainsPrime ? "o|" : " |";
                 if (rowContainsPrime) {
@@ -167,7 +163,7 @@ public class SquareFinder {
             BitSet row = matrix.get(j).entries;
             String line = String.format("%02d %02d", j, matrix.get(j).id);
             line += String.format(" %02d", matrix.get(j).id);
-            for (int l = 0; l < 2 * factorBase.size(); l++) {
+            for (int l = 0; l < factorBase.size(); l++) {
                 final boolean rowContainsPrime = row.get(l);
                 line += rowContainsPrime ? "o|" : " |";
             }
@@ -218,12 +214,17 @@ public class SquareFinder {
         return -1;
     }
 
-    private long sqrtMod(Multiset<Integer> factorsLeft, long n) {
+    private long sqrtMod(Multiset<Integer> factors, long n) {
         long prod = 1;
-        for (Multiset.Entry<Integer> entry : factorsLeft.entrySet()) {
-            Assert.assertEquals(0, entry.getCount() & 1);
+        for (Multiset.Entry<Integer> entry : factors.entrySet()) {
+//            Assert.assertEquals(0, entry.getCount() & 1);
             final int exp = entry.getCount() / 2;
             for (int i = 0; i < exp; i++) {
+                prod = (prod * entry.getElement()) % n;
+            }
+            // if exponent is odd on one side (but overall exponent) is even, multiply booth sides by the factor and we
+            // have a relation
+            if (1 == (entry.getCount() & 1)){
                 prod = (prod * entry.getElement()) % n;
             }
         }

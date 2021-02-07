@@ -3,7 +3,6 @@ package factoring.sieve.triple;
 import com.google.common.collect.HashMultiset;
 import com.google.common.collect.Multiset;
 import de.tilman_neumann.jml.factor.FactorAlgorithm;
-import de.tilman_neumann.jml.factor.tdiv.TDiv63Inverse;
 import de.tilman_neumann.util.SortedMultiset;
 import factoring.math.Column;
 import factoring.math.SquareFinder;
@@ -24,14 +23,14 @@ import static org.junit.Assert.assertTrue;
  * (by choosing x ~ sqrt(n)).
  * Here we have to sieve over 3 numbers each of size n^(3/8 + epsilon) < n^.376
  * This variant gives up on using squares on the left side. It uses a square s^2 and two
- * smooth parts p_1 ans p_2. Such the resulting number on the right side is s^2 * p-1 * p_2 - n.
+ * smooth parts p_1 ans p_2. Such the resulting number on the right side is s^2 * p_1 * p_2 - n.
  * It splits the numbers x > sqrt(n) from the quadratic sieve in a small 
  * (and such usually smooth) number s and a bigger number p. x = s*p.
  * The aim is to produce a smooth number near n.
  * Like in the quadratic sieve x^2 - n will be of size n^1/2.
  * we use a correction term to reduce the size of the numbers after
  * subtracting n.
- * Instead of x^2 = s^2 * p^2 we use 
+ * Instead of x^2 = s^2 * p^2 we use
  * x(s,i) = s^2*(p-i)*(p+i) = s^2 (p^2 - i^2) = s^2*p^2 - s^2*i^2
  * = x^2 - s^2 * i^2
  * x(s,i) - n = (x^2 - n) - s^2 * i^2
@@ -46,9 +45,6 @@ import static org.junit.Assert.assertTrue;
  * the smooth numbers p-i and p+i (in common if we want) and lookup if
  * x(s,i) - k*n is prime. We choose the lookup table a little bigger then n^3/8 such that
  * there is an i such that a smooth p-i and p+i exist.
- * 
- * We have to ensure to generate only different x(s,i).
- * Different s can lead to the same value x(s,i).
  *
  *  y(s,i,k) = x(s,i) - kn
  *  we choose i_opt such that x(s,i) - kn is minimal
@@ -223,80 +219,84 @@ public class TripleLookupAllSieve extends FactorAlgorithm {
         for (int k=1; relations < factorBaseSize; k++) {
             System.out.println("Next k : " + k);
             double sqrtN = sqrt(k*n);
-            int x = (int) Math.ceil(sqrtN);
-            int nPowOneDivEight = (int) Math.pow(n, .125);
-            System.out.println("n^1/8 : " + nPowOneDivEight);
-            Set<Integer> smooth = new HashSet<>();
-            int searchIntervalP = 10;
+            double searchIntervalX = 10;
+            for (int x = (int) Math.ceil(sqrtN); x < sqrtN + searchIntervalX; x++) {
+                int nPowOneDivEight = (int) Math.pow(n, .125);
+                System.out.println("n^1/8 : " + nPowOneDivEight);
+                Set<Integer> smooth = new HashSet<>();
+                int searchIntervalP = 10;
 //             this ensures that y is lower then smoothBond in the hole searchIntervalP
-            double sBest = smoothBound / (2 * searchIntervalP * sqrt(x * x - n));
-            // sLower s -> higher p - less smooth values, bigger range for i
-            int sHigher = Math.max((int) (sBest * 2), 2);
-            int[] factorList = getPrimeFactors(x, sHigher);
+                double sBest = smoothBound / (2 * searchIntervalP * sqrt(x * x - n));
+                // sLower s -> higher p - less smooth values, bigger range for i
+                int sHigher = Math.max((int) (sBest * 10), 2);
+//            int[] factorList = getUniqueFactors(x, sHigher);
+                List<ArrayList<Integer>> factorsList = getFactorsList(x, sHigher);
 //                    int[] factorArray = IntStream.of(factorListRaw).filter(i -> i >sLower).toArray(new int []);
-            System.out.println(" s : " + factorList + " y : " + (x*x - n));
+                System.out.println(" s : " + factorsList + " y : " + (x * x - n));
 //                    System.out.println(" s : " + factorArray + " y : " + (x*x - n));
-            int operations;
+                int operations;
 
-            for (int l=0; factorList[l] > 1; l++){
-                System.out.print(factorList[l] + ",");
+                for (ArrayList<Integer> sFactors : factorsList) {
+                    System.out.print(sFactors);
 //                    for (int s : smooth) {
-                List smoothY = new ArrayList();
-                operations = 0;
-                int relationsPerS = 0;
-                int s = factorList[l];
-                long p = (int) (x / s);
-                int y = (int) (s * s * p * p - n);
-                long yDivSSquare = y / (s * s);
-                if (y == 0){
-                    relations++;
-                    relationsPerS++;
-                    List<Integer> pFactors = getFactorList((int) p, sHigher);
-                    Multiset<Integer> factorsLeft = HashMultiset.create();
-                    factorsLeft.add(s);
-                    factorsLeft.addAll(pFactors);
-                    assertEquals(s*s*p*p, multiply(factorsLeft));
-                    finder.addFactors(factorsLeft, HashMultiset.create());
+                    List smoothY = new ArrayList();
+                    operations = 0;
+                    int relationsPerS = 0;
+                    int s = sFactors.stream().reduce(1, (a, b) -> a * b);
+                    long p = x / s;
+                    int y = (int) (s * s * p * p - n);
+                    long yDivSSquare = y / (s * s);
+                    // TODO can this happen?
+                    if (y == 0) {
+                        relations++;
+                        relationsPerS++;
+                        List<Integer> pFactors = getFactorList((int) p);
+                        Multiset<Integer> factorsLeft = HashMultiset.create();
+                        factorsLeft.add(s);
+                        factorsLeft.addAll(pFactors);
+                        assertEquals(s * s * p * p, multiply(factorsLeft));
+                        finder.addFactors(factorsLeft, HashMultiset.create());
 
-                } else {
-                    long iOpt = (long) sqrt(yDivSSquare);
-                    int yMax = 2 * (int) Math.pow(n, .375);
-                    long iRange = iOpt == 0 ? 0 : (yMax - yDivSSquare) / (s * s * 2 * iOpt);
+                    } else {
+                        long iOpt = (long) sqrt(yDivSSquare);
+                        int yMax = 2 * (int) Math.pow(n, .375);
+                        long iRange = iOpt == 0 ? 0 : (yMax - yDivSSquare) / (s * s * 2 * iOpt);
 //                        iRange /= 4;
-                    iRange = iRange < 0 ? 1 : iRange;
-                    long i = iOpt - iRange;
-                    i = i < 0 ? 0 : i;
-                    i = nextSmoothI(factorBaseMax, p, i);
-                    while (i < iOpt + iRange) {
-                        int pMinI = (int) (p - i);
-                        if (smoothNumber.get(pMinI) && maxFactor[pMinI] < factorBaseMax) {
-                            xi = s * s * (p - i) * (p + i);
-                            y = Math.abs((int) (xi - n));
-                            if (smoothNumber.get(y) && maxFactor[y] < factorBaseMax) {
-                                smoothY.add(y);
-                                relations++;
-                                relationsPerS++;
-                                List<Integer> pMinIFactors = getFactorList(pMinI, sHigher);
-                                List<Integer> pPlusIFactors = getFactorList((int) (p + i), sHigher);
-                                List<Integer> yFactors = getFactorList(y, sHigher);
-                                Multiset<Integer> factorsLeft = HashMultiset.create();
-                                factorsLeft.add(s);
-                                factorsLeft.addAll(pMinIFactors);
-                                factorsLeft.addAll(pPlusIFactors);
-                                Multiset<Integer> factorsRight = HashMultiset.create(yFactors);
-                                assertEquals(s*s*(p+i)*(p-i), multiply(factorsLeft));
-                                assertEquals(y, multiply(factorsRight));
-                                finder.addFactors(factorsLeft, factorsRight);
+                        iRange = iRange < 0 ? 1 : iRange;
+                        long i = iOpt - iRange;
+                        i = i < 0 ? 0 : i;
+                        i = nextSmoothI(factorBaseMax, p, i);
+                        while (i < iOpt + iRange) {
+                            int pMinI = (int) (p - i);
+                            if (smoothNumber.get(pMinI) && maxFactor[pMinI] < factorBaseMax) {
+                                xi = s * s * (p - i) * (p + i);
+                                y = Math.abs((int) (xi - n));
+                                if (smoothNumber.get(y) && maxFactor[y] < factorBaseMax) {
+                                    smoothY.add(y);
+                                    relations++;
+                                    relationsPerS++;
+                                    List<Integer> pMinIFactors = getFactorList(pMinI);
+                                    List<Integer> pPlusIFactors = getFactorList((int) (p + i));
+                                    List<Integer> yFactors = getFactorList(y);
+                                    Multiset<Integer> factorsLeft = HashMultiset.create();
+                                    factorsLeft.addAll(sFactors);
+                                    factorsLeft.addAll(pMinIFactors);
+                                    factorsLeft.addAll(pPlusIFactors);
+                                    Multiset<Integer> factorsRight = HashMultiset.create(yFactors);
+                                    assertEquals(s * s * (p + i) * (p - i), multiply(factorsLeft));
+                                    assertEquals(y, multiply(factorsRight));
+                                    finder.addFactors(factorsLeft, factorsRight);
 
+                                }
                             }
-                        }
-                        operations++;
+                            operations++;
 //                            iIndex++;
 //                            i = smoothI[iIndex];
-                        i = nextSmoothI(factorBaseMax, p, i + 1);
+                            i = nextSmoothI(factorBaseMax, p, i + 1);
+                        }
                     }
+                    System.out.println(" s : " + s + " relations : " + relationsPerS + " operations : " + operations + " rate : " + (0.0 + relationsPerS) / operations + " y's : " + smoothY);
                 }
-                System.out.println(" s : " + s + " relations : " + relationsPerS + " operations : " + operations + " rate : " + (0.0 + relationsPerS)/operations + " y's : " + smoothY);
             }
         }
         List<Column> smoothMatrix = finder.initMatrix();
@@ -330,45 +330,76 @@ public class TripleLookupAllSieve extends FactorAlgorithm {
         return i;
     }
 
-    private int[] getPrimeFactors(int xDiv, int upperBound) {
+    private int[] getAllFactors(int xDiv, int upperBound) {
         int[] factors = new int[smoothBits];
         int i = 0;
-        int factor = Integer.MAX_VALUE;
         while (maxFactor[xDiv] > 1){
-            factor = maxFactor[xDiv];
+            int factor = maxFactor[xDiv];
             xDiv = xDiv / factor;
-            // add only different factors.
-            if ((i == 0 || factors[i-1] != factor) && factor <= upperBound )
+            // add all factors.
+            if (factor <= upperBound)
                 factors[i++] = (short) factor;
         }
-        if (factors[0] == 0) factors [0] = factor;
         return factors;
     }
 
-    private List<Integer> getPrimeFactorList(int xDiv, int upperBound) {
+    private List<Factor> getFactorExpList(int xDiv, int upperBound) {
+        List<Factor> factors = new ArrayList<>();
+        int lastFactor = -1;
+        Factor fact = null;
+        while (maxFactor[xDiv] > 1){
+            int factor = maxFactor[xDiv];
+            xDiv = xDiv / factor;
+            if (factor <= upperBound) {
+                if (lastFactor == factor)
+                    fact.incExp();
+                else {
+                    fact = new Factor(factor);
+                    factors.add(fact);
+                }
+                lastFactor = factor;
+            }
+        }
+        return factors;
+    }
+
+    private List<Integer> getFactorList(int xDiv) {
         List<Integer> factors = new ArrayList<>();
         while (maxFactor[xDiv] > 1){
             int factor = maxFactor[xDiv];
             xDiv = xDiv / factor;
-            if (factor <= upperBound)
-                factors.add(factor);
+            factors.add(factor);
         }
         return factors;
     }
 
-    private List<Integer> getFactorList(int xDiv, int upperBound) {
-        List<Integer> primeFactors = getPrimeFactorList(xDiv, upperBound);
-        
-        powerSet(primeFactors, 0, new ArrayList<>(), upperBound, 1);      
+    private List<ArrayList<Integer>> getFactorsList(int xDiv, int upperBound) {
+        List<Factor> primeFactors = getFactorExpList(xDiv, upperBound);
+
+        ArrayList<ArrayList<Integer>> factorsList = new ArrayList<>();
+        powerSet(primeFactors, 0, new ArrayList<>(), factorsList, upperBound, 1);
+
+        return factorsList;
     }
-    public static void powerSet(List<Integer> numbers, int index, ArrayList<Integer> currentFactors, ArrayList<ArrayList<Integer>> result, int upperBound, int prod) {
-		if (index == numbers.size() && prod < upperBound)
+    public static void powerSet(List<Factor> numbers, int index, ArrayList<Integer> currentFactors, ArrayList<ArrayList<Integer>> result, int upperBound, int prod) {
+		if (index == numbers.size())
 			result.add(currentFactors);
 		else {
+		    if (prod < upperBound)
 			powerSet(numbers, index + 1, currentFactors, result, upperBound, prod); //do not take the current number
-			ArrayList<Integer> withNewFactor = new ArrayList<>(currentFactors);
-			withNewFactor.add(numbers.get(index));
-			powerSet(numbers, index + 1, withNewFactor, result, upperBound, prod * numbers.get(index)); //take it
+            if (prod * numbers.get(index).base < upperBound) {
+                Factor newFactor = numbers.get(index);
+                for (int exp = 0; exp < newFactor.exponent; exp++) {
+                    int newProd = prod;
+                    ArrayList<Integer> withNewFactor = new ArrayList<>(currentFactors);
+                    for(int add = 0; add <= exp; add++) {
+                        withNewFactor.add(numbers.get(index).base);
+                        newProd *= numbers.get(index).base;
+                    }
+                    if (newProd < upperBound)
+                    powerSet(numbers, index + 1, withNewFactor, result, upperBound, newProd); //take it
+                }
+            }
 		}
 	}
 
