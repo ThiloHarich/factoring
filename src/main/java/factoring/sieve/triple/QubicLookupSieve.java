@@ -6,7 +6,7 @@ import com.google.common.collect.Multiset.Entry;
 import de.tilman_neumann.jml.factor.FactorAlgorithm;
 import de.tilman_neumann.jml.factor.tdiv.TDiv63Inverse;
 import de.tilman_neumann.util.SortedMultiset;
-import factoring.math.Column;
+import factoring.math.Row;
 import factoring.math.PrimeMath;
 import factoring.math.SquareFinder;
 
@@ -400,8 +400,8 @@ public class QubicLookupSieve extends FactorAlgorithm {
                 }
             }
         }
-        List<Column> smoothMatrix = finder.initMatrix();
-        List<Column> reducedMatrix = finder.reduceMatrix(smoothMatrix);
+        List<Row> smoothMatrix = finder.initMatrix();
+        List<Row> reducedMatrix = finder.reduceMatrix(smoothMatrix);
         do {
             smoothMatrix = reducedMatrix;
             reducedMatrix = finder.reduceMatrix(smoothMatrix);

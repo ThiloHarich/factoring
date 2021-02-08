@@ -7,7 +7,7 @@ import com.google.common.collect.Multiset;
 import de.tilman_neumann.jml.factor.FactorAlgorithm;
 import de.tilman_neumann.util.SortedMultiset;
 import de.tilman_neumann.util.SortedMultiset_BottomUp;
-import factoring.math.Column;
+import factoring.math.Row;
 import factoring.math.SquareFinder;
 import factoring.trial.TDiv31Barrett;
 
@@ -205,8 +205,8 @@ public class SmoothNumbers extends FactorAlgorithm {
             }
         }
         System.out.println("relations considered : " + allTries);
-        List<Column> smoothMatrix = finder.initMatrix();
-        List<Column> reducedMatrix = finder.reduceMatrix(smoothMatrix);
+        List<Row> smoothMatrix = finder.initMatrix();
+        List<Row> reducedMatrix = finder.reduceMatrix(smoothMatrix);
         do {
             smoothMatrix = reducedMatrix;
             reducedMatrix = finder.reduceMatrix(smoothMatrix);

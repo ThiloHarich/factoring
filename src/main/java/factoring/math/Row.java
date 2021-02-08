@@ -13,13 +13,13 @@ import com.google.common.collect.Multiset;
 
 import factoring.sieve.triple.TripleLookupSieve;
 
-public class Column {
+public class Row {
         int id;
         BitSet entries;
         BitSet columns;
 
-        public static Column of(BitSet entries, int columnIndex) {
-            Column col = new Column();
+        public static Row of(BitSet entries, int columnIndex) {
+            Row col = new Row();
             col.entries = entries;
             col.id = columnIndex;
             col.columns = new BitSet();
@@ -27,15 +27,15 @@ public class Column {
             return col;
         }
         
-        public Column copy (){
-        	Column clone = new Column();
+        public Row copy (){
+        	Row clone = new Row();
         	clone.columns = (BitSet) this.columns.clone();
         	clone.entries = (BitSet) this.entries.clone();
         	clone.id = this.id;
         	return clone;
         }
         
-        public void xor(Column col) {
+        public void xor(Row col) {
         	this.entries.xor(col.entries);
         	this.columns.xor(col.columns);
         }

@@ -9,6 +9,7 @@ import java.util.Collection;
 import java.util.List;
 
 import de.tilman_neumann.jml.factor.hart.Hart_TDiv_Race;
+import factoring.sieve.triple.SmoothNumbersSieve;
 import org.junit.Test;
 
 import com.google.common.collect.Multiset;
@@ -44,8 +45,8 @@ public class CorrectnessTest {
 	public void testCorrect() {
 		final int bits = 40;
 
-		final long begin = (1L << bits) +7;
-		//		begin = 6387l;
+		long begin = (1L << bits) +7;
+				begin = 9l;
 		//		begin = 1073741835L;
 		//		final LehmanFactorFinder factorizer1 = new LehmanFactorFinder(50, 1, false);
 		//		final FactorAlgorithm factorizer2 = new SquFoF31();
@@ -55,7 +56,7 @@ public class CorrectnessTest {
 		final FactorAlgorithm factorizer1 = new Hart315Primes(false);
 		//		final FactorAlgorithm factorizer2 = new HartMod8(true);
 //		final FactorAlgorithm factorizer2 = new Hart_FastT(false);
-				final FactorAlgorithm factorizer2 = new Hart_TDiv_Race();
+				final FactorAlgorithm factorizer2 = new SmoothNumbersSieve();
 		//		final FactorAlgorithm factorizer1 = new LehmanMidRange7(0,1);
 		//		final FactorAlgorithm factorizer1 = new factoring.hart.Hart_TDiv_Race();
 //				final FactorAlgorithm factorizer2 = new LehmanHart2();
