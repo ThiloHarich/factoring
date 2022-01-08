@@ -13,7 +13,6 @@
  */
 package factoring.hart;
 
-import com.google.common.math.LongMath;
 import de.tilman_neumann.jml.factor.FactorAlgorithm;
 import de.tilman_neumann.jml.factor.tdiv.TDiv63Inverse;
 import de.tilman_neumann.jml.gcd.Gcd63;
@@ -21,8 +20,7 @@ import de.tilman_neumann.util.ConfigUtil;
 import org.apache.log4j.Logger;
 
 import java.math.BigInteger;
-import java.math.RoundingMode;
-import java.util.HashSet;
+
 
 /**
  * Possibly slightly faster variant of class Hart_Fast2Mult.
@@ -31,7 +29,7 @@ import java.util.HashSet;
  * - use Math.fma instead of double multiplication and addition
  * - changed order of k array
  *   - use multiplier 3*3*5*7 first
- *   - use multiplier 3*3*5*7 only in 6 out of 7 cases, no clue why 7 works best here, might optimize the adjustA  cases in the loop
+ *   - use multiplier 3*3*5*7*11 only in 6 out of 7 cases, no clue why 7 works best here, might optimize the adjustA  cases in the loop
  *
  * @authors Thilo Harich & Tilman Neumann
  */
