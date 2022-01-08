@@ -27,6 +27,12 @@ import java.util.HashSet;
 /**
  * Possibly slightly faster variant of class Hart_Fast2Mult.
  *
+ * Changes form Hart_Fast2Mult2
+ * - use Math.fma instead of double multiplication an addition
+ * - changed oder of k array
+ *   - use multiplier 3*3*5*7 first
+ *   - use multiplier 3*3*5*7 only in 6 out of 7 cases, no clue why 7 works best here, might optimize the adjustA  cases in the loop
+ *
  * @authors Thilo Harich & Tilman Neumann
  */
 public class Hart_Fast2Mult3 extends FactorAlgorithm {
