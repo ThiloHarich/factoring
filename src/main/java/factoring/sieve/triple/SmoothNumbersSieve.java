@@ -3,6 +3,7 @@ package factoring.sieve.triple;
 import de.tilman_neumann.jml.factor.FactorAlgorithm;
 import de.tilman_neumann.util.SortedMultiset;
 import de.tilman_neumann.util.SortedMultiset_BottomUp;
+import factoring.math.PrimeMath;
 import factoring.math.Row;
 import factoring.math.SquareFinder3;
 import factoring.trial.TDiv31Barrett;
@@ -25,6 +26,10 @@ import static org.junit.Assert.assertTrue;
  * < t^2 - n - (t^2 - n) + 2j*sqrt(t^2 - n) + j^2<br>
  * < 2j* sqrt(t^2 - n) + j^2<br>
  * < j*sqrt(8i) *n^1/4 + j^2<br>
+ * if we work on n' = k*n
+ * < sqrt(8) * j*sqrt(i) * k^1/4 * n^1/4 + j^2<br>
+ * This means working on kn generates values lower then shifting t by i.
+ * The values on the left are higher by a factor k^1/2. and so there are less smooth values.
  * With subpolynomial i and j we will have numbers of size O(n^1/4+epsilon) compared to O(n^1/2 + epsilon) of the
  * regular Quadratic Sieve.
  * For a factor base which size depends on n we need an efficient way to<br>
@@ -99,7 +104,10 @@ public class SmoothNumbersSieve extends FactorAlgorithm {
 			3527,3529,3533,3539,3541,3547,3557,3559,3571,3581,3583,3593,3607,3613,3617,
 			3623,3631,3637,3643,3659,3671,3673,3677,3691,3697,3701,3709,3719,3727,3733};
 
-    private static boolean print = true;
+    private static boolean print = false;
+    final boolean load = true;
+
+
     private static boolean showTiming = false;
     private static boolean check = false;
     // for a range we hash the smooth numbers.
@@ -178,25 +186,30 @@ public class SmoothNumbersSieve extends FactorAlgorithm {
         SquareFinder3 finder = new SquareFinder3(factorBase, n);
         allTries = 0;
         tries = 0;
+        steps = 0;
         double sqrtNBits = Math.log(n)/Math.log(2)/2;
         // for big numbers this has to be 1 (or lower) otherwise we get an IndexArrayOutOfBounds
         // with this factor we can control the size of the numbers on the right side.
         // for small numbers the numbers on the right have to be higher.
-        long t = (long) Math.ceil(Math.sqrt((double) (n)));
-        // squares have no serach range, so we will directly return
-        if (t*t == n)
-            return BigInteger.valueOf(t);
-        long tDiff = 0;
 
         // if we want to ensure that we can factozize every number with prob 1, we need to add the bitlength to the
         // factor base size
         int nBits = N.bitLength();
-        while (relations.size() < 1 *factorBaseSize) {
+        // multiplier for n' = k * n
+        int k = 1;
+        long tDiff = 0;
+        long t;
+        while (relations.size() < 1 *factorBaseSize + 4) {
             // TODO we only need the factors up to a bound. Which?
             // c is the minimal c for |(t^2 - c^2) - n|
-            int factor = sieve(n, factorBaseSize, finder, t, tDiff);
-            tDiff++;
-            t++;
+            t = (long) Math.ceil(Math.sqrt((double) (k*n)));
+            // squares have no search range, so we will directly return
+            if (t*t == k*n)
+                return BigInteger.valueOf(t);
+            int factor = sieve(n, factorBaseSize, finder, t, tDiff, k);
+//            tDiff++;
+//            t++;
+            k++;
             if (factor > 0)
                 return BigInteger.valueOf(factor);
         }
@@ -206,7 +219,7 @@ public class SmoothNumbersSieve extends FactorAlgorithm {
             System.out.println("time sieve  : " + (endSieve - start));
         }
         if (print)
-            System.out.println("max multiplier : " + (tDiff + 1));
+            System.out.println("max multiplier : " + k);
 
         if (false)
             return BigInteger.valueOf(1);
@@ -220,15 +233,18 @@ public class SmoothNumbersSieve extends FactorAlgorithm {
         // it might be that solutions of the matrix can not lead to a factor for some unkown reason.
         // we might get even more relations by extending the search. More negative numbers on the right of the equation.
         // at the moment the algorithm just fails for these numbers.
-        // Only a verry small portion of numbers ~2% ? reach this special handling were we try to get as many relations
+        // Only a very small portion of numbers ~2% ? reach this special handling were we try to get as many relations
         // as we can.
-        if (false) {
-            while (relations.size() < 3 * factorBaseSize && tDiff < 150) {
+        if (true) {
+
+            while (relations.size() < 6* factorBaseSize + 4) {
                 // TODO we only need the factors up to a bound. Which?
                 // c is the minimal c for |(t^2 - c^2) - n|
-                factor = sieve(n, factorBaseSize, finder, t, tDiff);
-                tDiff++;
-                t++;
+                t = (long) Math.ceil(Math.sqrt((double) (k*n)));
+                factor = sieve(n, factorBaseSize, finder, t, tDiff, k);
+//                tDiff++;
+//                t++;
+                k++;
                 if (factor > 0)
                     return BigInteger.valueOf(factor);
             }
@@ -241,9 +257,9 @@ public class SmoothNumbersSieve extends FactorAlgorithm {
     }
 
 
-    private int sieve(long n, int factorBaseSize, SquareFinder3 finder, long t, long tDiff) {
+    private int sieve(long n, int factorBaseSize, SquareFinder3 finder, long t, long tDiff, int k) {
         int lastRelationSize = 0;
-        double c = sqrt(t * t - n);
+        double c = sqrt(t * t - k*n);
         // if we have an upperbound u of smooth numbers:
         // (t^2 - (c+l)^2) - n > -u >= -n^1/2
         // (t^2 - (c^2+2cl+l^2)) - n > -u
@@ -255,7 +271,7 @@ public class SmoothNumbersSieve extends FactorAlgorithm {
         double sieveIntervalHalf2 = smoothBound / (3.0 * c);
 //        if (sieveIntervalHalf1 > sieveIntervalHalf2)
 //            System.out.println("need both sieve intervals");
-        // sieve interval can not be greather then c
+        // sieve interval can not be greater then c
 //        double sieveIntervalHalf = min(smoothFactor * min(sieveIntervalHalf1, sieveIntervalHalf2), c);
         double sieveIntervalHalf = min(sieveIntervalHalf2, c);
 //            List<Integer> smoothPos = smoothPosPre((int) t, (int)Math.round(c), (int)sieveIntervalHalf);
@@ -265,7 +281,7 @@ public class SmoothNumbersSieve extends FactorAlgorithm {
         int dist = (int) sieveIntervalHalf + 1;
         int cInt = (int) Math.round(c);
         int tInt = (int) t;
-        long tN = tInt * tInt - n;
+        long tN = tInt * tInt - k*n;
         int begin = cInt - dist;
         BitSet smoothPosDistHash = getBitSet(dist, cInt, tInt, begin);
         tries++;
@@ -276,14 +292,15 @@ public class SmoothNumbersSieve extends FactorAlgorithm {
         // TODO instead of BitSet we might directly iterate over the long array
         for (int smoothDist = smoothPosDistHash.nextSetBit(0); smoothDist >= 0 && factor < 0 && tDiff < 100;
              smoothDist = smoothPosDistHash.nextSetBit(smoothDist + 1)) {
-            factor = getFactor(n, factorBaseSize, finder, tInt, tN, begin, factor, exponentsSize, smoothDist);
+            factor = getFactor(n, factorBaseSize, finder, tInt, tN, begin, factor, exponentsSize, smoothDist, k);
         }
         final int hits = relations.size() - lastRelationSize;
         if (print && hits > 0) {
             double hitRate = hits == 0 ? Integer.MAX_VALUE : (tries + 0.0) / hits;
             SortedMultiset<BigInteger> factors = new SortedMultiset_BottomUp<>();
             smallFactoriser.factor((int) t, factorBaseSize, factors);
-            System.out.println("Mulitplier : " + (tDiff + 1));
+            System.out.println("multiplier  : " + k);
+            System.out.println("t shift  : " + tDiff);
             System.out.println("best dist : " + c);
             System.out.println("sieve interval : " + 2 * dist);
             System.out.println("num hits  " + hits);
@@ -301,7 +318,8 @@ public class SmoothNumbersSieve extends FactorAlgorithm {
         return smoothPosDistHash;
     }
 
-    private int getFactor(long n, int factorBaseSize, SquareFinder3 finder, int tInt, long tN, int begin, int factor, int exponentsSize, int smoothDist) {
+    private int getFactor(long n, int factorBaseSize, SquareFinder3 finder, int tInt, long tN, int begin, int factor,
+                          int exponentsSize, int smoothDist, int k) {
         long tryDist;
         tryDist = begin + smoothDist;
         tries++;
@@ -331,45 +349,78 @@ public class SmoothNumbersSieve extends FactorAlgorithm {
 //            }
 //            boolean rightCanBeADuplicat = containsHash(right, relationsHash, hashMask);
 //            final boolean contains = relations.contains(right);
-        // we first check if the hash of the rigth number machtes the hash of a already added right number
-        if (isRightSmooth2 &&  !relations.contains(right))
+        // we first check if the hash of the right number matches the hash of a already added right number
+        // The max factor of a smooth number can be outside of the factor base (e.g. if it is a square)
+        int gcd = -1;
+        if ((gcd = isNewRelation(isRightSmooth2, right, rightPos, factorBaseSize, k)) > -1)
 //                if (isRightSmooth && (!containsHash(right, relationsHash, hashMask) || !relations.contains(right)))
 //                if (isRightSmooth2 &&
 //                        maxSmoothFactorIndex[rightPos] < factorBaseSize &&
 //                        (!containsHash(right, relationsHash, hashMask) || !relations.contains(right)))
         {
-            final long[] rightExponent = exponentsMod2(abs(right), exponentsSize, true);
-            if (rightExponent.length == 0 || getMaxFactorIndex(rightExponent) > factorBaseSize) {
+            // TODO To be sure we really get smooth numbers we have to check the maximal Factor not the
+            // max squared factor. But this should happen really seldom
+            int rightNormalized = right / gcd;
+            final long[] rightExponent = exponentsMod2(abs(rightNormalized), exponentsSize, true);
+            if (rightExponent.length == 0 || getMaxFactorIndex(rightExponent) >= factorBaseSize) {
                 if (print)
                     System.out.println("max exponent " + getMaxFactorIndex(rightExponent) + " for right " + right + " outside factor base of size " + factorBaseSize);
             }
             else {
                 if (right < 0)
                     rightExponent[0] |= 1;
-                checkExponentsMod2(rightExponent, right);
-                final long higher = tInt + tryDist;
-                final long[] higherExponent = exponentsMod2((int) higher, exponentsSize, true);
+                checkExponentsMod2(rightExponent, rightNormalized);
+                final long higher = (tInt + tryDist);
+                int gcdHigher = (int) PrimeMath.gcdOneSmall(higher, gcd);
+                int higherNormalized = (int) (higher / gcdHigher);
+                final long[] higherExponent = exponentsMod2((int) higherNormalized, exponentsSize, true);
                 checkExponentsMod2(higherExponent, higher);
-                if (higherExponent.length == 0 || getMaxFactorIndex(higherExponent) > factorBaseSize)
-                    System.out.println("max exponent " + getMaxFactorIndex(higherExponent) + " for hiher " + higher + " outside factor base of size " + factorBaseSize);
+                if (higherExponent.length == 0 || getMaxFactorIndex(higherExponent) >= factorBaseSize) {
+                    if (print)
+                        System.out.println("max exponent " + getMaxFactorIndex(higherExponent) + " for higher " + higher + " outside factor base of size " + (factorBaseSize - 1));
+                }
                 else {
 
 //            boolean isRightSmooth = tries % 10 == 0;
 //            if (maxFactorInFactorBase) {
-                    final long lower = tInt - tryDist;
-                    // TODO we have to
+                    final long lower = (tInt - tryDist);
+                    int gcdLower = gcd / gcdHigher;
+                    int lowerNormalized = (int) (lower / gcdLower);
+                    final long[] lowerExponent = exponentsMod2(lowerNormalized, exponentsSize, true);
+                    checkExponentsMod2(lowerExponent, lower);
+                    if (lowerExponent.length == 0 || getMaxFactorIndex(lowerExponent) >= factorBaseSize) {
+                        if (print)
+                            System.out.println("max exponent " + getMaxFactorIndex(lowerExponent) + " for lower " + lower + " outside factor base of size " + (factorBaseSize - 1));
+                    }
+                    else {
+
+                        // TODO we have to
 //                    int right = (int) (lower * higher - n);
-                    factor = addRelation(relations, finder, (int) lower, (int) higher, higherExponent, right, rightExponent,factorBaseSize, exponentsSize, n);
+                        factor = addRelation(relations, finder, (int) lowerNormalized, lowerExponent, (int) higherNormalized,
+                                higherExponent, rightNormalized, rightExponent, factorBaseSize, exponentsSize, n, tryDist);
 //                relations.add(right);
 //            setHash(right, relationsHash, hashMask);
+                    }
                 }
             }
         }
         return factor;
     }
 
+    public int isNewRelation(boolean isRightSmooth, Integer right, int rightPos, int factorBaseSize, int k){
+        if (!isRightSmooth)
+            return -1;
+        // Since k is constant we can precalculate 1/(double)k
+        int gcd = (int) PrimeMath.gcdOneSmall(rightPos, k);
+        if (relations.contains(right/gcd))
+        return -1;
+        if (aFactorIndex(rightPos) < factorBaseSize)
+            return gcd;
+        return -1;
+    }
+
     /**
-     * retuns a factor dividing number.
+     * returns a factor dividing number.
      * We store the maximal factor dividing the number. Since we might have collitions we might return a max factor for
      * a different (smaller) number, which is not the maximal factor of this number.
      * @param number
@@ -397,7 +448,7 @@ public class SmoothNumbersSieve extends FactorAlgorithm {
 
 
 
-    private int addRelation(Set<Integer> relations, SquareFinder3 finder, int lower, int higher, long[] higherExponent, int right, long[] rightExponent, int factorBaseSize, int exponentsSize, long n) {
+    private int addRelation(Set<Integer> relations, SquareFinder3 finder, int lower, long[] lowerExponent, int higher, long[] higherExponent, int right, long[] rightExponent, int factorBaseSize, int exponentsSize, long n, long tryDist) {
         // ensure that this relation is not a duplicate, and all numbers fit in the matrix
         // right should not be dividable by k
         // TODO use a int [] based map
@@ -409,7 +460,7 @@ public class SmoothNumbersSieve extends FactorAlgorithm {
             if (print) System.out.println("right side is 0. Directly found factor " + max);
             return max;
         }
-        long[] exponents = getExponents(lower, higherExponent, rightExponent, exponentsSize);
+        long[] exponents =  getExponents(lowerExponent, higherExponent, rightExponent, exponentsSize);
 //        if (right < 0)
 //            rightExponents[0] |= 1;
 
@@ -453,6 +504,7 @@ public class SmoothNumbersSieve extends FactorAlgorithm {
 //            if (getMaxFactorIndex(leftExponents) >= factorBaseSize) {
 //                System.out.println("left numbers " + lower + " * " + higher + "  have a factor " + primes[getMaxFactorIndex(leftExponents)] + " outside the factor base.");
 //            }
+            System.out.println("dist " + tryDist);
             System.out.println("tries " + tries);
             System.out.println("found smooth lower  " + lower + " odd factors : " + exponentsToString(lowerExponents));
             System.out.println(" and  smooth higher " + higher + " odd factors : " + exponentsToString(higherExponents));
@@ -468,19 +520,19 @@ public class SmoothNumbersSieve extends FactorAlgorithm {
         return -1;
     }
 
-    private long[] getExponents(int lower, long[] higherExponent, long[] rightExponent, int exponentsSize) {
+    private long[] getExponents(long[] lowerExponent, long[] higherExponent, long[] rightExponent, int exponentsSize) {
         long [] exponents = new long[exponentsSize];
 
         // TODO we might chnage order of array access
 //        for (int i = 0; i < exponentsSize; i++) {
 //            lowerExponents[i] = exponentsMod2AsLong[lower * exponentsMod2Words + i];
 //            higherExponents[i] = exponentsMod2AsLong[higher * exponentsMod2Words + i];
-        final long[] lowerExponent = exponentsMod2(lower, exponentsSize, true);
-        checkExponentsMod2(lowerExponent, lower);
 //            rightExponents[i] = rightExponent;
 //            final long leftExponent = exponentsMod2AsLong[lower * exponentsMod2Words + i] ^ exponentsMod2AsLong[higher * exponentsMod2Words + i];
 //            leftExponents[i] = leftExponent;
             // TODO if everything is running only this is needed
+        if (rightExponent.length == 0 || higherExponent.length == 0 || lowerExponent.length == 0)
+            System.out.println();
         for (int i = 0; i < exponentsSize; i++) {
             exponents[i] = rightExponent[i] ^ lowerExponent[i] ^ higherExponent[i];
         }
@@ -513,7 +565,7 @@ public class SmoothNumbersSieve extends FactorAlgorithm {
     private long[] exponentsMod2(int number, int exponentsSize, boolean checkSmooth) {
         if (number < exponentsStored) {
             long[] exponents = new long[exponentsSize];
-            if ( exponentsMod2AsLong[number*exponentsMod2Words] == NO_SMOOTH_FACTOR)
+            if ( exponentsMod2AsLong[number * exponentsMod2Words] == NO_SMOOTH_FACTOR)
                 return new long [] {};
             for (int i = 0; i < exponentsSize; i++) {
                 exponents[i] = exponentsMod2AsLong[number*exponentsMod2Words + i];
@@ -570,7 +622,7 @@ public class SmoothNumbersSieve extends FactorAlgorithm {
         long endMatrix = System.nanoTime();
         if (print || showTiming)
             System.out.println("time matrix : " + (endMatrix - endSieve));
-        if (print) {
+        if (print || showTiming) {
             System.out.println("Number of relations considered overall : " + steps);
             System.out.println("Runtime calculated exponent : " + Math.log(steps) / Math.log(n));
         }
@@ -594,7 +646,6 @@ public class SmoothNumbersSieve extends FactorAlgorithm {
 
         if (smoothNumber != null /*&& maxSmoothFactorIndex != null*/)
             return;
-        final boolean load = false;
         if (load) {
             // TODO just serialize the BitSet
     //        File smoothNumbersFile = new File(SMOOTH_FILE_NAME + smoothBits + ".txt");
@@ -669,7 +720,7 @@ public class SmoothNumbersSieve extends FactorAlgorithm {
 //            int factorIndex = smallFactoriser.findSingleFactorIndex((int) j, baseSizeMax) + 1;
             // we take 8 bits per count, a word has 64 bits
             long [] factorCounts = new long[factorisationWords];
-            if (j == 25348)
+            if (j == 289)
                 System.out.println();
             // we store
             // the max fastor Index of smooth numbers above smoothBound / 8 as byte
@@ -733,7 +784,7 @@ public class SmoothNumbersSieve extends FactorAlgorithm {
                 int baseSize = (int) factorBaseSize((long)j*j);
                 // since smooth is for the left factors only, which are of nearly the same size n^1/2 (at least for
                 // bigger numbers) we assume they have max Factors of the same size within the factor base
-                if (result.maxFactorIndex <= baseSize) {
+                if (result.maxFactorIndex < baseSize) {
                     smoothNumber.set((int) j);
                 }
 //                smoothCount++;
@@ -876,7 +927,7 @@ public class SmoothNumbersSieve extends FactorAlgorithm {
      */
     private double factorBaseSize(long n) {
         final double logN = log(n);
-        return .8 * sqrt(exp(sqrt(logN * log(logN))));
+        return .7 * sqrt(exp(sqrt(logN * log(logN)))) + 2;
     }
 
 }

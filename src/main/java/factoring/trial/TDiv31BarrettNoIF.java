@@ -32,16 +32,16 @@ import static de.tilman_neumann.jml.base.BigIntConstants.I_2;
  *
  * @authors Tilman Neumann + Thilo Harich
  */
-public class TDiv31Barrett extends FactorAlgorithm {
+public class TDiv31BarrettNoIF extends FactorAlgorithm {
 	@SuppressWarnings("unused")
-	private static final Logger LOG = Logger.getLogger(TDiv31Barrett.class);
+	private static final Logger LOG = Logger.getLogger(TDiv31BarrettNoIF.class);
 
 	private AutoExpandingPrimesArray SMALL_PRIMES = AutoExpandingPrimesArray.get();	// "static" would be slightly slower
 
 	private int[] primes;
 	private long[] pinv;
 
-	public TDiv31Barrett() {
+	public TDiv31BarrettNoIF() {
 		primes = new int[NUM_PRIMES_FOR_31_BIT_TDIV];
 		pinv = new long[NUM_PRIMES_FOR_31_BIT_TDIV];
 		for (int i=0; i<NUM_PRIMES_FOR_31_BIT_TDIV; i++) {
@@ -144,44 +144,36 @@ public class TDiv31Barrett extends FactorAlgorithm {
 		// if N is odd and composite then the loop runs maximally up to prime = floor(sqrt(N))
 		// unroll the loop
 		int i=1;
-		int unrolledLimit = maxIndex-8;
-		for ( ; i<unrolledLimit; i++) {
-			if ((1 + (int) ((N*pinv[i])>>32)) * primes[i] == N) return primes[i];
-			if ((1 + (int) ((N*pinv[++i])>>32)) * primes[i] == N) return primes[i];
-			if ((1 + (int) ((N*pinv[++i])>>32)) * primes[i] == N) return primes[i];
-			if ((1 + (int) ((N*pinv[++i])>>32)) * primes[i] == N) return primes[i];
-			if ((1 + (int) ((N*pinv[++i])>>32)) * primes[i] == N) return primes[i];
-			if ((1 + (int) ((N*pinv[++i])>>32)) * primes[i] == N) return primes[i];
-			if ((1 + (int) ((N*pinv[++i])>>32)) * primes[i] == N) return primes[i];
-			if ((1 + (int) ((N*pinv[++i])>>32)) * primes[i] == N) return primes[i];
+		final int blockSize = 16;
+		int unrolledLimit = maxIndex- blockSize;
+		boolean found = false;
+		for ( ; i<unrolledLimit && !found; i++) {
+//			found = 1;
+			found = ((1 + (int) ((N*pinv[i])>>32)) * primes[i] == N) |
+					((1 + (int) ((N*pinv[++i])>>32)) * primes[i] == N) |
+					((1 + (int) ((N*pinv[++i])>>32)) * primes[i] == N) |
+					((1 + (int) ((N*pinv[++i])>>32)) * primes[i] == N) |
+					((1 + (int) ((N*pinv[++i])>>32)) * primes[i] == N) |
+					((1 + (int) ((N*pinv[++i])>>32)) * primes[i] == N) |
+					((1 + (int) ((N*pinv[++i])>>32)) * primes[i] == N) |
+					((1 + (int) ((N*pinv[++i])>>32)) * primes[i] == N) |
+					((1 + (int) ((N*pinv[++i])>>32)) * primes[i] == N) |
+					((1 + (int) ((N*pinv[++i])>>32)) * primes[i] == N) |
+					((1 + (int) ((N*pinv[++i])>>32)) * primes[i] == N) |
+					((1 + (int) ((N*pinv[++i])>>32)) * primes[i] == N) |
+					((1 + (int) ((N*pinv[++i])>>32)) * primes[i] == N) |
+					((1 + (int) ((N*pinv[++i])>>32)) * primes[i] == N) |
+					((1 + (int) ((N*pinv[++i])>>32)) * primes[i] == N) |
+					((1 + (int) ((N*pinv[++i])>>32)) * primes[i] == N) ;
+		}
+		if (found) {
+			i -= blockSize;
 		}
 		for ( ; i<maxIndex; i++) {
 			if ((1 + (int) ((N*pinv[i])>>32)) * primes[i] == N) return primes[i];
 		}
 		// otherwise N is prime
 		return 1;
-	}
-
-	public int findMaxFactorIndex(int n, int maxIndex) {
-		int nOrig = n;
-		if (n<0) n = -n; // sign does not matter
-
-		while (n % 2 == 0)
-			n /= 2;
-		if (n == 1)
-			return 0;
-		int i=1;
-		for ( ; i<maxIndex; i++) {
-			while ((1 + (int) ((n*pinv[i])>>32)) * primes[i] == n){
-				if (n == primes[i]){
-					return i;
-				}
-				n = (1 + (int) ((n*pinv[i])>>32));
-			}
-		}
-
-		// otherwise N is prime
-		return Integer.MAX_VALUE -10;
 	}
 	public int findSingleFactorIndex(int N, int maxIndex) {
 		if (N<0) N = -N; // sign does not matter
@@ -224,6 +216,7 @@ public class TDiv31Barrett extends FactorAlgorithm {
 	 *
 	 * If the number is smooth over the factor bas up to factor with index maxIndex .
 	 *
+	 * @param factorCounts a bit set of the exponents mod 2
 	 * @param N
 	 * @param maxIndex
 	 * @return

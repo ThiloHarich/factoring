@@ -16,8 +16,8 @@ public class SquareFinder3 {
     //    Map<Integer, Integer> factorIndex = new HashMap<>();
     public List<Row> matrix = new ArrayList<>();
     long n;
-    boolean print = true;
-    boolean check = false;
+    boolean print = false;
+    boolean check = true;
     int columnIndex = 0;
     static int factorisationWords;
 
@@ -111,6 +111,7 @@ public class SquareFinder3 {
 //        List<Column> matrix = matrixOrig.stream().collect(Collectors.toList());
         int rowCount = matrix.size();
         int pivotCount = 0;
+        print(matrix);
         int colIndex = 0;
         for (int i = factorBase.length-1; i >= 0 ; i--) {
 //            for (int i = 0; i < factorBase.length; i++) {
@@ -293,7 +294,7 @@ public class SquareFinder3 {
                 System.out.println(printExponents(rightFactorCounts, factorBase));
             }
             for (int i = 0; i < factorBase.length; i++) {
-                int prime = factorBase[i];
+                long prime = factorBase[i];
 //                int bucket = i >> 3;
 //                final int indexInLong = i - bucket;
 //                int count = (int) ((leftFactorCounts[bucket] & 255l << indexInLong) >> indexInLong);
@@ -304,15 +305,18 @@ public class SquareFinder3 {
                 long countShiftedRight = rightFactorCounts[wordIndex] & (255l << indexInWord);
                 int countRight = (int) (countShiftedRight >> indexInWord);
                 // multiply both sides with the prime, if it is odd
-                if ((count & 1) == 1) {
-//                    if ((countRight & 1) == 0)
-//                        System.out.println("left != right");
-                    x = PrimeMath.mod(x * prime, n);
-                    y = PrimeMath.mod(y * prime, n);
-                }
+//                if ((count & 1) == 1) {
+//                    x = PrimeMath.mod(x * prime, n);
+//                    y = PrimeMath.mod(y * prime, n);
+//                }
                 // TODO calculate prime^count mod n faster
+                // if exponent is even, we make it even and divide by 2
                 for (int j = 0; j < ((count+1) >> 1); j++) {
-                    x = PrimeMath.mod(x * prime, n);
+                    long xn = mod(x * prime, n);
+                    if (xn < 0)
+                        System.out.println();
+                    else
+                        x = xn;
                 }
                 for (int j = 0; j < ((countRight+1) >> 1); j++) {
                     y = PrimeMath.mod(y * prime, n);

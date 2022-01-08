@@ -6,8 +6,8 @@ import de.tilman_neumann.jml.factor.FactorAlgorithm;
 import de.tilman_neumann.jml.factor.tdiv.TDiv63Inverse;
 import de.tilman_neumann.util.SortedMultiset;
 import de.tilman_neumann.util.SortedMultiset_BottomUp;
-import factoring.math.Row;
 import factoring.math.PrimeMath;
+import factoring.math.Row;
 import factoring.math.SquareFinder;
 import factoring.trial.TDiv31Barrett;
 
@@ -16,8 +16,6 @@ import java.util.*;
 import java.util.stream.IntStream;
 
 import static java.lang.Math.*;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 /**
  * This is a variant of the quadratic sieve.
@@ -25,113 +23,23 @@ import static org.junit.Assert.assertTrue;
  * Where the quadratic sieve uses squares x^2 on the left side, subtracts n and then
  * sieve on the right side over y = x^2 - n. Then the numbers y to be sieved on are bigger than n^1/2.
  * The numbers on the right have to be smooth.
- * In this variant we have to find 4 smooth numbers. 3 of size n^(1/3) and one of n^(5/12).
+ * In this variant we have to find 5 smooth numbers. All of size n^(1/4).
  * This variant gives up on using squares on the left side. We have a smooth number, which is a
- * product of 3 numbers, which have nearly the same size. After subtracting n the number (again)
- * is of size n^(5/12).
- * We can always find the three numbers (x+a) * (x+b) * (x+c) on the left such that
- *  (x+a) * (x+b) * (x+c) - n = < n^(5/12)
- * But these numbers do not have to be smooth. since we have to try only f(n) less than polynomial
- * (ascending) numbers to find them all smooth, we can find a smooth relation in < f(n)/64 time.
- * We take x = ceil(n^(1/3))
- * x^3 - n = r < 3 x^2 ~ 3*n^2/3
- * a = ceil(sqrt(4/3 * r/x)) > 0 , a even
- * b = -a/2 + k < 0
- * c = -a/2 - k < 0
- * -> a+b+c = 0 and c = -(a+b)
- * a = sqrt(4/3 * r/x) - e , o <= e < 2 , for a even but not smooth. e can be higher when smooth
- * k = round (sqrt (a *(a^2/4 + 3/2 ex)/(x+a))) or better
- * k = round (sqrt ((3/2 ex (a-e/2) + a^3/4) / (x+a)))
- *
- *
- *
- * (x+a) * (x+b) * (x+c) - n =
- * x^3 + (a+b+c) * x^2 + (ab + c(a+b)) * x + a*b*c - n =    | since a+b+c = 0
- * r +  (ab + c(a+b)) * x + a*b*c =
- * r +  (ab - c^2) * x + a*b*c =
- * r +  (a*(-a/2+k) - (a/2+k)^2) * x + abc =
- * r + (-a^2/2 + ak - (a/2)^2 - ak - k^2) * x + abc =
- * r + (-3/4a^2 - k^2) * x + a*b*c =                      | a = sqrt(4/3 * r/x) - e , o <= e < 2
- * r + (-3/4(sqrt(4/3 * r/x) - e)^2 - k^2) * x + a*b*c =
- * r + (-3/4(4/3 * r/x - 2*sqrt(4/3 * r/x)e + e^2) - k^2) * x + a*b*c =    | a' = sqrt(4/3 * r/x)
- * r + (-r/x - 3/2a'e - 3/4e^2 - k^2) * x + a*b*c =
- * r + -r - 3/2a'ex - 3/4xe^2 - k^2x + a*b*c =         | 3e/2*sqrt(4/3 r/x)*x =  sqrt(3 rx) e
- * -3/2 ex (a'-e/2) - k^2x + a * (-a/2 + k) * (-a/2 - k) =
- * -3/2 ex (a'-e/2) - k^2x + a * ((a/2)^2 - k^2) =
- * -3/2 ex (a'-e/2) - k^2(x+a) + a^3/4 =
- * -3/2 exa' - k^2(x+a) + a^3/4 + 3/4 xe^3 =
- * -3/2 exa - k^2(x+a) + a^3/4 + O(n^(1/3))    |  k = sqrt((3/2 exa' + a^3/4) / (x+a)) + d
- * -3/2 exa - (sqrt((3/2 exa + a^3/4) / (x+a)) - d)^2*(x+a) + a^3/4 + O(n^(1/3))
- * -3/2 exa - ((3/2 exa + a^3/4) / (x+a) - d * sqrt((3/2 exa + a^3/4) / (x+a)) + d^2 )(x+a) + a^3/4 + O(n^(1/3))
- * -3/2 exa - (3/2 exa + a^3/4) + d * sqrt((3/2 exa + a^3/4)(x+a)) + d^2 (x+a) + a^3/4 + O(n^(1/3))
- *                                d * sqrt((3/2 exa + a^3/4)(x+a)) +/- O(d*n^(1/3))
- *
- * since
- *  a = sqrt(4/3 * r/x) - e    |  o <= e < 2 we want 'a' to be even
- *  a < sqrt(4/3 * 2n^(2/3) / n^(1/3)) - e  | r < 2n^(2/3) , in average r  ~ n^(2/3)
- *  a < sqrt(8/3 * n^(1/3)) - e  | r < 2n^2/3 , in average r  ~ n^2/3
- *  a < a' n^1/6   | a' < 1.64
- *
- *  (x+a) * (x+b) * (x+c) - n =
- *  d * sqrt((3/2 exa        + a^3/4)(x+a)) +/- O(d*n^(1/3)) <
- *  d * sqrt((3/2 en^(1/3)*a'n^1/6 + a'n^(3/6)(n^(1/3) + a'n^(1/6))) +/- O(d*n^(1/3))
- +  d * sqrt((3/2 ea' * n^(1/2) + a'n^(1/2)(n^(1/3) + a'n^(1/6))) +/- O(d*n^(1/3))
- *  d * sqrt(((3/2 ea'+ a') * n^(1/2))(n^(1/3) + a'n^(1/6))) +/- O(d*n^(1/3))
- *  d * sqrt(3/2 ea'+ a') * n^(1/2))*n^(1/3)) +/- O(d*n^(1/3))
- *  d * sqrt(3/2 ea'+ a') * n^(5/6)) +/- O(d*n^(1/3))
- *  d * sqrt(3/2 ea'+ a')) * n^(5/12)) +/- O(d*n^(1/3))<
- *  d * sqrt(2.5 * e + 1.64) *  n^(5/12)) +/- O(d*n^(1/3))
- *-----------------------------------------------------------------------------------------------------------
- * k^2(x+a) = -3/2 ex (a-e/2) + a^3/4
- * k^2 = (-3/2 ex (a-e/2) + a^3/4) / (x+a)
- * k = sqrt((-3/2 exa + a^3/4) / (x+a)) + d
- *
- *  a = sqrt(4/3 * r/x) - e    |  o <= e < 2 we want 'a' to be even
- *  a < sqrt(4/3 * 2n^2/3 / n^1/3) - e  | r < 2n^2/3 , in average r  ~ n^2/3
- *  a < sqrt(8/3 * n^1/3) - e  | r < 2n^2/3 , in average r  ~ n^2/3
- *  a < a' n^1/3   | a' < 1.64
- *
- * k = round (sqrt (a *(a^2/4 + 3/2 ex)/(x+a)))
- * k = sqrt (a *(a^2/4 + 3/2 ex)/(x+a)) + d , |d| <=.5
- *
- * k = sqrt (a *(a^2/4 + 3/2 ex)/(x+a)) < sqrt( 3n^1/6 * (9/4 n^1/3 + 9/2 n^1/3) / n^1/3)
- *  = sqrt( 81/4 n^1/2) / n^1/3) = sqrt( 81/4 n^1/6) = 9/2 n^1/12
- *
- * |(x+a) * (x+b) * (x+c) - n| = |3/2 exa - 3/4xe^2 - k^2(x+a) + a^3/4|
- * <  |-3/4 n^1/3 +  3/2 exa  - (sqrt (a *(a^2/4 + 3/2 ex))/(x+a) + d)^2(x+a) + a^3/4|
- * <  |-3/4 n^1/3 +  3/2 exa  - ((a +(a^2/4 + 3/2 ex)/(x+a) + 2d * sqrt (a *(a^2/4 + 3/2 ex)/(x+a)) + d^2)(x+a) + a^3/4|
- * <  |-3/4 n^1/3  + 2d * sqrt (a *(a^2/4 + 3/2 ex)/(x+a))*(x+a) + d^2*(x+a)|
- * <  |-3/4 n^1/3  + 2d * sqrt (a *(a^2/4 + 3/2 ex)*(x+a)) + d^2*(x+a)|
- * <  |-3/4 n^1/3  + 2d * sqrt (2 n^1/6 *(n^1/3 + 3/2 n^1/3)*n^1/3) + d^2*(x+a)|
- * < |-3/4 n^1/3  + 5d * n^5/12 + d^2 n^1/3|
- *
- *
- *
- *  b = -a*f + k < 0
- *  c = -a*(1-f) - k < 0
- *  -> a+b+c = 0 and c = -(a+b)
- *  *
- *  (x+a) * (x+b) * (x+c) - n =
- *  x^3 + (a+b+c) * x^2 + (ab + c(a+b)) * x + a*b*c - n =    | since a+b+c = 0
- *  r +  (ab + c(a+b)) * x + a*b*c =
- *  r +  (ab - c^2) * x + a*b*c =
- *  r +  (a*(-a*f+k) - (a*(1-f)+k)^2) * x + abc =
- *  r + (-a^2*f + ak - (a*(1-f))^2 - 2(1-f)ak - k^2) * x + abc =
- *  r + (-a^2*f + ak - (a^2*(1-2f+f^2)) - (2-2f)ak - k^2) * x + abc =
- *  r + ( (a^2*(1-f+f^2)) - (1-2f)ak - k^2) * x + abc =
- *  r + ( (a^2*(1-f+f^2)) - (2-2f)ak - k^2) * x + abc =
- *
- *  * r + (-3/4a^2 - k^2) * x + a*b*c =                      | a = sqrt(4/3 * r/x) - e
- *  * r + (-3/4(sqrt(4/3 * r/x) - e)^2 - k^2) * x + a*b*c =
- *  * r + (-3/4(4/3 * r/x - 2sqrt(4/3 * r/x)e + e^2) - k^2) * x + a*b*c =
- *  * r + (-r/x - 3/2ae - 3/4e^2 - k^2) * x + a*b*c =
- *  * r + -r - 3/2aex - 3/4xe^2 - k^2x + a*b*c =         | 3e/2*sqrt(4/3 r/x)*x =  sqrt(3 rx) e
- *  * -3/2 ex (a-e/2) - k^2x + a * (-a/2 + k) * (-a/2 - k) =
- *  * -3/2 ex (a-e/2) - k^2x + a * ((a/2)^2 - k^2) =
- *  * -3/2 ex (a-e/2) - k^2(x+a) + a^3/4
- *
- * */
-public class QubicLookupSieve extends FactorAlgorithm {
+ * product of 4 numbers, which have nearly the same size.
+ * In a first step we consider numbers of the form (x-t) and (x+t).
+ * Then (x-t) * (x+t) = x^2 - t^2. we take x > n^1/2 and try to approximate r = x^2 - n with t^2.
+ * So t ~ n^1/4.
+ * since x-t nad x+t are of size n^1/2 we try to reduce this numbers by writing as a product of two numbers of similar
+ * size. this is y = x+t = (z+s)*(z-s) = z^2 - s^2.
+ * If we have a data structure which can iterate over smooth numbers in an ascending and descending order
+ * starting at a certain point z,
+ * and can apply an and operation on this, we can iterate over the smooth numbers (z+s)*(z-s) = z^2 - s^2
+ * again we calculate z^2 > y, z ~ n^1/4.
+ * z^2 - y = m, we need m to be a square. We determine the distance to the next higher square by
+ * s = ceil(sqrt(m))^2 and add this to y. The distance is around n^1/4.
+ * So we have y+s = z^2 - s^2 = (z+s)*(z-s). we look up if this number is smooth.
+*/
+public class QuadroLookupSieve extends FactorAlgorithm {
 
     static int [] primes = {2,3,5,7,11,13,17,19,23,29,31,37,41,43,47,53,59,61,67,71,73,79,83,89,97,101,
             103,107,109,113,127,131,137,139,149,151,157,163,167,173,179,181,191,193,197,
@@ -215,6 +123,7 @@ public class QubicLookupSieve extends FactorAlgorithm {
 			9949,9967,9973,10007,10009,10037,10039,10061,10067,10069,10079,10091,10093*/};
     int smoothBound;
     BitSet smoothNumber;
+    BitSet smoothNumberReverse;
     short[] maxFactor;
     double smoothExpLower = .1;
     double smoothExpHigher = .15;
@@ -225,20 +134,20 @@ public class QubicLookupSieve extends FactorAlgorithm {
 
     TDiv31Barrett smallFactoriser = new TDiv31Barrett();
 
-    public QubicLookupSieve(int bitsN) {
+    public QuadroLookupSieve(int bitsN) {
+        initSmoothNumbers();
         this.bitsN = bitsN;
     }
 
 
 
     public long findSingleFactor(long n) {
-        initSmoothNumbers();
         int factorBaseSize = (int) factorBaseSize(n);
         int factorBase []= Arrays.copyOf(primes, factorBaseSize);
         int factorBaseMax = factorBase [factorBaseSize-1];
         final TDiv63Inverse tdiv = new TDiv63Inverse(factorBase[factorBase.length -1]);
-        double nPowRightExponent = pow(n, 5.0 / 12.0);
-        System.out.println("n^5/12 : " + nPowRightExponent);
+        double nPowRightExponent = pow(n, .25);
+        System.out.println("n^1/4 : " + nPowRightExponent);
         System.out.println("n^1/2 : " + sqrt(n));
         int relations = 0;
 
@@ -252,70 +161,47 @@ public class QubicLookupSieve extends FactorAlgorithm {
             if (k != 1 && PrimeMath.isSquare(k))
                 continue;
             System.out.println("Next k : " + k);
-            long x = (int) ceil(cbrt(k*n));
-			long r = x*x*x - k*n;
+            long x = (int) ceil(sqrt(k*n));
+			long r = x*x - k*n;
 			// only one division
-			final double aRaw = sqrt(4.0 * r / (3.0 * x));
-			int a = (int) floor(aRaw);
-            a = a % 2 == 0 ? a : a-1;
-//            a += 2;
-            int xPlusA = (int) (x + a);
-            int xPlusAsmooth = xPlusA + 1;
-            int deltaA = 0;
-            do {
-                xPlusAsmooth= smoothNumber.previousSetBit(xPlusAsmooth - 1);
-                a = (int) (xPlusAsmooth - x);
-                // make a even
-            } while ((a) % 2 == 1);
-//            a += 2;
-			// k = sqrt((3/2 exa + a^3/4) / (x+a))
-			double e = a - aRaw;
-            double v1 = (a*a*a)/4.0;
-            double v2 = -3/2 * e * x * aRaw;
-            double v3 = -3/2 * e * x * (aRaw - e / 2);
-            double v4 = -sqrt(3 * r *x) * e;
-            final double v =v1 + v2;
-            final double w =v1 + v4;
-//            final double lRaw = sqrt(v / (x + a));
-            final double lRaw = sqrt(w / (xPlusAsmooth));
-            int l = (int) (floor (lRaw)) ;
-//            l -= 2;
-            l--;
-            int b = -a / 2 + l;
-            int c = -a / 2 - l;
-            int xPlusB = (int) (x + b);
-            int xPlusC = (int) (x + c);
-            int xPlusBSmooth = xPlusB - 1;
-            int xPlusCSmooth;
-            double dInitial = l - lRaw;
-            int y;
-            int deltaK;
-            do {
-                double d;
-                do {
-                    xPlusBSmooth = smoothNumber.nextSetBit(xPlusBSmooth + 1);
-                    deltaK = xPlusBSmooth - xPlusB;
-                    xPlusCSmooth = xPlusC - deltaK;
-                    d = dInitial + deltaK;
-                } while (!smoothNumber.get(xPlusCSmooth));
-                // now all numbers are smooth
-                y = (int) (xPlusAsmooth * xPlusBSmooth * xPlusCSmooth - k*n);
-                final double approxConstant = abs(d) * sqrt(-2.5 * e + 1.64);
-                double approximation = approxConstant * nPowRightExponent * k;
-                double realFactor = y / nPowRightExponent;
-                System.out.println("delta A  : " +e + " delta K " + d);
-                System.out.println("        y : " + y + " smooth : " + smoothNumber.get(abs(y)));
-                System.out.println(" approx y : " + approximation);
-                System.out.println(" real   factor y : " + realFactor);
-                System.out.println(" approx factor y : " + approxConstant);
-                System.out.println("x+a : " + xPlusAsmooth);
-                System.out.println("x+b : " + xPlusBSmooth);
-                System.out.println("x+c : " + xPlusCSmooth);
+            double tOpt = sqrt(r);  // ~ n^1/4
+            int nextDistLower = 0;
+            int number = (int) (x-tOpt);
+            int z = (int) ceil(sqrt(number));
+            // we might do a loop over numberSqrtCeil, with an adjusted yRange
+            int numberSqrtCeil = z;
+            int yRange = (int)sqrt(x);
+            yRange = (int) exp(sqrt(log(x) * log(log(x))));
+            BitSetWithOffset smoothAscendingFromLower = getSmoothNumbersInRange((int) (x-tOpt), numberSqrtCeil, yRange);
+            for (int yDiff = smoothAscendingFromLower.ysMinyOffset.nextSetBit(0); yDiff >= 0; yDiff = smoothAscendingFromLower.ysMinyOffset.nextSetBit(yDiff + 1)) {
+                // operate on index i here
+                if (yDiff == Integer.MAX_VALUE) {
+                    break; // or (i+1) would overflow
+                }
+                int y = smoothAscendingFromLower.yOffset + yDiff;
 
-            }while (y > 0);
+                int smoothLowerNumber = (z - y) * (z + y);
+                int complementNumber = (int) (x + (x - smoothLowerNumber));
+
+                int nDivLower = (int) (n / smoothLowerNumber);
+                int[] rep = potentiallySmoothFermat(nDivLower);
+
+                if (rep != null){
+
+                    System.out.println("found smooth (x-t) " + smoothLowerNumber + " and (x+t) " + complementNumber);
+                    int rest = (int) (smoothLowerNumber * complementNumber - k*n);
+                    System.out.println("smooth number  : " +smoothLowerNumber * complementNumber + " and rest " + rest);
+                }
+
+            }
+            while (nextDistLower != 0);
 
 
-            relations++;
+//            System.out.println(" yLower " + yLower + " yHigher " + yHigher);
+//            }while (true);
+
+
+//            relations++;
         }
         List<Row> smoothMatrix = finder.initMatrix();
         List<Row> reducedMatrix = finder.reduceMatrix(smoothMatrix);
@@ -327,6 +213,81 @@ public class QubicLookupSieve extends FactorAlgorithm {
         long factor = finder.doGaussElimination(reducedMatrix);
 
         return factor;
+    }
+
+    /**
+     * given a number we will return a BitSet of numbers y' and a yOffset
+     * stored in BitSetWithOffset
+     * with y = y' + yOffset
+     *
+     * z^2 - y^2 = (z - y) * (z + y) = number +/- 3 * number^1/4 * (sqrt(numberSqrt - sqrt(number)) * yRange
+     * with
+     * (z - y) and (z + y) being smooth
+     * z = ceil(sqrt(number)) + l
+     * ((z+l) + (y+k)) * ((z+l) z - (y+k)) = (z+l)^2 - (y+k)^2) = z^2 + 2zl + l^2 - y^2 -2ky - k^2
+     * = z^2 + 2zl + l^2 - y^2 -2ky - k^2
+     * y^2 = 2zl -> y = n^1/4* l^1/2
+     *
+     * @param number
+     * @return
+     */
+    // TODO provide an Iterator here
+    BitSetWithOffset getSmoothNumbersInRange(int number, int numberSqrt, int yRange) {
+        // if number is smaller than lookup table just return the Bitset
+        // do a loop with some higher numbers
+        int z = numberSqrt;
+
+        int diffNumberToSquare = z * z - number;
+        double yOptDouble = sqrt(diffNumberToSquare);   // <= sqrt(2*sqrt(number)) = sqrt(2)*number^1/4
+        // we try to write number = x^2 - y^2
+        int yOptInt = (int) round(yOptDouble);
+        // (y + yRange)^2 = y^2 + 2y * yRange + yRange^2 ~  2 * sqrt(2)*number^1/4 * yRange < 3 * *number^1/4 * yRange
+        int yRangeAdjust = yRange > yOptInt ? yOptInt : yRange;
+        int yBegin = yOptInt - yRangeAdjust;
+        // Z - Y_opt + range -> Z - y_opt  + range
+        int lowerProduct = z - yBegin;
+        // z + y_opt - range -> z + y_opt - range
+        int higherProduct = z + yBegin;
+//        int smoothRange = Math.max(64, 2 * yRange);
+        BitSet smoothAscendingFromHigher = smoothNumber.get(higherProduct, higherProduct + 2*yRangeAdjust);
+        BitSet smoothDescendingFromLower = smoothNumberReverse.get(smoothBound - lowerProduct, smoothBound - (lowerProduct - 2*yRangeAdjust));
+        smoothAscendingFromHigher.and(smoothDescendingFromLower);
+        return new BitSetWithOffset(smoothAscendingFromHigher, yBegin);
+    }
+
+    /**
+     * we want number = z^2 - y^2 = (z - y) * (z + y)
+     * z^2 = {0,1,4} - number mod 8
+     * With a mod 2^k argument we find some valid z'
+     * if we have some z
+     *
+     * @return
+     */
+    int[] potentiallySmoothFermat(int number) {
+        // do some mod arguments here. reuse Smoothumbers class!?
+        int numberMod8 = number % 8;
+        int higherSquareSqrt = (int) ceil(sqrt(number));
+        int z = higherSquareSqrt;
+
+        int zRange = (int) exp(sqrt(log(higherSquareSqrt) * log(log(higherSquareSqrt))));
+        do {
+            int zMod8 = higherSquareSqrt % 8;
+            int zSquaredMod8 = (higherSquareSqrt * higherSquareSqrt) % 8;
+
+            int diffNumberToSquare = higherSquareSqrt * higherSquareSqrt - number;
+            double yOptDouble = sqrt(diffNumberToSquare);   // <= sqrt(2*sqrt(number)) = sqrt(2)*number^1/4
+            // we try to write number = x^2 - y^2
+            int yOptInt = (int) round(yOptDouble);
+            if (yOptInt * yOptInt != diffNumberToSquare)
+                return null;
+            int lowerNumber = higherSquareSqrt - yOptInt;
+            int higherNumber = higherSquareSqrt + yOptInt;
+            if (smoothNumber.get(lowerNumber)) {
+                if (smoothNumber.get(higherNumber))
+                    return new int[]{lowerNumber, higherNumber};
+            }
+        } while (z < higherSquareSqrt + zRange);
+        return null;
     }
 
     public static long multiply(Multiset<Integer> factors) {
@@ -441,8 +402,10 @@ public class QubicLookupSieve extends FactorAlgorithm {
 
 //        for (int j=290; j > 0 ; j--){
         smoothNumber = new BitSet(smoothBound);
+        smoothNumberReverse = new BitSet(smoothBound);
 //        smoothPosHash = new BitSet(smoothBound);
         smoothNumber.set(1);
+        smoothNumberReverse.set(smoothBound - 1);
         int smoothCount = 0;
         for (long j = 2; j < smoothBound; j++) {
             double baseSize = factorBaseSize(j * j);
@@ -453,40 +416,11 @@ public class QubicLookupSieve extends FactorAlgorithm {
                 System.out.println();
             int factorIndex = smallFactoriser.findSingleFactorIndex((int) j, (int) baseSize) + 1;
             if (factorIndex > 0 && factorIndex < factorBaseSize) {
-                    smoothNumber.set((int) j);
+                smoothNumber.set((int) j);
+                smoothNumberReverse.set((int) (smoothBound - j));
             }
         }
         System.out.println("initialization ready ");
-    }
-
-
-    private void initPMinPlusI(long n) {
-        double nPow3Div8 = pow(n, .375);
-        int nPow1Div8 = (int) pow(n, .125);
-        int sqrtSearchIntervalX = 20;
-        smoothPI = new short[smoothBound][];
-        short[] smoothPIndex = new short[smoothBound];
-//        int p=1; // we might start even later
-        int pMinI= (int) smoothBound - 2*nPow1Div8*sqrtSearchIntervalX; // we might start even later
-        pMinI = smoothNumber.previousSetBit(pMinI);
-        while (pMinI > 0){
-            int iHalf = 0;
-            while (iHalf < nPow1Div8*sqrtSearchIntervalX){
-                if (smoothNumber.get(pMinI + 2*iHalf)){
-                    if (smoothPI[pMinI+iHalf] == null) {
-                        smoothPI[pMinI + iHalf] = new short[nPow1Div8 * sqrtSearchIntervalX];
-                        for (int i = 0; i< smoothPI[pMinI + iHalf].length; i++) {
-                            smoothPI[pMinI + iHalf][i] = Short.MAX_VALUE;
-                        }
-                        smoothPIndex[pMinI + iHalf] = 0;
-                    }
-                    smoothPI[pMinI+iHalf][smoothPIndex[pMinI+iHalf]] = (short) iHalf;
-                    smoothPIndex[pMinI+iHalf] = (short) (smoothPIndex[pMinI+iHalf]+1);
-                }
-                iHalf = smoothNumber.nextSetBit(pMinI + 2*iHalf +1) - (pMinI + iHalf);
-            }
-            pMinI = smoothNumber.previousSetBit(pMinI-1);
-        }
     }
 
     @Override

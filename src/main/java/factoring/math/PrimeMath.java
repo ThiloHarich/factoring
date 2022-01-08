@@ -202,9 +202,9 @@ public class PrimeMath {
 		return xMod;
 	}
 
-	public static int mod (long x, long mod)
+	public static long mod (long x, long mod)
 	{
-		int xMod = (int) (x % mod);
+		long xMod =  (x % mod);
 		if (xMod < 0)
 			xMod += mod;
 		return xMod;
@@ -883,6 +883,60 @@ public class PrimeMath {
 				}
 			}
 			final double tmp = small;
+			small = big;
+			big = tmp;
+		}
+		if (small == 1)
+			return 1;
+
+		return (long) big;
+	}
+
+	public static long gcdOneSmall (double a, double b)
+	{
+		if (a == 1 || b == 1)
+			return 1;
+
+		double big = Math.max(a, b);
+		double small = Math.min(a, b);
+
+		// since we know one number is small we directly do the mod step
+		big = big % small;
+		double tmp = small;
+		small = big;
+		big = tmp;
+
+
+		// usually we check here for small > 0; but handling small == 1 separately saves time
+		while (small > 1)
+		{
+			// do substractions for some time. The number of iterated substractions has a low impact on the performance
+			big -= small;         // big/small =1
+			if (big > small) {
+				big -= small;         // big/small =2
+				if (big > small) {
+					big -= small;         // big/small =3
+					if (big > small) {
+						big -= small;         // big/small =4
+						if (big > small) {
+							big -= small;         // big/small =5
+							if (big > small) {
+								big -= small;         // big/small =6
+								if (big > small) {
+									// we will calculate  big = big  % small in a different way.
+									// since big and small are usually not completely different in size, we
+									// approximate the quotient big/small by just looking at the length of the
+									// numbers. Then we subtract the small number shifted by the (log) of the approximation of the quotient from the
+									// bigger one.
+									//																			big = modByShiftAndSub(big, small);
+									big = big % small;
+								}
+							}
+						}
+					}
+				}
+			}
+			tmp = small;
 			small = big;
 			big = tmp;
 		}

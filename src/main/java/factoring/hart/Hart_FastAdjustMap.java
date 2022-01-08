@@ -21,6 +21,8 @@ import de.tilman_neumann.jml.factor.FactorAlgorithm;
 import de.tilman_neumann.jml.factor.tdiv.TDiv63Inverse;
 import de.tilman_neumann.jml.gcd.Gcd63;
 
+import static org.junit.Assert.assertEquals;
+
 /**
  * Here we implement the adjust a method by a map/array
  *
@@ -83,14 +85,15 @@ public class Hart_FastAdjustMap extends FactorAlgorithm {
 	private final TDiv63Inverse tdiv = new TDiv63Inverse(I_MAX);
 	private final Gcd63 gcdEngine = new Gcd63();
 
-	private final int[] adjustA = new int[1024];
+	private final byte[] adjustA = new byte[1024];
 
 	/**
 	 * Full constructor.
 	 * @param doTDivFirst If true then trial division is done before the Lehman loop.
 	 * This is recommended if arguments N are known to have factors < cbrt(N) frequently.
 	 */
-	public Hart_FastAdjustMap(boolean doTDivFirst) {
+	public
+	Hart_FastAdjustMap(boolean doTDivFirst) {
 		this.doTDivFirst = doTDivFirst;
 		// Precompute sqrts for all k < I_MAX
 		sqrt = new double[I_MAX];
@@ -134,18 +137,19 @@ public class Hart_FastAdjustMap extends FactorAlgorithm {
 		long a, b, test, gcd;
 		int k = K_MULT;
 		int knPlus1 = (int) (((k*N+1) & 31) << 5);
-		final int nMod32 = (int) ((2 * K_MULT * N & 31) << 5);
+//		final int nMod32 = (int) ((2 * K_MULT * N & 31) << 5);
+		final int nMod32 = (int) ((K_MULT * N & 31) << 5);
 		try {
 			for (int i=1; ;i++, k += K_MULT) {
 				// calculating the sqrt here is 5 times slower then storing it
 				a = (long) (sqrt4N * sqrt[i] + ROUND_UP_DOUBLE);
-				//				long				a1 = adjustA(N, a, k);
-				//				final int knPlus1Mod32 = (int) (((k*N+1) & 31) << 5);
-				//				assertEquals(knPlus1Mod32, knPlus1);
+//				long				a1 = adjustA(N, a, k);
+//				final int knPlus1Mod32 = (int) (((k*N+1) & 31) << 5);
+//				assertEquals(knPlus1Mod32, knPlus1);
 				final int aMod32 = (int) (a & 31);
 				final int index = knPlus1 |  aMod32 ;
 				a += adjustA[index];
-				//				assertEquals(a1, a);
+//				assertEquals(a1, a);
 				test = a*a - k * fourN;
 				b = (long) Math.sqrt(test);
 				if (b*b == test) {
@@ -153,15 +157,15 @@ public class Hart_FastAdjustMap extends FactorAlgorithm {
 						return gcd;
 					}
 				}
-				i++; k += K_MULT;
+/*				i++; k += K_MULT;
 				a = (long) (sqrt4N * sqrt[i] + ROUND_UP_DOUBLE);
-				//				a1 = adjustA(N, a, k);
+								a1 = adjustA(N, a, k);
 				a |= 1;
-				//				assertEquals(a1, a);
-				//				knPlus1 += nMod32;
-				//				if (knPlus1 >= 1024)
-				//					knPlus1 -= 1024;
-				//				assertEquals(a1, a);
+								assertEquals(a1, a);
+								knPlus1 += nMod32;
+								if (knPlus1 >= 1024)
+									knPlus1 -= 1024;
+								assertEquals(a1, a);
 				test = a*a - k * fourN;
 				b = (long) Math.sqrt(test);
 				if (b*b == test) {
@@ -171,7 +175,7 @@ public class Hart_FastAdjustMap extends FactorAlgorithm {
 				}
 				//								knPlus1 += nMod32;
 				//				if (knPlus1 >= 1024)
-				//					knPlus1 -= 1024;
+				//					knPlus1 -= 1024;*/
 				knPlus1 = (knPlus1 + nMod32) & 1023;
 			}
 		} catch (final ArrayIndexOutOfBoundsException e) {
