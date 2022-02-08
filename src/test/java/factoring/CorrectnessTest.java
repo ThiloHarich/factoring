@@ -8,9 +8,9 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
+import factoring.primes.Primes;
 import factoring.trial.TDiv23InverseFMA;
 import factoring.trial.TDiv31Barrett;
-import factoring.trial.TDiv52InverseFMA;
 import org.junit.Test;
 
 import com.google.common.collect.Multiset;
@@ -120,7 +120,8 @@ public class CorrectnessTest {
 		final int numPrimes = 1634;
 		final int loop = 20;
 		final int smallFactorBits = bits / 3;
-		final long[] semiprimes = PerformanceHard.makeSemiPrimesList(bits, numPrimes);
+		boolean readFromFile = false;
+		final long[] semiprimes = Primes.makeSemiPrimesList(bits, numPrimes, readFromFile);
 
 
 		long begin = (1L << bits) +1;

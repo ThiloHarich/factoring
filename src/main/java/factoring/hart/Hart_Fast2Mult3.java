@@ -71,7 +71,6 @@ public class Hart_Fast2Mult3 extends FactorAlgorithm {
 		kArr = new long[2*I_MAX];
 		sqrtKArr = new double[2*I_MAX];
 		int kCount = 0;
-		double count2 = 0;
 		for (int i=1; i<I_MAX; i++) {
 			long k1 = i*K_MULT1;
 			// ensure to not add a multiplier twice
@@ -80,24 +79,19 @@ public class Hart_Fast2Mult3 extends FactorAlgorithm {
 				sqrtKArr[kCount] = Math.sqrt(k1);
 				kCount++;
 			}
-			// in 6 out of 7 cases we add a new multiplier
-			if (count2 < 7)
+			if (i % 8 != 0)
 			{
 				long k2 = i * K_MULT2;
 				kArr[kCount] = k2;
 				sqrtKArr[kCount] = Math.sqrt(k2);
 				kCount++;
-				count2++;
-			}
-			else{
-				count2 = 0;
 			}
 		}
 	}
 
 	@Override
 	public String getName() {
-		return "Hart_Fast2Mult2(" + doTDivFirst + ")";
+		return "Hart_Fast2Mult3(" + doTDivFirst + ")";
 	}
 
 	@Override
@@ -153,9 +147,7 @@ public class Hart_Fast2Mult3 extends FactorAlgorithm {
 	 * if k*n == 1 mod 8 -> x = k*n+1 mod 16 or -k*n+1 mod 16
 	 * if k*n == 5 mod 8 -> x = k*n+1 mod 32 or -k*n+1 mod 32
 	 *
-	 * @param N
 	 * @param x
-	 * @param k
 	 * @return
 	 */
 	private long adjustA(long N, long x, long k) {

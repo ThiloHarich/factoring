@@ -13,34 +13,35 @@
  */
 package factoring.hart;
 
-import java.math.BigInteger;
-import java.util.HashSet;
-
-import org.apache.log4j.Logger;
-
 import de.tilman_neumann.jml.factor.FactorAlgorithm;
 import de.tilman_neumann.jml.factor.tdiv.TDiv63Inverse;
 import de.tilman_neumann.jml.gcd.Gcd63;
 import de.tilman_neumann.util.ConfigUtil;
+import org.apache.log4j.Logger;
+
+import java.math.BigInteger;
+import java.util.*;
+import java.util.function.IntConsumer;
+import java.util.stream.IntStream;
 
 /**
  * Possibly slightly faster variant of class Hart_Fast2Mult.
  *
  * @authors Thilo Harich & Tilman Neumann
  */
-public class Hart_Fast2Mult2 extends FactorAlgorithm {
-	private static final Logger LOG = Logger.getLogger(Hart_Fast2Mult2.class);
+public class Hart_Fast2MultStream extends FactorAlgorithm {
+	private static final Logger LOG = Logger.getLogger(Hart_Fast2MultStream.class);
 
 	// k multipliers. These are applied alternately; thus we kind of investigate two k-sets of different size "in parallel".
 	// These two multipliers turned out to be the fastest in case of two sets. Three or more sets seemed to give a slowdown.
-	private static final long K_MULT1 = 3465;
-	private static final long K_MULT2 = 315;
+	private static final long K_MULT1 = 315;
+	static int bulkSize = 1024;
 
 	/**
 	 * Size of arrays: this is around 4*n^1/3.
 	 * 2^21 should work for all number n up to 2^52.
 	 */
-	private static final int I_MAX = 1<<21;
+	private static int I_MAX = 1<<21;
 
 	/** This constant is used for fast rounding of double values to long. */
 	private static final double ROUND_UP_DOUBLE = 0.9999999665;
@@ -49,6 +50,7 @@ public class Hart_Fast2Mult2 extends FactorAlgorithm {
 
 	private final long[] kArr;
 	private final double[] sqrtKArr;
+	List<Integer> bulkArray = new ArrayList<>();
 
 	private final TDiv63Inverse tdiv = new TDiv63Inverse(I_MAX);
 	private final Gcd63 gcdEngine = new Gcd63();
@@ -60,12 +62,15 @@ public class Hart_Fast2Mult2 extends FactorAlgorithm {
 	 * With doTDivFirst=false, this implementation is pretty fast for hard semiprimes.
 	 * But the smaller possible factors get, it will become slower and slower.
 	 */
-	public Hart_Fast2Mult2(boolean doTDivFirst) {
+	public Hart_Fast2MultStream(boolean doTDivFirst, int numberLength) {
 		this.doTDivFirst = doTDivFirst;
+
+		I_MAX = (1 << (numberLength/3 + 2) );
 		// Precompute all required sqrt(k) for i < I_MAX
 		HashSet<Long> kSet = new HashSet<>();
 		kArr = new long[2*I_MAX];
 		sqrtKArr = new double[2*I_MAX];
+//		bulkArray = new int[I_MAX/16];
 		int kCount = 0;
 		for (int i=1; i<I_MAX; i++) {
 			long k1 = i*K_MULT1;
@@ -77,14 +82,8 @@ public class Hart_Fast2Mult2 extends FactorAlgorithm {
 				kCount++;
 			}
 
-			long k2 = i*K_MULT2;
-			double sqrt2 = Math.sqrt(k2);
-			if (!kSet.contains(k2)) {
-				kArr[kCount] = k2;
-				sqrtKArr[kCount] = sqrt2;
-				kSet.add(k2);
-				kCount++;
-			}
+			if (kCount % bulkSize == 0)
+				bulkArray.add(kCount);
 		}
 	}
 
@@ -120,20 +119,31 @@ public class Hart_Fast2Mult2 extends FactorAlgorithm {
 		final double sqrt4N = sqrtN*2;
 		long a, b, test, gcd;
 		try {
-			for (int i=0; ; i++) {
-				long k = kArr[i];
-				a = adjustA(N, (long) Math.fma(sqrt4N, sqrtKArr[i], ROUND_UP_DOUBLE), k);
-//				a = adjustA(N, (long) (sqrt4N * sqrtKArr[i] + ROUND_UP_DOUBLE), k);
-				test = a*a - k * fourN;
-				b = (long) Math.sqrt(test);
-				if (b*b == test && (gcd = gcdEngine.gcd(a+b, N))>1 && gcd<N) {
-					return gcd;
-				}
-			}
+			Optional<Integer> factorOpt = bulkArray.stream().filter(bulk -> findFactor(N, fourN, sqrt4N, bulk) > 0).findAny();
+//			OptionalInt factorOpt = IntStream.range(0, I_MAX).map(bulk -> findFactor(N, fourN, sqrt4N, bulkSize, bulk * bulkSize)).findFirst();
+			return factorOpt.isPresent() ? factorOpt.get() : -1;
 		} catch (final ArrayIndexOutOfBoundsException e) {
 			LOG.error("Hart_Fast2Mult2: Failed to factor N=" + N + ". Either it has factors < cbrt(N) needing trial division, or the arrays are too small.");
 			return 1;
 		}
+	}
+
+	private int findFactor(long N, long fourN, double sqrt4N, int bulk) {
+		long gcd;
+		long b;
+		long a;
+		long test;
+		for (int i = bulk; i < bulk + bulkSize; i++) {
+			long k = kArr[i];
+			a = adjustA(N, (long) Math.fma(sqrt4N, sqrtKArr[i], ROUND_UP_DOUBLE), k);
+//				a = adjustA(N, (long) (sqrt4N * sqrtKArr[i] + ROUND_UP_DOUBLE), k);
+			test = a * a - k * fourN;
+			b = (long) Math.sqrt(test);
+			if (b * b == test && (gcd = gcdEngine.gcd(a + b, N)) > 1 && gcd < N) {
+				return (int) gcd;
+			}
+		}
+		return -1;
 	}
 
 	/**
@@ -295,7 +305,7 @@ public class Hart_Fast2Mult2 extends FactorAlgorithm {
 				9170754184293724117L, // 63 bit
 		};
 
-		Hart_Fast2Mult2 holf = new Hart_Fast2Mult2(false);
+		Hart_Fast2MultStream holf = new Hart_Fast2MultStream(false, 21);
 		for (long N : testNumbers) {
 			long factor = holf.findSingleFactor(N);
 			LOG.info("N=" + N + " has factor " + factor);

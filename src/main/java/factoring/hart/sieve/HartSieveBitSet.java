@@ -27,7 +27,6 @@ import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import org.apache.commons.math3.analysis.integration.RombergIntegrator;
 import org.apache.log4j.Logger;
 
 import com.google.common.collect.ImmutableSet;

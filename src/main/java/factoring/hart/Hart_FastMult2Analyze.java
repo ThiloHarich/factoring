@@ -14,8 +14,11 @@
 package factoring.hart;
 
 import java.math.BigInteger;
-import java.util.HashSet;
+import java.util.*;
+import java.util.stream.Collectors;
 
+import de.tilman_neumann.jml.factor.tdiv.TDiv31Barrett;
+import factoring.primes.Primes;
 import org.apache.log4j.Logger;
 
 import de.tilman_neumann.jml.factor.FactorAlgorithm;
@@ -28,19 +31,25 @@ import de.tilman_neumann.util.ConfigUtil;
  *
  * @authors Thilo Harich & Tilman Neumann
  */
-public class Hart_Fast2Mult2 extends FactorAlgorithm {
-	private static final Logger LOG = Logger.getLogger(Hart_Fast2Mult2.class);
+public class Hart_FastMult2Analyze extends FactorAlgorithm {
+	private static final Logger LOG = Logger.getLogger(Hart_FastMult2Analyze.class);
 
 	// k multipliers. These are applied alternately; thus we kind of investigate two k-sets of different size "in parallel".
 	// These two multipliers turned out to be the fastest in case of two sets. Three or more sets seemed to give a slowdown.
-	private static final long K_MULT1 = 3465;
-	private static final long K_MULT2 = 315;
+//	private static final long K_MULT1 = 15;
+//	public static final long K_MULT1 = 45;
+//	public static final long K_MULT1 = 3415 * 13;
+//	public static final long K_MULT2 = 3415;
+	public static final long K_MULT1 = 315;
+//	public static final long K_MULT1 = 1;
+
+
 
 	/**
 	 * Size of arrays: this is around 4*n^1/3.
 	 * 2^21 should work for all number n up to 2^52.
 	 */
-	private static final int I_MAX = 1<<21;
+	public static int I_MAX = 1<<21;
 
 	/** This constant is used for fast rounding of double values to long. */
 	private static final double ROUND_UP_DOUBLE = 0.9999999665;
@@ -53,6 +62,12 @@ public class Hart_Fast2Mult2 extends FactorAlgorithm {
 	private final TDiv63Inverse tdiv = new TDiv63Inverse(I_MAX);
 	private final Gcd63 gcdEngine = new Gcd63();
 
+	public static int[] multiplierScore;
+	public static List<Set<Integer>> semiPrimeToMultiplier = new ArrayList<>();
+	public static Map<Integer,Set<Integer>> multiplierToSemiPrime = new HashMap<>();
+
+
+
 	/**
 	 * Full constructor.
 	 * @param doTDivFirst If true then trial division is done before the Hart loop.
@@ -60,31 +75,38 @@ public class Hart_Fast2Mult2 extends FactorAlgorithm {
 	 * With doTDivFirst=false, this implementation is pretty fast for hard semiprimes.
 	 * But the smaller possible factors get, it will become slower and slower.
 	 */
-	public Hart_Fast2Mult2(boolean doTDivFirst) {
+	public Hart_FastMult2Analyze(boolean doTDivFirst, int numberLength) {
 		this.doTDivFirst = doTDivFirst;
+
+		I_MAX = (1 << (numberLength/3 + 2) );
+		I_MAX = 10000;
 		// Precompute all required sqrt(k) for i < I_MAX
 		HashSet<Long> kSet = new HashSet<>();
 		kArr = new long[2*I_MAX];
 		sqrtKArr = new double[2*I_MAX];
+		if (multiplierScore == null)
+			multiplierScore = new int[2*I_MAX];
 		int kCount = 0;
 		for (int i=1; i<I_MAX; i++) {
 			long k1 = i*K_MULT1;
 			double sqrt1 = Math.sqrt(k1);
-			if (!kSet.contains(k1)) {
+//			if (!kSet.contains(k1))
+			{
 				kArr[kCount] = k1;
 				sqrtKArr[kCount] = sqrt1;
 				kSet.add(k1);
 				kCount++;
 			}
 
-			long k2 = i*K_MULT2;
-			double sqrt2 = Math.sqrt(k2);
-			if (!kSet.contains(k2)) {
-				kArr[kCount] = k2;
-				sqrtKArr[kCount] = sqrt2;
-				kSet.add(k2);
-				kCount++;
-			}
+//			long k2 = i*K_MULT2;
+//			double sqrt2 = Math.sqrt(k2);
+//			if (!kSet.contains(k2))
+//			{
+//				kArr[kCount] = k2;
+//				sqrtKArr[kCount] = sqrt2;
+//				kSet.add(k2);
+//				kCount++;
+//			}
 		}
 	}
 
@@ -95,15 +117,15 @@ public class Hart_Fast2Mult2 extends FactorAlgorithm {
 
 	@Override
 	public BigInteger findSingleFactor(BigInteger N) {
-		return BigInteger.valueOf(findSingleFactor(N.longValue()));
+		return BigInteger.valueOf(findSingleFactor(N.longValue(), 0));
 	}
 
 	/**
 	 * Find a factor of long N.
-	 * @param N
+	 *
 	 * @return factor of N
 	 */
-	public long findSingleFactor(long N) {
+	public long findSingleFactor(long N, int numberIndex) {
 		if (doTDivFirst) {
 			// do trial division before the Hart loop
 			tdiv.setTestLimit((int) Math.cbrt(N));
@@ -119,21 +141,52 @@ public class Hart_Fast2Mult2 extends FactorAlgorithm {
 		final long fourN = N<<2;
 		final double sqrt4N = sqrtN*2;
 		long a, b, test, gcd;
+		List<Integer> multipliers = new ArrayList<>();
+		FactorAlgorithm factorizer = new TDiv31Barrett();
+		double qDivq = 0;
+
 		try {
-			for (int i=0; ; i++) {
+			for (int i=0; i < I_MAX; i++) {
 				long k = kArr[i];
-				a = adjustA(N, (long) Math.fma(sqrt4N, sqrtKArr[i], ROUND_UP_DOUBLE), k);
-//				a = adjustA(N, (long) (sqrt4N * sqrtKArr[i] + ROUND_UP_DOUBLE), k);
-				test = a*a - k * fourN;
+				a = adjustA(N, (long) (sqrt4N * sqrtKArr[i] + ROUND_UP_DOUBLE), k);
+				final long aSquared = a * a;
+				// even if we have an overflow in aSquared and/or k * fourN the diff will be correct
+				test = aSquared - k * fourN;
+				// if test is a square then the square can be found with Math.sqrt on double's
 				b = (long) Math.sqrt(test);
 				if (b*b == test && (gcd = gcdEngine.gcd(a+b, N))>1 && gcd<N) {
-					return gcd;
+
+					qDivq = ((double)N/gcd)/gcd;
+//					multiplierSuccessful.add(i+1);
+					final int multiplier = i + 1;
+//					if (multiplier == 945)
+//						System.out.println();
+					multiplierScore[multiplier] += 1.0;
+					multipliers.add(multiplier);
+					if (multiplierToSemiPrime.get(multiplier) == null){
+						multiplierToSemiPrime.put(multiplier, new HashSet<>());
+					}
+					multiplierToSemiPrime.get(multiplier).add(numberIndex);
 				}
 			}
 		} catch (final ArrayIndexOutOfBoundsException e) {
 			LOG.error("Hart_Fast2Mult2: Failed to factor N=" + N + ". Either it has factors < cbrt(N) needing trial division, or the arrays are too small.");
-			return 1;
 		}
+		System.out.println(qDivq);
+		if (numberIndex != semiPrimeToMultiplier.size())
+			System.out.println();
+		for (int index :
+				multipliers) {
+			System.out.println(index + ":  " + factorizer.factor(BigInteger.valueOf(index)));
+		}
+		semiPrimeToMultiplier.add(new HashSet<>(multipliers));
+
+//		if (multiplierSuccessful.size() < 100)
+//			System.out.println();
+//		for (int multiplier : multiplierSuccessful) {
+//			multiplierScore[multiplier] += 1.0/(multiplierSuccessful.size() - .2);
+//		}
+		return 1;
 	}
 
 	/**
@@ -153,10 +206,14 @@ public class Hart_Fast2Mult2 extends FactorAlgorithm {
 	 * @return
 	 */
 	private long adjustA(long N, long x, long k) {
-		if ((k&1)==0) return x | 1;
-
+		if ((k&1)==0) {
+			return x | 1;
+		}
 		final long kNp1 = k*N+1;
-		if ((kNp1 & 3) == 0) return x + ((kNp1 - x) & 7);
+
+		if ((kNp1 & 3) == 0) {
+			return x + ((kNp1 - x) & 7);
+		}
 
 		if ((kNp1 & 7) == 2) {
 			final long adjust1 = ( kNp1 - x) & 15;
@@ -169,11 +226,109 @@ public class Hart_Fast2Mult2 extends FactorAlgorithm {
 		return x + (adjust1 < adjust2 ? adjust1 : adjust2);
 	}
 
+	public static void storeAnalysis() {
+		int bits = 36;
+
+		int numPrimes = 25000;
+		int maxLoops = 1;
+		List<Integer> bestMultipliers = new ArrayList<>();
+		for (int loop = 0; loop < maxLoops; loop++) {
+			System.out.println("num primes : " + numPrimes * (loop + 1));
+			long[] semiprimes = Primes.makeSemiPrimesList(bits, numPrimes, true);
+
+			int loops = 100;
+			findFactors(semiprimes, loops, bits);
+
+			double entryLevel = 0;
+			List<HartSmoothMultiplier.Score> scores = new ArrayList<>();
+//			PriorityQueue<HartSmoothMulitplier.Score> scoreQueue = new PriorityQueue<>( (a, b) -> (int) Math.signum(b.score - a.score));
+			TreeSet<HartSmoothMultiplier.Score> scoreTree = new TreeSet<>();
+			int goodMultipliers = 0;
+			for (int i = 0; i < Hart_FastMult2Analyze.I_MAX; i++) {
+				if (Hart_FastMult2Analyze.multiplierScore[i] > entryLevel) {
+					HartSmoothMultiplier.Score score = new HartSmoothMultiplier.Score(Hart_FastMult2Analyze.multiplierScore[i], i);
+					scores.add(score);
+//					scoreQueue.add(score);
+					scoreTree.add(score);
+					goodMultipliers++;
+				}
+			}
+			calculateGoodMultipliers(numPrimes, bestMultipliers, scores, scoreTree, goodMultipliers);
+			String goodMulti = bestMultipliers.stream().limit(20).map(s -> s.toString()).collect(Collectors.joining(","));
+			System.out.println(goodMulti);
+		}
+	}
+
+	private static void calculateGoodMultipliers(int numPrimes, List<Integer> bestMultipliers, List<HartSmoothMultiplier.Score> scores, TreeSet<HartSmoothMultiplier.Score> scoreTree, int goodMultipliers) {
+		FactorAlgorithm factorizer = new TDiv31Barrett();
+		int semiPrimesFound = 0;
+		int index = 0;
+		HartSmoothMultiplier.Score[] scoreArr = scores.toArray(new HartSmoothMultiplier.Score[goodMultipliers]);
+		Arrays.sort(scoreArr, (a, b) -> (int) Math.signum(b.score - a.score));
+		final String collect = Arrays.stream(scoreArr).limit(20).map(s -> s.toString()).collect(Collectors.joining("-  "));
+		System.out.println(collect);
+		int maxScore = Integer.MAX_VALUE;
+
+		while (maxScore > 10 && semiPrimesFound < numPrimes-1 && !scoreTree.isEmpty()) {
+//				System.out.println("Found : " + goodMultipliers + " good multipliers");
+
+			int bestMultiplier = scoreArr[0].index;
+//				final HartSmoothMulitplier.Score score = scoreQueue.peek();
+			final HartSmoothMultiplier.Score score = scoreTree.first();
+			bestMultiplier = score.index;
+			bestMultipliers.add(bestMultiplier);
+//				scoreQueue.remove();
+			scoreTree.remove(score);
+
+			maxScore = (int) score.score;
+			if (Math.ceil(score.score) != multiplierToSemiPrime.get(bestMultiplier).size())
+				System.out.println();
+			semiPrimesFound += multiplierToSemiPrime.get(bestMultiplier).size();
+
+			System.out.println(++index + " multiplier " + score.index + " new semiprimes Found: " + score.score + " : " + factorizer.factor(BigInteger.valueOf(score.index)) + " semis found : " + semiPrimesFound);
+
+			// now we delete all semiprimes found by the multiplier
+			final Set<Integer> semiPrimes = new HashSet<>(multiplierToSemiPrime.get(bestMultiplier));
+			Iterator<Integer> semiPrimeIter = semiPrimes.iterator();
+			while (semiPrimeIter.hasNext()) {
+				Integer semiPrimeFound = semiPrimeIter.next();
+				final Set<Integer> multipliers = semiPrimeToMultiplier.get(semiPrimeFound);
+				Iterator<Integer> multipliersWithSemiprimeToDelete = multipliers.iterator();
+				while (multipliersWithSemiprimeToDelete.hasNext()) {
+					final Integer multiplier = multipliersWithSemiprimeToDelete.next();
+//					if (multiplier == 675)
+//						System.out.println();
+					final Set<Integer> semiPrimesForMultiplier = multiplierToSemiPrime.get(multiplier);
+					HartSmoothMultiplier.Score oldScore = new HartSmoothMultiplier.Score(semiPrimesForMultiplier.size(), multiplier);
+					semiPrimesForMultiplier.remove(semiPrimeFound);
+					scoreTree.remove(oldScore);
+					if (multiplier != bestMultiplier) {
+						HartSmoothMultiplier.Score newScore = new HartSmoothMultiplier.Score(semiPrimesForMultiplier.size(), multiplier);
+						scoreTree.add(newScore);
+					}
+				}
+			}
+		}
+	}
+
+	protected static void findFactors(final long[] semiprimes, int loop, int bits) {
+		Hart_FastMult2Analyze factorizer = new Hart_FastMult2Analyze(false, bits);
+		int j = 0;
+		for (final Long semiprime : semiprimes) {
+				factorizer.findSingleFactor(semiprime, j);
+				j++;
+			//                factorizer1.factor(BigInteger.valueOf(semiprime));
+//				if (++j % 10000 == 0){
+//					System.out.println((100.0 * j / numPrimes) + "% of factorization done. factorized " + j + " semi primes");
+//				}
+		}
+	}
 	/**
 	 * Test.
 	 * @param args ignored
 	 */
 	public static void main(String[] args) {
+		storeAnalysis();
 		ConfigUtil.initProject();
 
 		// These test number were too hard for previous versions:
@@ -295,10 +450,10 @@ public class Hart_Fast2Mult2 extends FactorAlgorithm {
 				9170754184293724117L, // 63 bit
 		};
 
-		Hart_Fast2Mult2 holf = new Hart_Fast2Mult2(false);
-		for (long N : testNumbers) {
-			long factor = holf.findSingleFactor(N);
-			LOG.info("N=" + N + " has factor " + factor);
-		}
+//		Hart_FastMult2Analyze holf = new Hart_FastMult2Analyze(false, 1 << 21);
+//		for (long N : testNumbers) {
+//			long factor = holf.findSingleFactor(N);
+//			LOG.info("N=" + N + " has factor " + factor);
+//		}
 	}
 }

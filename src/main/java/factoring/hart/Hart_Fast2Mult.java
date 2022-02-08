@@ -76,7 +76,7 @@ public class Hart_Fast2Mult extends FactorAlgorithm {
 	 * Size of arrays: this is around 4*n^1/3.
 	 * 2^21 should work for all number n up to 2^52.
 	 */
-	private static final int I_MAX = 1<<21;
+	private static int I_MAX = 1<<21;
 
 	/** This constant is used for fast rounding of double values to long. */
 	private static final double ROUND_UP_DOUBLE = 0.9999999665;
@@ -94,8 +94,11 @@ public class Hart_Fast2Mult extends FactorAlgorithm {
 	 * With doTDivFirst=false, this implementation is pretty fast for hard semiprimes.
 	 * But the smaller possible factors get, it will become slower and slower.
 	 */
-	public Hart_Fast2Mult(boolean doTDivFirst) {
+	public Hart_Fast2Mult(boolean doTDivFirst, int numberLength) {
 		this.doTDivFirst = doTDivFirst;
+
+		I_MAX = (1 << (numberLength/3 + 2) );
+
 		// Precompute sqrts for all k < I_MAX
 		sqrt1 = new double[I_MAX];
 		sqrt2 = new double[I_MAX];
@@ -144,8 +147,8 @@ public class Hart_Fast2Mult extends FactorAlgorithm {
 			for (int i=1; ; i++, k1 += K_MULT1, k2 += K_MULT2) {
 				// using the fusedMultiplyAdd operation defined in IEEE 754-2008 gives ~ 4-8 % speedup
 				// but requires Java 9 and a Intel Haswell or AMD Piledriver CPU or later.
-				//a = (long) Math.fma(sqrt4N, sqrt1[i], ROUND_UP_DOUBLE);
-				a = (long) (sqrt4N * sqrt1[i] + ROUND_UP_DOUBLE);
+				a = (long) Math.fma(sqrt4N, sqrt1[i], ROUND_UP_DOUBLE);
+//				a = (long) (sqrt4N * sqrt1[i] + ROUND_UP_DOUBLE);
 				a = adjustA(N, a, k1);
 				test = a*a - k1 * fourN;
 				b = (long) Math.sqrt(test);
@@ -155,8 +158,8 @@ public class Hart_Fast2Mult extends FactorAlgorithm {
 				// the second parallel 45 * i loop gives ~4 % speedup if we
 				// avoid that we hit the same values as in the first 315 * i case
 				if (sqrt2[i] > Double.MIN_VALUE) {
-					//a = (long) Math.fma(sqrt4N, sqrt2[i], ROUND_UP_DOUBLE);
-					a = (long) (sqrt4N * sqrt2[i] + ROUND_UP_DOUBLE);
+					a = (long) Math.fma(sqrt4N, sqrt2[i], ROUND_UP_DOUBLE);
+//					a = (long) (sqrt4N * sqrt2[i] + ROUND_UP_DOUBLE);
 					a = adjustA(N, a, k2);
 					test = a*a - k2 * fourN;
 					b = (long) Math.sqrt(test);
@@ -325,7 +328,7 @@ public class Hart_Fast2Mult extends FactorAlgorithm {
 				3608228875180849937L, // 62 bit
 			};
 		
-		Hart_Fast2Mult holf = new Hart_Fast2Mult(false);
+		Hart_Fast2Mult holf = new Hart_Fast2Mult(false, 21);
 		for (long N : testNumbers) {
 			long factor = holf.findSingleFactor(N);
 			LOG.info("N=" + N + " has factor " + factor);

@@ -17,7 +17,6 @@ import de.tilman_neumann.jml.factor.FactorAlgorithm;
 import de.tilman_neumann.jml.factor.tdiv.TDiv63Inverse;
 import de.tilman_neumann.jml.gcd.Gcd63;
 import de.tilman_neumann.util.SortedMultiset;
-import org.apache.log4j.Logger;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -64,7 +63,7 @@ import static org.junit.Assert.assertTrue;
  * @authors Thilo Harich & Tilman Neumann
  */
 public class FermatXSquareMultiplied extends FactorAlgorithm {
-	private static final Logger LOG = Logger.getLogger(FermatXSquareMultiplied.class);
+//	private static final Logger LOG = Logger.getLogger(FermatXSquareMultiplied.class);
 	static int [] primes = {2,3,5,7,11,13,17,19,23,29,31,37,41,43,47,53,59,61,67,71,73,79,83,89,97,101,
 			103,107,109,113,127,131,137,139,149,151,157,163,167,173,179,181,191,193,197,
 			199,211,223,227,229,233,239,241,251,257,263,269,271,277,281,283,293,307,311,
@@ -273,7 +272,7 @@ public class FermatXSquareMultiplied extends FactorAlgorithm {
 				}
 			}
 		} catch (final ArrayIndexOutOfBoundsException e) {
-			LOG.error("Hart_Fast: Failed to factor N=" + N + ". Either it has factors < cbrt(N) needing trial division, or the arrays are too small.");
+//			LOG.error("Hart_Fast: Failed to factor N=" + N + ". Either it has factors < cbrt(N) needing trial division, or the arrays are too small.");
 			// TODO Or N is square
 			return 1;
 		}

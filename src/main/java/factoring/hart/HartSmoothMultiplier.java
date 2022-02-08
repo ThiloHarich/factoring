@@ -13,34 +13,98 @@
  */
 package factoring.hart;
 
-import java.math.BigInteger;
-import java.util.HashSet;
-
-import org.apache.log4j.Logger;
-
 import de.tilman_neumann.jml.factor.FactorAlgorithm;
 import de.tilman_neumann.jml.factor.tdiv.TDiv63Inverse;
 import de.tilman_neumann.jml.gcd.Gcd63;
 import de.tilman_neumann.util.ConfigUtil;
+import org.apache.log4j.Logger;
+
+import java.math.BigInteger;
+import java.util.Arrays;
+import java.util.Objects;
 
 /**
- * Possibly slightly faster variant of class Hart_Fast2Mult.
+ * This Algorithm tries to run the hart algorithm with smooth multipliers k
+ * This is finding x^2 - k*n = y^2.
+ * In order to achieve this we have a sieve stage to generate such numbers.
+ * All numbers are a multiple of  105 = 3 * 5 * 7.
+ * We say a number is a good multiplier if
+ * - it is small and
+ * - has many factors.
+ * - it is 0 or 3 mod 6
+ * Have many primes (but no squares) in the multiplier gives more possibilities to split the multiplier k = a * b in
+ * two factors a,b. If we can approximate the two factors p,q of N=p*q with the quotient a/b ~ p/q, then there
+ * should be a better chance to factor N' = N * a * b with the Lehman and/or Hart algorithm.
+ *
+ * This algorithm is based on the following facts:
+ * 1) If we write the factors p>q of the number n = p*q and
+ * and
+ *
+ * p*b = q*a + r
+ *
+ * this means we can approximate
+ * p/q = a/b + r/(q*b) if r is much lower than p*b we have a nice approximation
+ * since Fermat / Hart works nice when the number is a product of similar factors
+ * p' = p*b, q' = q*a. If we choose
+ * x = (p' + q')/2 = (p*b + q*a)/2 = (q*a + r + q*a)/2 = q*a + r/2
+ *
+ * then applying the equation x^2 - N' = y^2,
+ * N' = q' * p' = N*a*b = p*b * q*a = (q*a + r) * q*a = (q*a)^2 + q*a*r
+ *
+ * x^2 - N' = (q*a + r/2)^2 - (q*a)^2 - q*a*r
+ * = (q*a)^2 + (q*a)r + r^2/4  - (q*a)^2 * q*a*r
+ * = r^2/4
+ *
+ * if r is even we have x^2 - N = y^2, with y=r/2
+ *
+ * since x = q*a + r/2 must be an integer -> r must be even
+ *
+ *  example : p=59 , q = 19 -> a = 3, b=1 -> r=2
+ *  qa = 57
+ *  qb = 59
+ *  x = 58
+ *  N' = N*3 = 3363
+ *  x^2 = 3364
+ *  y=1
+ *
+ *  example : p=59 , q = 17 -> a = 3, b=1 -> r=8
+ *  qa = 51
+ *  qb = 59
+ *  x = 55
+ *  N' = N*3 = 3009
+ *  x^2 = 3025
+ *  y = 4
+ *
+ * But unfortunately we do not know p, q, a,b and such can not calculate x =  (p*b + q*a)/2 = q*a + r/2
+ * But we can take x = ceil(sqrt(N')).
+ * sqrt(N') = sqrt(p*b * q*a) = sqrt((q*a)^2 + q*a*r)
+ * =  sqrt((q*a)^2 * (1+ r/(q*a))) = q*a * sqrt(1+ r/(q*a)) ~ q*a +  (q*a)*(r/(2q*a)-(r/(8q*a))^2) = q*a + r/2 - r^2/(8q*a)
+ *
+ * It is only working for small k,r. r must be lower then the sqrt(q*a) ~ sqrt(p*b) ~ sqrt(k*p)
+ *
+ *  example : p=59 , q = 7 -> a = 3, b=1 -> r=38
+ *  qa = 21
+ *  qb = 59
+ *  x = 40
+ *  N' = N*3 = 1239
+ *  sqrt(N') = 35,2
+ *  x^2 = 1600
+ *  y = 4 *
+ *
+ * If we choose the multiplier m = a*b of x as a product of many (say k) factors (primes) we
+ * investigate in 2^k pairs (a,b) at one time.
+ *
  *
  * @authors Thilo Harich & Tilman Neumann
  */
-public class Hart_Fast2Mult2Analyze extends FactorAlgorithm {
-	private static final Logger LOG = Logger.getLogger(Hart_Fast2Mult2Analyze.class);
-
-	// k multipliers. These are applied alternately; thus we kind of investigate two k-sets of different size "in parallel".
-	// These two multipliers turned out to be the fastest in case of two sets. Three or more sets seemed to give a slowdown.
-	private static final long K_MULT1 = 3465;
-	private static final long K_MULT2 = 315;
+public class HartSmoothMultiplier extends FactorAlgorithm {
+	private static final Logger LOG = Logger.getLogger(HartSmoothMultiplier.class);
 
 	/**
 	 * Size of arrays: this is around 4*n^1/3.
 	 * 2^21 should work for all number n up to 2^52.
 	 */
-	private static final int I_MAX = 1<<21;
+	private static int I_MAX = 1<<21;
 
 	/** This constant is used for fast rounding of double values to long. */
 	private static final double ROUND_UP_DOUBLE = 0.9999999665;
@@ -53,9 +117,10 @@ public class Hart_Fast2Mult2Analyze extends FactorAlgorithm {
 	private final TDiv63Inverse tdiv = new TDiv63Inverse(I_MAX);
 	private final Gcd63 gcdEngine = new Gcd63();
 
-	public static int[] modCase = new int[64];
-	public static double[] modCaseK = new double[64];
-
+	// the numbers we want to have in the multiplier, many primes help to get the factors p,q of N of nearly the same size
+	// 6.5 indicates that we look for numbers .5 * 6 = 3 mod 6
+	public static double [] goodFactors = {2,3,5,6,6,6.5,7,11,13,17,19,23,29,31,37,41,43,47,53,59,61,67,71,73,79,83,89,97,101,
+			103,107,109,113,127,131,137,139,149};
 	/**
 	 * Full constructor.
 	 * @param doTDivFirst If true then trial division is done before the Hart loop.
@@ -63,54 +128,56 @@ public class Hart_Fast2Mult2Analyze extends FactorAlgorithm {
 	 * With doTDivFirst=false, this implementation is pretty fast for hard semiprimes.
 	 * But the smaller possible factors get, it will become slower and slower.
 	 */
-	public Hart_Fast2Mult2Analyze(boolean doTDivFirst) {
+	public HartSmoothMultiplier(boolean doTDivFirst, int numberLength) {
 		this.doTDivFirst = doTDivFirst;
-		// Precompute all required sqrt(k) for i < I_MAX
-		HashSet<Long> kSet = new HashSet<>();
-		kArr = new long[2*I_MAX];
-		sqrtKArr = new double[2*I_MAX];
+
+		// rough upper limit for the maximal index to be used by the algorithm
+		I_MAX = (1 << (numberLength/3 + 2) );
+
+		// since the good multipliers are independent of the number (size) we can store and read it from a file.
+		final int maxSieveIndex = I_MAX * 10;
+		float[] smoothNumberScore = new float[maxSieveIndex];
+
+		// sieve with numbers we want to have in the multiplier basically primes
+		// the score is just the count number of primes
+		for (int i = 0; i< goodFactors.length; i++){
+			int prime = (int)goodFactors[i];
+			int offset = (int) ((goodFactors[i] - prime) * prime);
+			for (int index = offset == 0 ? prime : offset; index < maxSieveIndex; index += prime){
+				smoothNumberScore[index] += Math.signum(prime);
+			}
+		}
+		Score[] scores = new Score[maxSieveIndex-1];
+		for (int i = 1; i < maxSieveIndex; i++) {
+			// we want to have higher smooth numbers, but do not forget the small once
+			double length = Math.pow(Math.log(i+5), .71);
+			// this heuristic was found by trial and error, no clue why it works, and if there might be better once.
+			Score score = new Score((smoothNumberScore[i] + 2)/ length, i);
+			scores[i-1] = score;
+		}
+		// sort according to the score
+		Arrays.sort(scores, (a,b) -> (int) Math.signum(b.score - a.score));
 		int kCount = 0;
-		//  1,3, 2, 5,7, 4,
-		//  2,4, 1, 6,8, 3,
-		// 4i-3
-		for (int i=1; i<I_MAX; i++) {
-			// add two odd numbers
-			int index1 = 4*i - 3;
-			int index2 = 4*i - 1;
-//			kCount = addSmoothSmallK(kSet, kCount, index1);
-//			kCount = addSmoothSmallK(kSet, kCount, index2);
-			// add one even number
-			final int index3 = 2 * i;
-//			kCount = addSmoothSmallK(kSet, kCount, index3);
-			kCount = addSmoothSmallK(kSet, kCount, i);
+		// Precompute all required sqrt(k) for i < I_MAX
+		kArr = new long[I_MAX];
+		sqrtKArr = new double[I_MAX];
 
+		for (int i = 0; i < I_MAX; i++) {
+			if (i<100)
+			System.out.println(""+  (i+1) + " number " + scores[i].index + " score " + scores[i].score  + " : " + tdiv.factor(BigInteger.valueOf(scores[i].index)));
+			// Having 3,5,7 as fixed multipliers helps
+			final int multiplier = scores[i].index * 3 * 5 * 7;
+			double sqrt = Math.sqrt(multiplier);
+			kArr[kCount] = multiplier;
+			sqrtKArr[kCount] = sqrt;
+			kCount++;
 		}
 	}
 
-	private int addSmoothSmallK(HashSet<Long> kSet, int kCount, int i) {
-		long k1 = i *K_MULT1;
-		double sqrt1 = Math.sqrt(k1);
-		if (!kSet.contains(k1)) {
-			kArr[kCount] = k1;
-			sqrtKArr[kCount] = sqrt1;
-			kSet.add(k1);
-			kCount++;
-		}
-
-		long k2 = i *K_MULT2;
-		double sqrt2 = Math.sqrt(k2);
-		if (!kSet.contains(k2)) {
-			kArr[kCount] = k2;
-			sqrtKArr[kCount] = sqrt2;
-			kSet.add(k2);
-			kCount++;
-		}
-		return kCount;
-	}
 
 	@Override
 	public String getName() {
-		return "Hart_Fast2Mult2(" + doTDivFirst + ")";
+		return "HartSmoothMultiplier(" + doTDivFirst + ")";
 	}
 
 	@Override
@@ -142,51 +209,14 @@ public class Hart_Fast2Mult2Analyze extends FactorAlgorithm {
 		try {
 			for (int i=0; ; i++) {
 				long k = kArr[i];
-				final long aOrig = (long) (sqrt4N * sqrtKArr[i] + ROUND_UP_DOUBLE);
-				a = adjustA(N, aOrig, k);
-				final long aSquared = a * a;
-				long aMod25 = a % 25;
-				long aSquaredMod25 = aSquared % 25;
-				long kFourNMod35 = (k * fourN) % 25;
-
-				if (aSquaredMod25 == kFourNMod35)
-					System.out.println();
-
-				test = aSquared - k * fourN;
+				a = adjustA(N, (long) Math.fma(sqrt4N, sqrtKArr[i], ROUND_UP_DOUBLE), k);
+//				a = adjustA(N, (long) (sqrt4N * sqrtKArr[i] + ROUND_UP_DOUBLE), k);
+				// we do not care about an overflow in a^2 or  k * fourN since the difference on the
+				// least significant bits works for bigger number as well
+				test = a*a - k * fourN;
+				// the sqrt on less precise double values is good enough, if the sqrt is a int value i.e. b*b == test
 				b = (long) Math.sqrt(test);
 				if (b*b == test && (gcd = gcdEngine.gcd(a+b, N))>1 && gcd<N) {
-					if ((k&1)==0) {
-						// prob = .5
-						modCase[0]++;
-						modCaseK[0]+= a - aOrig;
-						return gcd;
-					}
-					final long kNp1 = k*N+1;
-
-					if ((kNp1 & 3) == 0) {
-						// prob = .25
-						modCase[1]++;
-						modCaseK[1]+=a - aOrig;
-						return gcd;
-					}
-
-					if ((kNp1 & 7) == 2) {
-						// prob = .125
-						modCase[2]++;
-						modCaseK[2]+= a - aOrig;
-						return gcd;
-					}
-					// prob = .125
-					modCase[3]++;
-					modCaseK[3]+= a - aOrig;
-
-					if (kNp1 < 0)
-						System.out.println();
-
-					final long index = kNp1 % 32;
-					modCase[(int) (index + 32)]++;
-					modCaseK[(int) (index + 32)]+= a - aOrig;
-
 					return gcd;
 				}
 			}
@@ -199,8 +229,7 @@ public class Hart_Fast2Mult2Analyze extends FactorAlgorithm {
 	/**
 	 * Increases x to return the next possible solution for x for x^2 - 4kn = b^2.
 	 * Due to performance reasons we give back solutions for this equations modulo a
-	 * power of 2, since we can determine the solutions just by additions and binary
-	 * operations.
+	 * power of 2, since calculating an expensive mod for (a product) of primes does not pay out.
 	 *
 	 * if k is even x must be odd.
 	 * if k*n == 3 mod 4 -> x = k*n+1 mod 8
@@ -213,30 +242,37 @@ public class Hart_Fast2Mult2Analyze extends FactorAlgorithm {
 	 * @return
 	 */
 	private long adjustA(long N, long x, long k) {
-		if ((k&1)==0) {
-//			System.out.print("0");
-			return x | 1;
-		}
-		final long kNp1 = k*N+1;
+		if ((k&1)==0) return x | 1;
 
-		if ((kNp1 & 3) == 0) {
-//			System.out.print("1");
-			return x + ((kNp1 - x) & 7);
-		}
+		final long kNp1 = k*N+1;
+		if ((kNp1 & 3) == 0) return x + ((kNp1 - x) & 7);
 
 		if ((kNp1 & 7) == 2) {
-//			System.out.print("2");
 			final long adjust1 = ( kNp1 - x) & 15;
 			final long adjust2 = (-kNp1 - x) & 15;
 			return x + (adjust1 < adjust2 ? adjust1 : adjust2);
 		}
 
-//		System.out.print("3");
 		final long adjust1 = ( kNp1 - x) & 31;
 		final long adjust2 = (-kNp1 - x) & 31;
 		return x + (adjust1 < adjust2 ? adjust1 : adjust2);
 	}
 
+	public static class Score{
+		public double score;
+		public int index;
+
+		public Score(double score, int index) {
+			this.score = score;
+			this.index = index;
+		}
+
+		@Override
+		public String toString() {
+			return index +
+					":" + Math.ceil(score);
+		}
+	}
 	/**
 	 * Test.
 	 * @param args ignored
@@ -363,7 +399,7 @@ public class Hart_Fast2Mult2Analyze extends FactorAlgorithm {
 				9170754184293724117L, // 63 bit
 		};
 
-		Hart_Fast2Mult2Analyze holf = new Hart_Fast2Mult2Analyze(false);
+		HartSmoothMultiplier holf = new HartSmoothMultiplier(true, 43);
 		for (long N : testNumbers) {
 			long factor = holf.findSingleFactor(N);
 			LOG.info("N=" + N + " has factor " + factor);

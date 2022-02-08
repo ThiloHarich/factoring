@@ -1,15 +1,16 @@
 package factoring;
 
 import java.math.BigInteger;
-import java.util.Random;
+import java.util.*;
 
 import de.tilman_neumann.jml.factor.FactorAlgorithm;
+
+import de.tilman_neumann.jml.factor.tdiv.TDiv31Barrett;
 import de.tilman_neumann.jml.factor.tdiv.TDiv63Inverse;
 
 import factoring.hart.*;
-import factoring.hart.test.Hart_Fast2Mult2;
-import factoring.math.HartSmoothNumbers;
 import factoring.math.PrimeMath;
+import factoring.primes.Primes;
 
 //import de.tilman_neumann.math.factor.CombinedFactorAlgorithm;
 //import de.tilman_neumann.math.factor.FactorAlgorithm;
@@ -17,17 +18,24 @@ import factoring.math.PrimeMath;
 public class PerformanceHard {
 
 
-	final static int bits = 39;
-	final static int numPrimes = 100;
-	final static int loop = 9000;
-//		final static int loop = 1;
+//	2^(36/3) = 2^12 ~ 10^4
+	final static int bits = 42	;
+	final static int numPrimes = 20000;
+//	final static int loop = 9000;
+		final static int loop = 20;
 	static long[] semiprimes;
+	private static boolean readFromFile = false;
 
 	public static void main(String[] args) {
 		final PerformanceHard test = new PerformanceHard();
 		test.singleFactor();
 		//		factorize();
 		//		singleFactor();
+	}
+
+	private void analyzeMultipliers(){
+
+
 	}
 
 	private void singleFactor() {
@@ -73,9 +81,11 @@ public class PerformanceHard {
 //		final FactorAlgorithm factorizer2 = new Hart_FastNo9(false);
 //		final FactorAlgorithm factorizer1 = new Hart_FastNarrow(false);
 //		final FactorAlgorithm factorizer1 = new Hart_FastAdjustMap(false);
-		final FactorAlgorithm factorizer1 = new Hart_Fast2Mult3(false);
+//		final FactorAlgorithm factorizer1 = new Hart_Fast2Mult4(false);
 //		final FactorAlgorithm factorizer2 = new Hart_Fast2MultAdjustALookup(false);
-		final FactorAlgorithm factorizer2 = new Hart_Fast2Mult2(false);
+		final FactorAlgorithm factorizer2 = new Hart_Fast2Mult(false, bits);
+		final FactorAlgorithm factorizer1 = new HartSmoothMultiplier(false, bits);
+//		final FactorAlgorithm factorizer1 = new Hart_FastMult2Analyze(false, bits);
 //				final FactorAlgorithm factorizer2 = new SmoothNumbersSieve();
 		//		final FactorAlgorithmBase factorizer1 = new LehmanHart(0);
 		//		final FactorAlgorithmBase factorizer1 = new LehmanHart2();
@@ -92,7 +102,7 @@ public class PerformanceHard {
 		//		final FactorAlgorithm factorizer2 = new HartMod8(true);
 		//		final FactorAlgorithm factorizer1 = new LehmanMidRange5(1);
 		//		final FactorAlgorithmBase factorizer1 = new LehmanMultiplier6_5_7(true);
-		semiprimes = makeSemiPrimesList(bits, numPrimes);
+		semiprimes = Primes.makeSemiPrimesList(bits, numPrimes, readFromFile);
 		//		semiprimes = makeSemiPrimesListReal(bits, numPrimes);
 //		semiprimes = new long[]{574000473499l};
 		final long min1 = test2(factorizer1);
@@ -106,10 +116,36 @@ public class PerformanceHard {
 		System.out.println("Speedup : " + min1 / (double) min2);
 		System.out.println("Speedup : " + min2 / (double) min1);
 		//		final double completeWork = Arrays.asList(HartMod8.foundInStep).stream().flatMapToInt(IntStream::of).sum();
-		double completeWork = 0;
-		for (int i = 0; i < 4; i++) {
-			completeWork += Hart_Fast2Mult2Analyze.modCase[i];
+		int completeSolutions = 0;
+		int solutionsMod8 = 0;
+		final int mod = 4;
+		int ignoreCount = 0;
+		int hartRange = (1 << (bits/3)) * 3;
+		double entryLevel = .1;
+		List<HartSmoothMultiplier.Score> scores = new ArrayList<>();
+		int goodMultipliers = 0;
+		for (int i = 0; i < Hart_FastMult2Analyze.I_MAX; i++) {
+			if (Hart_FastMult2Analyze.multiplierScore[i] > entryLevel){
+				HartSmoothMultiplier.Score score = new HartSmoothMultiplier.Score(Hart_FastMult2Analyze.multiplierScore[i], i);
+				scores.add(score);
+				goodMultipliers++;
+			}
 		}
+		System.out.println("Found : " + goodMultipliers + " good multipliers");
+		HartSmoothMultiplier.Score[] scoreArr = scores.toArray(new HartSmoothMultiplier.Score[goodMultipliers]);
+		Arrays.sort(scoreArr, (a, b) -> (int) Math.signum(b.score - a.score));
+
+		FactorAlgorithm factorizer = new TDiv31Barrett();
+		for (int i = 0; i < goodMultipliers; i++) {
+			System.out.println(scoreArr[i].index + " : " + scoreArr[i].score + " : " + factorizer.factor(BigInteger.valueOf(scoreArr[i].index)));
+		}
+
+		System.out.println("ignore     : \t" + ignoreCount);
+		System.out.println("speedup    : \t" + 1000/ (1000.0 - ignoreCount) );
+
+		System.out.println("sol over all  : \t" + completeSolutions);
+
+
 //		for (int i = 0; i < Hart_Fast2Mult2Analyze.modCase.length; i++) {
 //			final double work = (Hart_Fast2Mult2Analyze.modCase[i] +0.0) / completeWork;
 //			System.out.println("mod case " + i + " : " + work + " avg k : " + (Hart_Fast2Mult2Analyze.modCaseK[i] / Hart_Fast2Mult2Analyze.modCase[i]));
@@ -118,6 +154,14 @@ public class PerformanceHard {
 		//		System.out.println("adjust : " + factorizer1.adjust);
 		//		System.out.println("test   : " + factorizer1.test);
 		//		System.out.println("sqrt   : " + factorizer1.sqrtTime);
+	}
+
+	private String bar(int count, String barChar) {
+		double logCount = Math.log(count) * 10;
+		String bar = "";
+		for (int i=0; i < logCount; i++)
+			bar += barChar;
+		return bar;
 	}
 	//	private static void factorize() {
 	//		final LehmanSimple factorizer1 = new LehmanSimple();
@@ -166,7 +210,7 @@ public class PerformanceHard {
 		minTime = Math.min(minTime, findFactors(factorizer, semiprimes, loop));
 		minTime = Math.min(minTime, findFactors(factorizer, semiprimes, loop));
 		minTime = Math.min(minTime, findFactors(factorizer, semiprimes, loop));
-
+//
 		return minTime;
 	}
 
@@ -213,10 +257,15 @@ public class PerformanceHard {
 
 	protected static long findFactors(final FactorAlgorithm factorizer1, final long[] semiprimes, int loop) {
 		final long start = System.nanoTime();
+		int j = 0;
 		for (int i = 0; i < loop; i++) {
-			for (final long semiprime : semiprimes) {
+			for (final Long semiprime : semiprimes) {
+				if (semiprime != null)
 				factorizer1.findSingleFactor(BigInteger.valueOf(semiprime));
 				//                factorizer1.factor(BigInteger.valueOf(semiprime));
+//				if (++j % 10000 == 0){
+//					System.out.println((100.0 * j / numPrimes) + "% of factorization done. factorized " + j + " semi primes");
+//				}
 			}
 		}
 		final long time = System.nanoTime() - start;
@@ -253,25 +302,6 @@ public class PerformanceHard {
 		System.out.println(name + " :    \t" + time);
 
 		return time;
-	}
-
-	public static long[] makeSemiPrimesList(int bits, int numPrimes) {
-		final long[] semiPrimes = new long[numPrimes];
-		Random rnd = new Random(872);
-		for (int i=0; i< numPrimes; i++)
-		{
-			final int smallFactorBits = (bits / 2 );
-//						final int smallFactorBits = (bits / 3) - 1;
-
-//			rnd = new Random();
-			final BigInteger fact1 = BigInteger.probablePrime(smallFactorBits, rnd);
-			final int bigFactorBits = bits - smallFactorBits;
-//			rnd = new Random();
-			final BigInteger fact2 = BigInteger.probablePrime(bigFactorBits, rnd);
-			semiPrimes[i] = fact1.longValue() * fact2.longValue();
-		}
-
-		return semiPrimes;
 	}
 
 	public static long[] makeSemiPrimesListReal(int bits, int numPrimes) {

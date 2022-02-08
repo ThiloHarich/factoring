@@ -13,28 +13,33 @@
  */
 package factoring.hart;
 
-import java.math.BigInteger;
-import java.util.HashSet;
-
-import org.apache.log4j.Logger;
-
 import de.tilman_neumann.jml.factor.FactorAlgorithm;
 import de.tilman_neumann.jml.factor.tdiv.TDiv63Inverse;
 import de.tilman_neumann.jml.gcd.Gcd63;
 import de.tilman_neumann.util.ConfigUtil;
+import org.apache.log4j.Logger;
+
+import java.math.BigInteger;
+
 
 /**
  * Possibly slightly faster variant of class Hart_Fast2Mult.
  *
+ * Changes form Hart_Fast2Mult2
+ * - use Math.fma instead of double multiplication and addition
+ * - changed order of k array
+ *   - use multiplier 3*3*5*7 first
+ *   - use multiplier 3*3*5*7*11 only in 6 out of 7 cases, no clue why 7 works best here, might optimize the adjustA  cases in the loop
+ *
  * @authors Thilo Harich & Tilman Neumann
  */
-public class Hart_Fast2Mult2 extends FactorAlgorithm {
-	private static final Logger LOG = Logger.getLogger(Hart_Fast2Mult2.class);
+public class Hart_Fast2Mult4 extends FactorAlgorithm {
+	private static final Logger LOG = Logger.getLogger(Hart_Fast2Mult4.class);
 
 	// k multipliers. These are applied alternately; thus we kind of investigate two k-sets of different size "in parallel".
 	// These two multipliers turned out to be the fastest in case of two sets. Three or more sets seemed to give a slowdown.
-	private static final long K_MULT1 = 3465;
-	private static final long K_MULT2 = 315;
+	private static final int K_MULT = 3*3*5*7;  // 315
+	private static final int K_MULT1 = 3*3*5;    //  45
 
 	/**
 	 * Size of arrays: this is around 4*n^1/3.
@@ -60,29 +65,25 @@ public class Hart_Fast2Mult2 extends FactorAlgorithm {
 	 * With doTDivFirst=false, this implementation is pretty fast for hard semiprimes.
 	 * But the smaller possible factors get, it will become slower and slower.
 	 */
-	public Hart_Fast2Mult2(boolean doTDivFirst) {
+	public Hart_Fast2Mult4(boolean doTDivFirst) {
 		this.doTDivFirst = doTDivFirst;
 		// Precompute all required sqrt(k) for i < I_MAX
-		HashSet<Long> kSet = new HashSet<>();
 		kArr = new long[2*I_MAX];
 		sqrtKArr = new double[2*I_MAX];
 		int kCount = 0;
 		for (int i=1; i<I_MAX; i++) {
-			long k1 = i*K_MULT1;
-			double sqrt1 = Math.sqrt(k1);
-			if (!kSet.contains(k1)) {
+			long k1 = i*K_MULT;
+			if ((k1 % 2) != 0) {
 				kArr[kCount] = k1;
-				sqrtKArr[kCount] = sqrt1;
-				kSet.add(k1);
+				sqrtKArr[kCount] = Math.sqrt(k1);
 				kCount++;
 			}
-
-			long k2 = i*K_MULT2;
-			double sqrt2 = Math.sqrt(k2);
-			if (!kSet.contains(k2)) {
+			if ( (i%2) == 0)
+			{
+				long k2 = i * K_MULT1;
+				// now i/4 is even
 				kArr[kCount] = k2;
-				sqrtKArr[kCount] = sqrt2;
-				kSet.add(k2);
+				sqrtKArr[kCount] = Math.sqrt(k2);
 				kCount++;
 			}
 		}
@@ -90,7 +91,7 @@ public class Hart_Fast2Mult2 extends FactorAlgorithm {
 
 	@Override
 	public String getName() {
-		return "Hart_Fast2Mult2(" + doTDivFirst + ")";
+		return "Hart_Fast2Mult3(" + doTDivFirst + ")";
 	}
 
 	@Override
@@ -123,7 +124,6 @@ public class Hart_Fast2Mult2 extends FactorAlgorithm {
 			for (int i=0; ; i++) {
 				long k = kArr[i];
 				a = adjustA(N, (long) Math.fma(sqrt4N, sqrtKArr[i], ROUND_UP_DOUBLE), k);
-//				a = adjustA(N, (long) (sqrt4N * sqrtKArr[i] + ROUND_UP_DOUBLE), k);
 				test = a*a - k * fourN;
 				b = (long) Math.sqrt(test);
 				if (b*b == test && (gcd = gcdEngine.gcd(a+b, N))>1 && gcd<N) {
@@ -147,9 +147,7 @@ public class Hart_Fast2Mult2 extends FactorAlgorithm {
 	 * if k*n == 1 mod 8 -> x = k*n+1 mod 16 or -k*n+1 mod 16
 	 * if k*n == 5 mod 8 -> x = k*n+1 mod 32 or -k*n+1 mod 32
 	 *
-	 * @param N
 	 * @param x
-	 * @param k
 	 * @return
 	 */
 	private long adjustA(long N, long x, long k) {
@@ -295,7 +293,7 @@ public class Hart_Fast2Mult2 extends FactorAlgorithm {
 				9170754184293724117L, // 63 bit
 		};
 
-		Hart_Fast2Mult2 holf = new Hart_Fast2Mult2(false);
+		Hart_Fast2Mult4 holf = new Hart_Fast2Mult4(false);
 		for (long N : testNumbers) {
 			long factor = holf.findSingleFactor(N);
 			LOG.info("N=" + N + " has factor " + factor);

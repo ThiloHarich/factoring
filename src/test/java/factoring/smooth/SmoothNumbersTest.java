@@ -1,30 +1,17 @@
 package factoring.smooth;
 
-import factoring.PerformanceHard;
-import factoring.sieve.triple.HartTripleLookupSieve;
+import factoring.primes.Primes;
 import factoring.sieve.triple.TripleLookupAllSieve;
 import factoring.sieve.triple.TripleLookupSieve;
 import org.junit.Test;
 
-import org.openjdk.jmh.annotations.*;
-import org.openjdk.jmh.runner.Runner;
-import org.openjdk.jmh.runner.RunnerException;
-import org.openjdk.jmh.runner.options.Options;
-import org.openjdk.jmh.runner.options.OptionsBuilder;
 
 import com.google.common.collect.TreeMultiset;
 
-import static java.lang.Math.cbrt;
 import static java.lang.Math.ceil;
 import static org.junit.Assert.assertEquals;
 
-import java.util.Arrays;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.IntStream;
-import java.util.stream.LongStream;
-
 import factoring.trial.TrialInvFact;
-import junit.framework.TestFailure;
 
 public class SmoothNumbersTest {
 	
@@ -135,7 +122,8 @@ public class SmoothNumbersTest {
 
     @Test
 	public void testCreateSmooth (){
-		long[] semiPrimes = PerformanceHard.makeSemiPrimesList(40, 10);
+		boolean readFromFile = false;
+		long[] semiPrimes = Primes.makeSemiPrimesList(40, 10, readFromFile);
 
 		SmoothNumbers smooth = new SmoothNumbers();
 		TripleLookupSieve tls = new TripleLookupSieve(40);
@@ -150,7 +138,8 @@ public class SmoothNumbersTest {
 	@Test
 	public void testSmall (){
 		int bits = 15;
-		long[] semiPrimes = PerformanceHard.makeSemiPrimesList(bits, 10);
+		boolean readFromFile = false;
+		long[] semiPrimes = Primes.makeSemiPrimesList(bits, 10, readFromFile);
 
 		SmoothNumbers smooth = new SmoothNumbers();
 		TripleLookupAllSieve tls = new TripleLookupAllSieve(bits);
