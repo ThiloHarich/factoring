@@ -17,14 +17,13 @@ import static de.tilman_neumann.jml.base.BigIntConstants.I_1;
 import static de.tilman_neumann.jml.factor.TestNumberNature.RANDOM_COMPOSITES;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
+import de.tilman_neumann.jml.factor.FactorAlgorithm;
 import org.apache.log4j.Logger;
 
-import de.tilman_neumann.jml.factor.FactorAlgorithm;
 import de.tilman_neumann.jml.factor.TestsetGenerator;
 import de.tilman_neumann.jml.gcd.Gcd63;
 import de.tilman_neumann.util.ConfigUtil;

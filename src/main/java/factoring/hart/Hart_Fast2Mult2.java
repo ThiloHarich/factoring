@@ -122,8 +122,8 @@ public class Hart_Fast2Mult2 extends FactorAlgorithm {
 		try {
 			for (int i=0; ; i++) {
 				long k = kArr[i];
-				a = adjustA(N, (long) Math.fma(sqrt4N, sqrtKArr[i], ROUND_UP_DOUBLE), k);
-//				a = adjustA(N, (long) (sqrt4N * sqrtKArr[i] + ROUND_UP_DOUBLE), k);
+//				a = adjustA(N, (long) Math.fma(sqrt4N, sqrtKArr[i], ROUND_UP_DOUBLE), k);
+				a = adjustA(N, (long) (sqrt4N * sqrtKArr[i] + ROUND_UP_DOUBLE), k);
 				test = a*a - k * fourN;
 				b = (long) Math.sqrt(test);
 				if (b*b == test && (gcd = gcdEngine.gcd(a+b, N))>1 && gcd<N) {

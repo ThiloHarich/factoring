@@ -126,8 +126,8 @@ public class Hart_FastFmaSimple extends FactorAlgorithm {
 		try {
 			for (int i=1; ;i++, k += K_MULT) {
 				// calculating the sqrt here is 5 times slower then storing it
-				//				a = (long) (sqrt4N * sqrt[i] + ROUND_UP_DOUBLE);
-				a = (long) Math.fma(sqrt4N, sqrt[i], ROUND_UP_DOUBLE);
+								a = (long) (sqrt4N * sqrt[i] + ROUND_UP_DOUBLE);
+//				a = (long) Math.fma(sqrt4N, sqrt[i], ROUND_UP_DOUBLE);
 				a = adjustA(N, a, k);
 				test = a*a - k * fourN;
 				b = (long) Math.sqrt(test);

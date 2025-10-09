@@ -5,7 +5,8 @@ import java.math.BigInteger;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Random;
+import java.util.*;
+import java.util.stream.IntStream;
 
 public class Primes {
 
@@ -49,9 +50,46 @@ public class Primes {
 		return primes;
 	}
 
-	public static long[] makeSemiPrimesList(int bits, int numPrimes, boolean readFromFile) {
+    public static long[] makeNumberList(int bitLength, int noFactorUpTo, int numNumbers, boolean readFromFile) {
+
+
+        // create a list of numbers we want to sieve with; primes preferred, but not necessary
+        int[] sieveNumbers = IntStream.range(2, noFactorUpTo)
+                .filter(num -> BigInteger.valueOf(num).isProbablePrime(3))
+                .toArray();
+        long sieveLimit = noFactorUpTo * 3L;
+        List<Long> result = new ArrayList<>();
+
+        while (result.size() < numNumbers) {
+            BitSet numbersSieved = new BitSet();
+            long startAt = BigInteger.probablePrime(bitLength, new Random()).longValue();
+            for (int sieveStep : sieveNumbers) {
+                long currentSievedNumber = ((startAt + sieveStep) / sieveStep) * sieveStep;
+
+                for (; currentSievedNumber < startAt + sieveLimit; currentSievedNumber += sieveStep) {
+                    numbersSieved.set((int) (currentSievedNumber - startAt));
+                }
+            }
+
+            for (int notSievedIndex = numbersSieved.nextClearBit(0); notSievedIndex < sieveLimit; notSievedIndex = numbersSieved.nextClearBit(notSievedIndex + 1)) {
+                long number = startAt + notSievedIndex;
+                if (number % 2 == 1 && !BigInteger.valueOf(number).isProbablePrime(10)) {
+                    long sqrt = (long) Math.sqrt(number);
+                    if (sqrt * sqrt != number) {
+                        result.add(number);
+                    }
+                }
+            }
+        }
+
+        return result.stream().mapToLong(Long::longValue).toArray();
+    }
+
+
+
+        public static long[] makeSemiPrimesList(int bits, int numPrimes, boolean readFromFile) {
 		long[] semiPrimes = new long[numPrimes];
-		final String file = "semiPrimes" + bits + ".dat";
+		final String file = "semiPrimes_" + (numPrimes / 1000) + "K_" + bits + "Bits.dat";
 		final Path path = Paths.get(file);
 
 		if (Files.exists(path) && readFromFile)
@@ -71,8 +109,8 @@ public class Primes {
 		Random rnd = new Random();
 		for (int i=0; i< numPrimes;)
 		{
-//			final int smallFactorBitsMin = (int) Math.ceil(bits * .37);
-			final int smallFactorBitsMin = (int) (bits * .5);
+			final int smallFactorBitsMin = (int) Math.ceil(bits * .37);
+//			final int smallFactorBitsMin = (int) (bits * .5);
 			final int smallFactorBitsMax = (int) (bits * .5);
 //			final int smallFactorBitsMax = 20;
 //			final int smallFactorBitsMin = smallFactorBitsMax;
@@ -114,4 +152,8 @@ public class Primes {
 
 		return semiPrimes;
 	}
+
+    public static boolean isProbablePrime(int multiplier) {
+        return BigInteger.valueOf(multiplier).isProbablePrime(10);
+    }
 }

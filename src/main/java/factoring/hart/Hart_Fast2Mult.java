@@ -15,7 +15,8 @@ package factoring.hart;
 
 import java.math.BigInteger;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import de.tilman_neumann.jml.factor.FactorAlgorithm;
 import de.tilman_neumann.jml.factor.tdiv.TDiv63Inverse;
@@ -63,7 +64,7 @@ import de.tilman_neumann.util.ConfigUtil;
  * @authors Thilo Harich & Tilman Neumann
  */
 public class Hart_Fast2Mult extends FactorAlgorithm {
-	private static final Logger LOG = Logger.getLogger(Hart_Fast2Mult.class);
+	private static final Logger LOG = LogManager.getLogger(Hart_Fast2Mult.class);
 
 	/**
 	 * We only test k-values that are multiples of this constant.
@@ -147,7 +148,8 @@ public class Hart_Fast2Mult extends FactorAlgorithm {
 			for (int i=1; ; i++, k1 += K_MULT1, k2 += K_MULT2) {
 				// using the fusedMultiplyAdd operation defined in IEEE 754-2008 gives ~ 4-8 % speedup
 				// but requires Java 9 and a Intel Haswell or AMD Piledriver CPU or later.
-				a = (long) Math.fma(sqrt4N, sqrt1[i], ROUND_UP_DOUBLE);
+//				a = (long) Math.fma(sqrt4N, sqrt1[i], ROUND_UP_DOUBLE);
+				a = (long) Math.ceil(sqrt4N * sqrt1[i]);
 //				a = (long) (sqrt4N * sqrt1[i] + ROUND_UP_DOUBLE);
 				a = adjustA(N, a, k1);
 				test = a*a - k1 * fourN;
@@ -157,9 +159,11 @@ public class Hart_Fast2Mult extends FactorAlgorithm {
 				}
 				// the second parallel 45 * i loop gives ~4 % speedup if we
 				// avoid that we hit the same values as in the first 315 * i case
-				if (sqrt2[i] > Double.MIN_VALUE) {
-					a = (long) Math.fma(sqrt4N, sqrt2[i], ROUND_UP_DOUBLE);
+				if (sqrt2[i] > Double.MIN_VALUE) 
+                {
+//					a = (long) Math.fma(sqrt4N, sqrt2[i], ROUND_UP_DOUBLE);
 //					a = (long) (sqrt4N * sqrt2[i] + ROUND_UP_DOUBLE);
+                    a = (long) Math.ceil(sqrt4N * sqrt2[i]);
 					a = adjustA(N, a, k2);
 					test = a*a - k2 * fourN;
 					b = (long) Math.sqrt(test);
